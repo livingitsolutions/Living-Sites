@@ -1,0 +1,1 @@
+{"version":3,"file":"drizzle-instance.d.ts","sourceRoot":"","sources":["../../src/db/drizzle-instance.ts"],"names":[],"mappings":"AAOA,OAAO,KAAK,MAAM,MAAM,UAAU,CAAC;AAEnC,MAAM,MAAM,SAAS,GAAG,UAAU,CAAC,OAAO,aAAa,CAAC,CAAC;AAEzD,iBAAS,aAAa,CAAC,GAAG,EAAE,MAAM;;EAEjC;AAED,OAAO,EAAE,aAAa,IAAI,OAAO,EAAE,CAAC"}
