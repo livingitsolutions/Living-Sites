@@ -16,7 +16,11 @@
     "typecheck": "npm run typecheck --workspaces",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "vitest run",
+    "test": "npm run test:all",
+    "test:unit": "vitest run --exclude packages/infrastructure/src/repositories/netlify-integration.test.ts --exclude packages/infrastructure/src/repositories/organization/drizzle-integration.test.ts --exclude packages/infrastructure/src/repositories/plan-feature/drizzle-plan-feature-outbox.integration.test.ts",
+    "test:integration": "vitest run packages/infrastructure/src/repositories/netlify-integration.test.ts packages/infrastructure/src/repositories/organization/drizzle-integration.test.ts packages/infrastructure/src/repositories/plan-feature/drizzle-plan-feature-outbox.integration.test.ts",
+    "test:db": "vitest run packages/infrastructure/src/repositories/netlify-integration.test.ts",
+    "test:all": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -31,6 +35,12 @@
     "typescript-eslint": "^8.0.0",
     "vitest": "*",
     "@types/node": "*",
-    "drizzle-kit": "*"
+    "drizzle-kit": "1.0.0-beta.22",
+    "@netlify/database-dev": "0.10.1"
+  },
+  "dependencies": {
+    "@netlify/database": "1.1.0",
+    "@netlify/functions": "5.3.0",
+    "drizzle-orm": "1.0.0-beta.22"
   }
 }

@@ -13,7 +13,7 @@
  * types are retained and marked failed. A successfully dispatched event
  * with zero registered subscribers is marked processed and logged.
  */
-import { sql, eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { Logger } from "@livingsites/platform";
 import type {
   OutboxProcessor,
@@ -73,16 +73,10 @@ export class DrizzleOutboxProcessor implements OutboxProcessor {
 
   private async claimPending(batchSize: number): Promise<OutboxRow[]> {
     try {
-      const now = new Date();
       const claimed = await this.db
         .update(applicationOutbox)
         .set({ status: "processing" })
-        .where(
-          and(
-            eq(applicationOutbox.status, "pending"),
-            sql`${applicationOutbox.available_at} <= ${now}`,
-          ),
-        )
+        .where(eq(applicationOutbox.status, "pending"))
         .returning();
 
       return claimed.slice(0, batchSize);

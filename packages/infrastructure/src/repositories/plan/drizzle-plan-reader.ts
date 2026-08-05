@@ -84,7 +84,7 @@ export class DrizzlePlanReader implements PlanReader {
       const featureIds = entitlementRows.map((e) => e.feature_id);
       if (featureIds.length > 0) {
         const featureResult = await this.db.select().from(features);
-        featureRows = featureResult.filter((f) => featureIds.includes(f.id));
+        featureRows = featureResult.filter((f: typeof featureResult[number]) => featureIds.includes(f.id));
       }
     } catch (err) {
       this.logger.error("PlanReader: failed to load entitlements", { planId: row.id, error: String(err) });

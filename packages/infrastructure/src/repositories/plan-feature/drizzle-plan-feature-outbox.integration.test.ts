@@ -42,8 +42,8 @@ describeOrSkip("Drizzle Plan/Feature/Outbox — database integration", () => {
 
   beforeAll(async () => {
     sqlClient = postgres(TEST_DATABASE_URL!);
-    db = drizzle(sqlClient, { schema });
-    await migrate(db, { migrationsFolder: "./packages/infrastructure/drizzle/migrations" });
+    db = drizzle({ client: sqlClient, schema });
+    await migrate(db, { migrationsFolder: "./netlify/database/migrations" });
     planReader = new DrizzlePlanReader({ db, logger });
     featureReader = new DrizzleFeatureReader({ db, logger });
     creationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });

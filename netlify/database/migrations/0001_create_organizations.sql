@@ -1,10 +1,10 @@
-CREATE TABLE "organizations" (
+CREATE TABLE IF NOT EXISTS "organizations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
 	"billing_email" text NOT NULL,
 	"plan_id" text,
-	"status" "org_status" DEFAULT 'active' NOT NULL,
+	"status" text DEFAULT 'active' NOT NULL,
 	"feature_overrides" text DEFAULT '[]' NOT NULL,
 	"version" integer DEFAULT 1 NOT NULL,
 	"created_at" timestamp with time zone NOT NULL,

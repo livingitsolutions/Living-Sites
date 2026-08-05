@@ -62,9 +62,9 @@ export class DrizzleFeatureReader implements FeatureReader {
 
       if (entitlementRows.length === 0) return [];
 
-      const featureIds = entitlementRows.map((e) => e.feature_id);
+      const featureIds = entitlementRows.map((e: typeof entitlementRows[number]) => e.feature_id);
       const allFeatures = await this.db.select().from(features);
-      const planFeatures = allFeatures.filter((f) => featureIds.includes(f.id));
+      const planFeatures = allFeatures.filter((f: typeof allFeatures[number]) => featureIds.includes(f.id));
 
       const results: Feature[] = [];
       for (const row of planFeatures) {

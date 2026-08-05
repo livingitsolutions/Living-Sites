@@ -2,24 +2,39 @@
 
 ## Migration vs Seed Data
 
-**Migrations** define the database schema — tables, columns, indexes, enums.
-They are additive, forward-only, and never destructive. They run via
-`npm run db:migrate`.
+**Migrations** define schema. **Seeds** populate platform-global
+reference data. Seeds run via `npm run db:seed`, never automatically.
 
-**Seeds** populate platform-global reference data — plans, features, and
-entitlements. They are idempotent and deterministic. They run via
-`npm run db:seed`.
+## Controlled Upsert Strategy
 
-The distinction is critical: migrations change structure; seeds populate
-content. A migration that inserts data is a code smell — data belongs in
-seeds.
+Seeds use **controlled upsert**: seed-owned fields are updated on rerun,
+operational fields are preserved.
+
+### Seed-owned fields (updated on rerun)
+
+Plans: `tier`, `slug`, `name`, `description`, `price_monthly`,
+`price_annual`, `currency`, `max_websites`, `max_members`,
+`custom_domains_allowed`, `is_active`
+
+Features: `key`, `category`, `name`, `description`, `value_type`,
+`is_active`
+
+Entitlements: `value`
+
+### Preserved fields (never overwritten by seed)
+
+- `version` (aggregate version)
+- `created_at`, `updated_at` (audit metadata — `updated_at` is set on
+  update, `created_at` is never changed)
+- `created_by`, `updated_by` (operational audit)
+- `deactivated_at` (admin-controlled deactivation state)
 
 ## Seeded Plans
 
-| ID | Slug | Tier | Name | Max Websites | Custom Domains |
-|----|------|------|------|--------------|----------------|
-| `plan_free` | free | starter | Free | 1 | No |
-| `plan_lifetime` | lifetime | business | Lifetime | unlimited | Yes |
+| ID | Slug | Tier | Name |
+|----|------|------|------|
+| `plan_free` | free | starter | Free |
+| `plan_lifetime` | lifetime | business | Lifetime |
 
 ## Seeded Features
 
@@ -35,24 +50,17 @@ seeds.
 
 ## Idempotency
 
-All seed inserts use `ON CONFLICT DO NOTHING` on the primary key. Rerunning
-the seed does not create duplicates. Seed data changes must be explicit and
-reviewable in the seed source file.
+Rerunning the seed:
+- Creates no duplicates (upsert by stable primary key)
+- Updates changed seed-owned fields deterministically
+- Preserves operational fields (version, audit, deactivation)
+- Creates no customer-specific or Tajon-specific data
 
-## No Customer-Specific Data
+## Tests
 
-Seeds contain only platform-global reference data. No organization-specific
-or customer-specific data is created. The LIFETIME plan is representable
-for future lifetime-access grants, but no Tajon-specific data is seeded.
-
-## Production Seeding
-
-Production seeding is an explicit command, never automatic at application
-startup:
-
-```bash
-npm run db:seed
-```
-
-Seed commands cannot accidentally delete production data — they only insert
-with conflict resolution.
+Integration tests verify:
+- Seed applies successfully
+- Rerun creates no duplicates
+- Changed seed-owned fields update deterministically
+- Operational fields are preserved across reruns
+- No Tajon-specific organization is created

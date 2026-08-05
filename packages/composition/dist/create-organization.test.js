@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { composeTest } from "./test";
 import { composeDevelopment } from "./development";
-import { composeProduction, MissingProductionDependencyError } from "./production";
+import { composeProduction } from "./production";
 function makePlan(overrides = {}) {
     return {
         id: "plan_starter",
@@ -144,11 +144,9 @@ describe("composeDevelopment", () => {
         expect(dev.clock.nowMs()).toBe(1000);
     });
 });
-describe("composeProduction — missing dependency failure", () => {
-    it("fails fast when databaseUrl is missing", () => {
-        expect(() => composeProduction({
-            databaseUrl: "",
-        })).toThrow(MissingProductionDependencyError);
+describe("composeProduction — missing database failure", () => {
+    it("fails fast when Netlify Database is unavailable", () => {
+        expect(() => composeProduction({ connectionString: "postgresql://invalid:invalid@invalid:99999/invalid" })).toThrow();
     });
 });
 //# sourceMappingURL=create-organization.test.js.map

@@ -3,7 +3,11 @@ import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader
 import { createOrganization } from "@livingsites/application";
 import type { CreateOrganizationDeps } from "@livingsites/application";
 export interface ProductionCompositionConfig {
-    readonly databaseUrl: string;
+    /**
+     * Optional explicit connection string for local development.
+     * When absent, @netlify/database resolves the connection automatically.
+     */
+    readonly connectionString?: string;
     readonly logLevel?: "trace" | "debug" | "info" | "warn" | "error" | "silent";
     readonly outboxMaxAttempts?: number;
     readonly outboxBaseBackoffMs?: number;
@@ -27,9 +31,15 @@ export interface ProductionComposition {
     }>;
     readonly close: () => Promise<void>;
 }
-export declare class MissingProductionDependencyError extends Error {
-    readonly missingDependencies: readonly string[];
-    constructor(missing: readonly string[]);
-}
-export declare function composeProduction(config: ProductionCompositionConfig): ProductionComposition;
+export declare function composeProduction(config?: ProductionCompositionConfig): ProductionComposition;
+/**
+ * Composition root for generic PostgreSQL development.
+ *
+ * Accepts an explicit connection string. Clearly named as development —
+ * NOT for production use. Production uses composeProduction with Netlify Database.
+ */
+export declare function composePostgresDevelopment(config: {
+    readonly databaseUrl: string;
+    readonly logLevel?: "trace" | "debug" | "info" | "warn" | "error" | "silent";
+}): ProductionComposition;
 //# sourceMappingURL=production.d.ts.map

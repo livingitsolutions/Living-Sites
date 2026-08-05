@@ -1,7 +1,8 @@
 /**
- * Provider registration contracts — future home for provider wiring.
+ * Provider registration contracts.
  *
- * No contracts defined in this milestone. See README.md for documentation.
+ * Exports the Netlify Database provider for use by the composition root.
+ * All provider-specific code stays inside Infrastructure.
  */
-export const INFRASTRUCTURE_PROVIDERS = "";
+export { createNetlifyDatabase, MissingNetlifyDatabaseError, } from "./netlify-database";
 //# sourceMappingURL=index.js.map

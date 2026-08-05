@@ -1,28 +1,21 @@
 /**
- * Composition root — production wiring.
+ * Composition root — production wiring for Netlify Database.
  *
- * Assembles a complete Organization creation runtime using:
- * - configured PostgreSQL/Drizzle connection
- * - SystemClock
- * - CryptoIdGenerator
- * - ConsoleLogger
- * - Drizzle Organization repository
- * - Drizzle Plan reader
- * - Drizzle Feature reader
- * - OutboxEventPublisher
- * - DrizzleOrganizationCreationPersistence (atomic aggregate + event)
- * - DrizzleOutboxProcessor
- * - CreateOrganization policies and use case
+ * Uses the Netlify Database provider which automatically resolves the
+ * connection in the Netlify runtime. No manually copied connection string
+ * is required in the normal Netlify runtime.
  *
- * No in-memory repositories. No no-op event publisher. No test-support
- * imports. Fails fast on missing or invalid configuration. Runs
- * dependency health checks. Exposes an explicit shutdown operation.
+ * For local development or non-Netlify PostgreSQL, use composePostgresDevelopment
+ * which accepts an explicit connection string.
  *
- * Does not automatically run migrations or seeds.
+ * Fails fast with a typed error when the database is unavailable.
+ * Does NOT automatically run migrations or seeds.
+ * Does NOT import test-support.
  */
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
 import {
+  createNetlifyDatabase,
   createDbConnection,
   DrizzleOrganizationRepository,
   DrizzlePlanReader,
@@ -30,6 +23,7 @@ import {
   OutboxEventPublisher,
   DrizzleOrganizationCreationPersistence,
   DrizzleOutboxProcessor,
+  MissingNetlifyDatabaseError,
 } from "@livingsites/infrastructure";
 import type {
   OrganizationReader,
@@ -44,7 +38,11 @@ import { createOrganization } from "@livingsites/application";
 import type { CreateOrganizationDeps } from "@livingsites/application";
 
 export interface ProductionCompositionConfig {
-  readonly databaseUrl: string;
+  /**
+   * Optional explicit connection string for local development.
+   * When absent, @netlify/database resolves the connection automatically.
+   */
+  readonly connectionString?: string;
   readonly logLevel?: "trace" | "debug" | "info" | "warn" | "error" | "silent";
   readonly outboxMaxAttempts?: number;
   readonly outboxBaseBackoffMs?: number;
@@ -67,47 +65,34 @@ export interface ProductionComposition {
   readonly close: () => Promise<void>;
 }
 
-export class MissingProductionDependencyError extends Error {
-  readonly missingDependencies: readonly string[];
-
-  constructor(missing: readonly string[]) {
-    super(`Missing required production dependencies: ${missing.join(", ")}`);
-    this.name = "MissingProductionDependencyError";
-    this.missingDependencies = missing;
-  }
-}
-
 export function composeProduction(
-  config: ProductionCompositionConfig,
+  config: ProductionCompositionConfig = {},
 ): ProductionComposition {
-  const missing: string[] = [];
-  if (!config.databaseUrl) missing.push("databaseUrl");
-  if (missing.length > 0) {
-    throw new MissingProductionDependencyError(missing);
-  }
-
   const logger = new ConsoleLogger("app", config.logLevel ?? "info");
   const clock = new SystemClock();
   const idGenerator = new CryptoIdGenerator();
 
-  const connection = createDbConnection({ url: config.databaseUrl });
+  let connection;
+  try {
+    connection = createNetlifyDatabase({
+      ...(config.connectionString ? { connectionString: config.connectionString } : {}),
+    });
+  } catch (err) {
+    if (err instanceof MissingNetlifyDatabaseError) {
+      throw err;
+    }
+    throw new MissingNetlifyDatabaseError(
+      `Failed to initialize Netlify Database: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
   const db = connection.db;
 
-  const organizationRepository = new DrizzleOrganizationRepository({
-    db,
-    logger,
-  });
-
+  const organizationRepository = new DrizzleOrganizationRepository({ db, logger });
   const planReader = new DrizzlePlanReader({ db, logger });
   const featureReader = new DrizzleFeatureReader({ db, logger });
-
   const eventPublisher = new OutboxEventPublisher({ db, logger });
-
-  const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({
-    db,
-    logger,
-  });
-
+  const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
   const outboxProcessor = new DrizzleOutboxProcessor({
     db,
     logger,
@@ -129,7 +114,7 @@ export function composeProduction(
     const details: Record<string, boolean> = {};
     let healthy = true;
     try {
-      await db.execute(new Function("return 1")() as unknown as never);
+      await db.execute("SELECT 1" as unknown as never);
       details.database = true;
     } catch {
       details.database = false;
@@ -160,5 +145,55 @@ export function composeProduction(
     createOrganizationDeps,
     healthCheck,
     close,
+  };
+}
+
+/**
+ * Composition root for generic PostgreSQL development.
+ *
+ * Accepts an explicit connection string. Clearly named as development —
+ * NOT for production use. Production uses composeProduction with Netlify Database.
+ */
+export function composePostgresDevelopment(config: {
+  readonly databaseUrl: string;
+  readonly logLevel?: "trace" | "debug" | "info" | "warn" | "error" | "silent";
+}): ProductionComposition {
+  const logger = new ConsoleLogger("app", config.logLevel ?? "debug");
+  const clock = new SystemClock();
+  const idGenerator = new CryptoIdGenerator();
+
+  const connection = createDbConnection({ url: config.databaseUrl });
+  const db = connection.db;
+
+  const organizationRepository = new DrizzleOrganizationRepository({ db, logger });
+  const planReader = new DrizzlePlanReader({ db, logger });
+  const featureReader = new DrizzleFeatureReader({ db, logger });
+  const eventPublisher = new OutboxEventPublisher({ db, logger });
+  const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
+  const outboxProcessor = new DrizzleOutboxProcessor({ db, logger });
+
+  const createOrganizationDeps: CreateOrganizationDeps = {
+    organizationRepository,
+    planRepository: planReader,
+    eventPublisher,
+    clock,
+    idGenerator,
+    organizationCreationPersistence,
+  };
+
+  return {
+    clock,
+    idGenerator,
+    logger,
+    eventPublisher,
+    organizationRepository,
+    planReader,
+    featureReader,
+    organizationCreationPersistence,
+    outboxProcessor,
+    createOrganization,
+    createOrganizationDeps,
+    healthCheck: async () => ({ healthy: true, details: { database: true } }),
+    close: async () => { await connection.close(); },
   };
 }

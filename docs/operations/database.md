@@ -1,75 +1,78 @@
 # Database Operations
 
+## Production Provider
+
+Netlify Database is the authoritative production database provider.
+See [Netlify Database](./netlify-database.md) for provisioning and
+configuration details.
+
 ## Production Dependency Graph
 
 ```
-composeProduction
+composeProduction (Netlify Database)
   ├── SystemClock
   ├── CryptoIdGenerator
   ├── ConsoleLogger
-  ├── DrizzleDB (PostgreSQL via postgres-js)
+  ├── NetlifyDatabaseProvider (drizzle-orm/netlify-db)
   │     ├── DrizzleOrganizationRepository
   │     ├── DrizzlePlanReader
   │     ├── DrizzleFeatureReader
   │     ├── OutboxEventPublisher
-  │     ├── DrizzleOrganizationCreationPersistence (atomic create + event)
+  │     ├── DrizzleOrganizationCreationPersistence
   │     └── DrizzleOutboxProcessor
   └── CreateOrganization use case
-        ├── OrganizationCreationPersistence (atomic path)
-        ├── PlanReader (policy evaluation)
-        └── EventPublisher (fallback path)
 ```
+
+For generic PostgreSQL development (non-Netlify), use
+`composePostgresDevelopment` which accepts an explicit connection string.
+This is clearly named as development — NOT for production.
 
 ## Plan and Feature Persistence
 
-Plans and Features are platform-global reference data. They are not
-organization-specific. The database stores them in three tables:
+Plans and Features are platform-global reference data stored in:
+- `plans` — subscription tiers
+- `features` — discrete capabilities
+- `plan_feature_entitlements` — plan-feature associations
 
-- `plans` — subscription tiers (FREE, LIFETIME)
-- `features` — discrete capabilities (website limit, custom domain, etc.)
-- `plan_feature_entitlements` — associates plans with features and their values
-
-The `DrizzlePlanReader` and `DrizzleFeatureReader` adapters implement
-read-only ports (`PlanReader`, `FeatureReader`). They map database rows to
-domain `Plan` and `Feature` contracts, reconstruct branded IDs, and reject
-malformed persisted state with `InvalidPersistenceStateError`.
+Read-only adapters (`DrizzlePlanReader`, `DrizzleFeatureReader`) map
+database rows to domain contracts. Provider-specific row types stay
+inside Infrastructure.
 
 ## Migration vs Seeding
 
-**Migrations** define schema (tables, columns, indexes, enums). They are
-additive and forward-only. They never destroy data. They are applied via
-`npm run db:migrate`.
-
-**Seeds** populate reference data (plans, features, entitlements). They are
-idempotent — rerunning does not create duplicates. They are applied via
-`npm run db:seed`. Seeds must never run automatically at application startup.
+**Migrations** define schema. **Seeds** populate reference data.
+See [Seeding](./seeding.md) for seed reconciliation details.
 
 ## Operational Commands
 
-### Correct Order
-
-1. **Configure** — set `DATABASE_URL` in the environment
-2. **Migrate** — `npm run db:migrate`
-3. **Seed** — `npm run db:seed` (when required)
-4. **Health-check** — the production composition runs health checks on startup
-5. **Start application/worker** — start the application or the outbox worker
-
-### Available Scripts
-
 | Command | Description |
 |---------|-------------|
-| `npm run db:generate` | Generate Drizzle migrations from schema changes |
-| `npm run db:migrate` | Apply all pending migrations |
-| `npm run db:check` | Check for schema drift |
-| `npm run db:seed` | Seed platform-global plans and features |
-| `npm run outbox:process` | Run the outbox processor worker |
+| `npm run db:generate` | Generate Drizzle migrations from schema |
+| `npm run db:migrate` | Apply migrations (local) |
+| `npm run db:check` | Check schema drift |
+| `npm run db:seed` | Seed plans and features |
+| `npm run outbox:process` | Run outbox processor (CLI) |
 
-## Integration Test Setup
+Netlify CLI commands:
+| Command | Description |
+|---------|-------------|
+| `netlify database migrations apply` | Apply migrations to local DB |
+| `netlify database status` | Inspect migration state |
+| `netlify database reset` | Reset local database |
 
-Database integration tests use `TEST_DATABASE_URL`. When set, tests apply
-migrations, seed data, and run against the test database. When absent,
-all database suites skip transparently with a reported skip count and reason.
+## RLS Decision
+
+RLS is deferred to the Authentication/Tenant Engine milestone. See
+[ADR 009](../adr/009-rls-deferred.md). The server-side database role has
+full access. No Supabase auth assumptions remain.
+
+## Integration Tests
+
+Integration tests run against a real local Postgres-compatible database
+via `@netlify/database-dev`:
 
 ```bash
-TEST_DATABASE_URL=postgresql://user:pass@host:5432/testdb npm test
+npm run test:db      # database integration tests only
+npm run test:unit    # unit tests only
+npm run test:all     # all tests
 ```

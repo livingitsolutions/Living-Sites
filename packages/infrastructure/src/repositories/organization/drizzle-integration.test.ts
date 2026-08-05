@@ -52,8 +52,8 @@ describeOrSkip("DrizzleOrganizationRepository — database integration", () => {
 
   beforeAll(async () => {
     sql = postgres(TEST_DATABASE_URL!);
-    db = drizzle(sql, { schema });
-    await migrate(db, { migrationsFolder: "./packages/infrastructure/drizzle/migrations" });
+    db = drizzle({ client: sql, schema });
+    await migrate(db, { migrationsFolder: "./netlify/database/migrations" });
     repo = new DrizzleOrganizationRepository({ db, logger: new NoopLogger() });
   });
 

@@ -74,7 +74,7 @@ export class DrizzleOrganizationCreationPersistence implements OrganizationCreat
     event: OrganizationCreatedEvent,
   ): Promise<CreateResult<Organization>> {
     try {
-      const result = await this.db.transaction(async (tx) => {
+      const result = await this.db.transaction(async (tx: typeof this.db) => {
         const insertData = draftToInsertData(draft, 1);
 
         const [inserted] = await tx

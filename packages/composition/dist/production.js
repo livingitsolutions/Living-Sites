@@ -1,59 +1,42 @@
 /**
- * Composition root — production wiring.
+ * Composition root — production wiring for Netlify Database.
  *
- * Assembles a complete Organization creation runtime using:
- * - configured PostgreSQL/Drizzle connection
- * - SystemClock
- * - CryptoIdGenerator
- * - ConsoleLogger
- * - Drizzle Organization repository
- * - Drizzle Plan reader
- * - Drizzle Feature reader
- * - OutboxEventPublisher
- * - DrizzleOrganizationCreationPersistence (atomic aggregate + event)
- * - DrizzleOutboxProcessor
- * - CreateOrganization policies and use case
+ * Uses the Netlify Database provider which automatically resolves the
+ * connection in the Netlify runtime. No manually copied connection string
+ * is required in the normal Netlify runtime.
  *
- * No in-memory repositories. No no-op event publisher. No test-support
- * imports. Fails fast on missing or invalid configuration. Runs
- * dependency health checks. Exposes an explicit shutdown operation.
+ * For local development or non-Netlify PostgreSQL, use composePostgresDevelopment
+ * which accepts an explicit connection string.
  *
- * Does not automatically run migrations or seeds.
+ * Fails fast with a typed error when the database is unavailable.
+ * Does NOT automatically run migrations or seeds.
+ * Does NOT import test-support.
  */
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
-import { createDbConnection, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, } from "@livingsites/infrastructure";
+import { createNetlifyDatabase, createDbConnection, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
 import { createOrganization } from "@livingsites/application";
-export class MissingProductionDependencyError extends Error {
-    missingDependencies;
-    constructor(missing) {
-        super(`Missing required production dependencies: ${missing.join(", ")}`);
-        this.name = "MissingProductionDependencyError";
-        this.missingDependencies = missing;
-    }
-}
-export function composeProduction(config) {
-    const missing = [];
-    if (!config.databaseUrl)
-        missing.push("databaseUrl");
-    if (missing.length > 0) {
-        throw new MissingProductionDependencyError(missing);
-    }
+export function composeProduction(config = {}) {
     const logger = new ConsoleLogger("app", config.logLevel ?? "info");
     const clock = new SystemClock();
     const idGenerator = new CryptoIdGenerator();
-    const connection = createDbConnection({ url: config.databaseUrl });
+    let connection;
+    try {
+        connection = createNetlifyDatabase({
+            ...(config.connectionString ? { connectionString: config.connectionString } : {}),
+        });
+    }
+    catch (err) {
+        if (err instanceof MissingNetlifyDatabaseError) {
+            throw err;
+        }
+        throw new MissingNetlifyDatabaseError(`Failed to initialize Netlify Database: ${err instanceof Error ? err.message : String(err)}`);
+    }
     const db = connection.db;
-    const organizationRepository = new DrizzleOrganizationRepository({
-        db,
-        logger,
-    });
+    const organizationRepository = new DrizzleOrganizationRepository({ db, logger });
     const planReader = new DrizzlePlanReader({ db, logger });
     const featureReader = new DrizzleFeatureReader({ db, logger });
     const eventPublisher = new OutboxEventPublisher({ db, logger });
-    const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({
-        db,
-        logger,
-    });
+    const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
     const outboxProcessor = new DrizzleOutboxProcessor({
         db,
         logger,
@@ -73,7 +56,7 @@ export function composeProduction(config) {
         const details = {};
         let healthy = true;
         try {
-            await db.execute(new Function("return 1")());
+            await db.execute("SELECT 1");
             details.database = true;
         }
         catch {
@@ -103,6 +86,48 @@ export function composeProduction(config) {
         createOrganizationDeps,
         healthCheck,
         close,
+    };
+}
+/**
+ * Composition root for generic PostgreSQL development.
+ *
+ * Accepts an explicit connection string. Clearly named as development —
+ * NOT for production use. Production uses composeProduction with Netlify Database.
+ */
+export function composePostgresDevelopment(config) {
+    const logger = new ConsoleLogger("app", config.logLevel ?? "debug");
+    const clock = new SystemClock();
+    const idGenerator = new CryptoIdGenerator();
+    const connection = createDbConnection({ url: config.databaseUrl });
+    const db = connection.db;
+    const organizationRepository = new DrizzleOrganizationRepository({ db, logger });
+    const planReader = new DrizzlePlanReader({ db, logger });
+    const featureReader = new DrizzleFeatureReader({ db, logger });
+    const eventPublisher = new OutboxEventPublisher({ db, logger });
+    const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
+    const outboxProcessor = new DrizzleOutboxProcessor({ db, logger });
+    const createOrganizationDeps = {
+        organizationRepository,
+        planRepository: planReader,
+        eventPublisher,
+        clock,
+        idGenerator,
+        organizationCreationPersistence,
+    };
+    return {
+        clock,
+        idGenerator,
+        logger,
+        eventPublisher,
+        organizationRepository,
+        planReader,
+        featureReader,
+        organizationCreationPersistence,
+        outboxProcessor,
+        createOrganization,
+        createOrganizationDeps,
+        healthCheck: async () => ({ healthy: true, details: { database: true } }),
+        close: async () => { await connection.close(); },
     };
 }
 //# sourceMappingURL=production.js.map

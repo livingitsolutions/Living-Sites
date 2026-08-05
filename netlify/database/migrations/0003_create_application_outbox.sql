@@ -1,4 +1,4 @@
-CREATE TABLE "application_outbox" (
+CREATE TABLE IF NOT EXISTS "application_outbox" (
 	"id" text PRIMARY KEY NOT NULL,
 	"event_type" text NOT NULL,
 	"aggregate_type" text NOT NULL,
@@ -17,3 +17,18 @@ CREATE TABLE "application_outbox" (
 	"schema_version" text DEFAULT '1.0.0' NOT NULL,
 	CONSTRAINT "application_outbox_idempotency_key_unique" UNIQUE("idempotency_key")
 );
+
+CREATE INDEX IF NOT EXISTS "application_outbox_pending_idx"
+	ON "application_outbox" ("available_at")
+	WHERE "status" = 'pending';
+
+CREATE INDEX IF NOT EXISTS "application_outbox_aggregate_idx"
+	ON "application_outbox" ("aggregate_type", "aggregate_id");
+
+CREATE INDEX IF NOT EXISTS "application_outbox_organization_idx"
+	ON "application_outbox" ("organization_id")
+	WHERE "organization_id" IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS "application_outbox_website_idx"
+	ON "application_outbox" ("website_id")
+	WHERE "website_id" IS NOT NULL;
