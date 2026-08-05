@@ -17,7 +17,7 @@
  *   composition → test-support (test/development adapters)
  */
 export { composeProduction, MissingProductionDependencyError } from "./production";
-export type { ProductionComposition, ProductionDependencies } from "./production";
+export type { ProductionComposition, ProductionCompositionConfig } from "./production";
 export { composeDevelopment } from "./development";
 export type { DevelopmentComposition, DevelopmentCompositionConfig } from "./development";
 export { composeTest } from "./test";

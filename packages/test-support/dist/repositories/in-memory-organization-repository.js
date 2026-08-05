@@ -124,6 +124,12 @@ export class InMemoryPlanRepository {
     async findById(id) {
         return this.store.get(String(id)) ?? null;
     }
+    async findActiveById(id) {
+        const plan = this.store.get(String(id));
+        if (!plan || !plan.isActive)
+            return null;
+        return plan;
+    }
     async listActive() {
         return Array.from(this.store.values()).filter((p) => p.isActive);
     }
@@ -154,14 +160,27 @@ export class InMemoryPlanRepository {
 }
 export class InMemoryFeatureRepository {
     store = new Map();
+    entitlements = new Map();
     add(feature) {
         this.store.set(String(feature.id), feature);
+    }
+    addEntitlement(planId, featureId, value) {
+        this.entitlements.set(`${planId}:${featureId}`, { featureId, value });
     }
     async findById(id) {
         return this.store.get(String(id)) ?? null;
     }
     async findByKey(key) {
         return Array.from(this.store.values()).find((f) => String(f.key) === key) ?? null;
+    }
+    async listForPlan(planId) {
+        const planKey = String(planId);
+        const featureIds = Array.from(this.entitlements.values())
+            .filter((e) => this.entitlements.has(`${planKey}:${e.featureId}`))
+            .map((e) => e.featureId);
+        return featureIds
+            .map((fid) => this.store.get(fid))
+            .filter((f) => f !== undefined);
     }
     async listAll() {
         return Array.from(this.store.values());

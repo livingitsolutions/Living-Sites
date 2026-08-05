@@ -17,4 +17,5 @@ export * from "./export";
 export * from "./cross-context";
 export * from "./event-publisher";
 export * from "./organization-factory";
+export * from "./outbox";
 //# sourceMappingURL=index.js.map

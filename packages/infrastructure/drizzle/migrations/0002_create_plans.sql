@@ -1,0 +1,21 @@
+CREATE TABLE "plans" (
+	"id" text PRIMARY KEY NOT NULL,
+	"tier" "plan_tier" NOT NULL,
+	"slug" text NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"price_monthly" integer DEFAULT 0 NOT NULL,
+	"price_annual" integer DEFAULT 0 NOT NULL,
+	"currency" text DEFAULT 'usd' NOT NULL,
+	"max_websites" integer,
+	"max_members" integer,
+	"custom_domains_allowed" boolean DEFAULT false NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"version" integer DEFAULT 1 NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"created_by" text,
+	"updated_by" text,
+	"deactivated_at" timestamp with time zone,
+	CONSTRAINT "plans_slug_unique" UNIQUE("slug")
+);

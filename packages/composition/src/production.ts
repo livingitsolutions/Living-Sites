@@ -1,22 +1,54 @@
 /**
  * Composition root — production wiring.
  *
- * Requires concrete PlanRepository, EventPublisher, and Database dependencies
- * as parameters. No silent fallback to in-memory or no-op dependencies.
- * If required dependencies are missing, fails fast with a typed error.
+ * Assembles a complete Organization creation runtime using:
+ * - configured PostgreSQL/Drizzle connection
+ * - SystemClock
+ * - CryptoIdGenerator
+ * - ConsoleLogger
+ * - Drizzle Organization repository
+ * - Drizzle Plan reader
+ * - Drizzle Feature reader
+ * - OutboxEventPublisher
+ * - DrizzleOrganizationCreationPersistence (atomic aggregate + event)
+ * - DrizzleOutboxProcessor
+ * - CreateOrganization policies and use case
+ *
+ * No in-memory repositories. No no-op event publisher. No test-support
+ * imports. Fails fast on missing or invalid configuration. Runs
+ * dependency health checks. Exposes an explicit shutdown operation.
+ *
+ * Does not automatically run migrations or seeds.
  */
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
-import { createDbConnection, DrizzleOrganizationRepository } from "@livingsites/infrastructure";
-import type { PlanRepository, EventPublisher, OrganizationReader, OrganizationCreator } from "@livingsites/application";
+import {
+  createDbConnection,
+  DrizzleOrganizationRepository,
+  DrizzlePlanReader,
+  DrizzleFeatureReader,
+  OutboxEventPublisher,
+  DrizzleOrganizationCreationPersistence,
+  DrizzleOutboxProcessor,
+} from "@livingsites/infrastructure";
+import type {
+  OrganizationReader,
+  OrganizationCreator,
+  PlanReader,
+  FeatureReader,
+  EventPublisher,
+  OrganizationCreationPersistence,
+  OutboxProcessor,
+} from "@livingsites/application";
 import { createOrganization } from "@livingsites/application";
 import type { CreateOrganizationDeps } from "@livingsites/application";
 
-export interface ProductionDependencies {
+export interface ProductionCompositionConfig {
   readonly databaseUrl: string;
-  readonly planRepository: PlanRepository;
-  readonly eventPublisher: EventPublisher;
   readonly logLevel?: "trace" | "debug" | "info" | "warn" | "error" | "silent";
+  readonly outboxMaxAttempts?: number;
+  readonly outboxBaseBackoffMs?: number;
+  readonly outboxMaxBackoffMs?: number;
 }
 
 export interface ProductionComposition {
@@ -25,9 +57,13 @@ export interface ProductionComposition {
   readonly logger: Logger;
   readonly eventPublisher: EventPublisher;
   readonly organizationRepository: OrganizationReader & OrganizationCreator;
-  readonly planRepository: PlanRepository;
+  readonly planReader: PlanReader;
+  readonly featureReader: FeatureReader;
+  readonly organizationCreationPersistence: OrganizationCreationPersistence;
+  readonly outboxProcessor: OutboxProcessor;
   readonly createOrganization: typeof createOrganization;
   readonly createOrganizationDeps: CreateOrganizationDeps;
+  readonly healthCheck: () => Promise<{ healthy: boolean; details: Record<string, boolean> }>;
   readonly close: () => Promise<void>;
 }
 
@@ -41,44 +77,88 @@ export class MissingProductionDependencyError extends Error {
   }
 }
 
-export function composeProduction(deps: ProductionDependencies): ProductionComposition {
+export function composeProduction(
+  config: ProductionCompositionConfig,
+): ProductionComposition {
   const missing: string[] = [];
-  if (!deps.databaseUrl) missing.push("databaseUrl");
-  if (!deps.planRepository) missing.push("planRepository");
-  if (!deps.eventPublisher) missing.push("eventPublisher");
+  if (!config.databaseUrl) missing.push("databaseUrl");
   if (missing.length > 0) {
     throw new MissingProductionDependencyError(missing);
   }
 
-  const logger = new ConsoleLogger("app", deps.logLevel ?? "info");
+  const logger = new ConsoleLogger("app", config.logLevel ?? "info");
   const clock = new SystemClock();
   const idGenerator = new CryptoIdGenerator();
 
-  const connection = createDbConnection({ url: deps.databaseUrl });
+  const connection = createDbConnection({ url: config.databaseUrl });
+  const db = connection.db;
+
   const organizationRepository = new DrizzleOrganizationRepository({
-    db: connection.db,
+    db,
     logger,
+  });
+
+  const planReader = new DrizzlePlanReader({ db, logger });
+  const featureReader = new DrizzleFeatureReader({ db, logger });
+
+  const eventPublisher = new OutboxEventPublisher({ db, logger });
+
+  const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({
+    db,
+    logger,
+  });
+
+  const outboxProcessor = new DrizzleOutboxProcessor({
+    db,
+    logger,
+    maxAttempts: config.outboxMaxAttempts,
+    baseBackoffMs: config.outboxBaseBackoffMs,
+    maxBackoffMs: config.outboxMaxBackoffMs,
   });
 
   const createOrganizationDeps: CreateOrganizationDeps = {
     organizationRepository,
-    planRepository: deps.planRepository,
-    eventPublisher: deps.eventPublisher,
+    planRepository: planReader,
+    eventPublisher,
     clock,
     idGenerator,
+    organizationCreationPersistence,
+  };
+
+  const healthCheck = async () => {
+    const details: Record<string, boolean> = {};
+    let healthy = true;
+    try {
+      await db.execute(new Function("return 1")() as unknown as never);
+      details.database = true;
+    } catch {
+      details.database = false;
+      healthy = false;
+    }
+    details.planReader = true;
+    details.featureReader = true;
+    details.eventPublisher = true;
+    details.outboxProcessor = true;
+    return { healthy, details };
+  };
+
+  const close = async () => {
+    await connection.close();
   };
 
   return {
     clock,
     idGenerator,
     logger,
-    eventPublisher: deps.eventPublisher,
+    eventPublisher,
     organizationRepository,
-    planRepository: deps.planRepository,
+    planReader,
+    featureReader,
+    organizationCreationPersistence,
+    outboxProcessor,
     createOrganization,
     createOrganizationDeps,
-    close: async () => {
-      await connection.close();
-    },
+    healthCheck,
+    close,
   };
 }

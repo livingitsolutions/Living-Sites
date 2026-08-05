@@ -33,6 +33,7 @@ import type {
   PlanRepository,
   PlanReader,
   FeatureRepository,
+  FeatureReader,
   OrganizationListParams,
 } from "@livingsites/application";
 
@@ -190,6 +191,12 @@ export class InMemoryPlanRepository implements PlanRepository {
     return this.store.get(String(id)) ?? null;
   }
 
+  async findActiveById(id: PlanId): Promise<Plan | null> {
+    const plan = this.store.get(String(id));
+    if (!plan || !plan.isActive) return null;
+    return plan;
+  }
+
   async listActive(): Promise<Plan[]> {
     return Array.from(this.store.values()).filter((p) => p.isActive);
   }
@@ -223,9 +230,14 @@ export class InMemoryPlanRepository implements PlanRepository {
 
 export class InMemoryFeatureRepository implements FeatureRepository {
   private store: Map<string, Feature> = new Map();
+  private entitlements: Map<string, { featureId: string; value: number }> = new Map();
 
   add(feature: Feature): void {
     this.store.set(String(feature.id), feature);
+  }
+
+  addEntitlement(planId: string, featureId: string, value: number): void {
+    this.entitlements.set(`${planId}:${featureId}`, { featureId, value });
   }
 
   async findById(id: FeatureId): Promise<Feature | null> {
@@ -234,6 +246,16 @@ export class InMemoryFeatureRepository implements FeatureRepository {
 
   async findByKey(key: string): Promise<Feature | null> {
     return Array.from(this.store.values()).find((f) => String(f.key) === key) ?? null;
+  }
+
+  async listForPlan(planId: PlanId): Promise<Feature[]> {
+    const planKey = String(planId);
+    const featureIds = Array.from(this.entitlements.values())
+      .filter((e) => this.entitlements.has(`${planKey}:${e.featureId}`))
+      .map((e) => e.featureId);
+    return featureIds
+      .map((fid) => this.store.get(fid))
+      .filter((f): f is Feature => f !== undefined);
   }
 
   async listAll(): Promise<Feature[]> {
@@ -261,4 +283,4 @@ export class InMemoryFeatureRepository implements FeatureRepository {
   }
 }
 
-export type { OrganizationReader, OrganizationCreator, PlanReader };
+export type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader };

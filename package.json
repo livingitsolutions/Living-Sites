@@ -20,7 +20,9 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:check": "drizzle-kit check"
+    "db:check": "drizzle-kit check",
+    "db:seed": "node scripts/seed.mjs",
+    "outbox:process": "node scripts/outbox-process.mjs"
   },
   "devDependencies": {
     "typescript": "5.5",

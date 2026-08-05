@@ -16,4 +16,7 @@ export * from "./repositories";
 export * from "./providers";
 export { createDbConnection } from "./db";
 export { DrizzleOrganizationRepository } from "./repositories/organization";
+export { DrizzlePlanReader } from "./repositories/plan";
+export { DrizzleFeatureReader } from "./repositories/feature";
+export { OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor } from "./repositories/outbox";
 //# sourceMappingURL=index.js.map

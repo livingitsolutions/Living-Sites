@@ -222,28 +222,6 @@ describe("composeProduction — missing dependency failure", () => {
     expect(() =>
       composeProduction({
         databaseUrl: "",
-        planRepository: {} as any,
-        eventPublisher: {} as any,
-      }),
-    ).toThrow(MissingProductionDependencyError);
-  });
-
-  it("fails fast when planRepository is missing", () => {
-    expect(() =>
-      composeProduction({
-        databaseUrl: "postgres://localhost",
-        planRepository: undefined as any,
-        eventPublisher: {} as any,
-      }),
-    ).toThrow(MissingProductionDependencyError);
-  });
-
-  it("fails fast when eventPublisher is missing", () => {
-    expect(() =>
-      composeProduction({
-        databaseUrl: "postgres://localhost",
-        planRepository: {} as any,
-        eventPublisher: undefined as any,
       }),
     ).toThrow(MissingProductionDependencyError);
   });

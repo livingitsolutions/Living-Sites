@@ -1,7 +1,7 @@
 # Vertical Slice: Create Organization
 
 > Architecture Version 1.0.0 — Approved and Frozen
-> Corrective milestone: Sprint 9
+> Production foundation complete: Sprint 10
 
 ## Capability Purpose
 
@@ -19,8 +19,9 @@ structurally distinct from a persisted `Organization`:
 The lifecycle:
 1. Application factory helper resolves ID and timestamp via injected ports
 2. Pure Domain factory creates `OrganizationDraft` (version 0)
-3. Repository `create(candidate: OrganizationDraft)` persists it
-4. Repository returns `Organization` at version 1
+3. `OrganizationCreationPersistence.createWithEvent()` persists the draft
+   and writes the `OrganizationCreated` outbox record atomically
+4. Returns `Organization` at version 1
 5. `OrganizationDraft` and `Organization` are not interchangeable — the
    `__draft` brand on the version field prevents accidental assignment
 
@@ -53,23 +54,45 @@ The full `OrganizationRepository` is split into focused capability ports:
 - `OrganizationReader` — `findById`, `findBySlug`, `list`
 - `OrganizationCreator` — `create(candidate: OrganizationDraft)`
 
-The `CreateOrganization` use case depends only on `OrganizationReader &
-OrganizationCreator`. Mutation methods (`save`, `softDelete`) are on the
-full `OrganizationRepository` interface but are not implemented by the
-Drizzle adapter in this slice. This prevents untested production mutation
-code from being included.
+### Plan and Feature Readers
+
+Read-only ports for policy evaluation:
+
+- `PlanReader` — `findById`, `findActiveById`, `listActive`
+- `FeatureReader` — `findById`, `findByKey`, `listForPlan`
+
+The full `PlanRepository` and `FeatureRepository` contracts remain for
+future-facing use. The Drizzle adapters implement only the read ports needed
+by CreateOrganization.
+
+## Transactional Outbox
+
+The production flow uses `OrganizationCreationPersistence.createWithEvent()`
+to atomically persist the Organization and the `OrganizationCreated` outbox
+record in a single database transaction. See
+[ADR 008](../adr/008-transactional-outbox.md) for the architecture decision.
+
+When `OrganizationCreationPersistence` is not provided (test/development),
+the use case falls back to the separate create + publish flow.
 
 ## Composition API
 
 ### composeProduction
 
-Requires concrete dependencies as parameters:
-- `databaseUrl`
-- `planRepository` (PlanRepository)
-- `eventPublisher` (EventPublisher)
+Requires `databaseUrl` configuration. Fails fast with
+`MissingProductionDependencyError` if missing. No silent fallback to
+in-memory or no-op dependencies.
 
-Fails fast with `MissingProductionDependencyError` if any are missing.
-No silent fallback to in-memory or no-op dependencies.
+Production wiring:
+- SystemClock, CryptoIdGenerator, ConsoleLogger
+- Drizzle Organization repository (via `DrizzleOrganizationRepository`)
+- Drizzle Plan reader (`DrizzlePlanReader`)
+- Drizzle Feature reader (`DrizzleFeatureReader`)
+- `OutboxEventPublisher` (durable, database-backed)
+- `DrizzleOrganizationCreationPersistence` (atomic create + event)
+- `DrizzleOutboxProcessor`
+- CreateOrganization policies and use case
+- Health check and explicit `close()` operation
 
 ### composeDevelopment
 
@@ -82,9 +105,20 @@ and documented as non-production. Uses `NoopEventPublisher` by default
 Uses deterministic test-support adapters. `InMemoryEventPublisher` captures
 events for assertion. No database, no network.
 
-## Migration Workflow
+## Migration and Seed Workflow
 
 Versioned SQL migrations replace `drizzle-kit push` as the standard workflow.
+
+### Migration files
+
+```
+packages/infrastructure/drizzle/migrations/
+  0001_create_organizations.sql
+  0002_create_plans_features_entitlements.sql  (Sprint 10)
+  0003_create_application_outbox.sql            (Sprint 10)
+  meta/
+    _journal.json
+```
 
 ### Commands
 
@@ -97,68 +131,52 @@ npm run db:migrate
 
 # Check for schema drift
 npm run db:check
+
+# Seed platform-global plans and features
+npm run db:seed
+
+# Run the outbox processor worker
+npm run outbox:process
 ```
 
-### Migration files
+### Correct operational order
 
-```
-packages/infrastructure/drizzle/migrations/
-  0001_create_organizations.sql
-  meta/
-    _journal.json
-```
+1. Configure (`DATABASE_URL`)
+2. Migrate (`npm run db:migrate`)
+3. Seed (`npm run db:seed`)
+4. Health-check (composition startup)
+5. Start application/worker
 
-Migration files are immutable after creation. The workflow is forward-only.
-No hardcoded database credentials — `DATABASE_URL` is used at the
-composition/CLI boundary only.
-
-**`db:push` is prohibited for production and is not part of the standard
-workflow.**
-
-### Local, preview, test, and production execution
-
-- **Local development:** Set `DATABASE_URL` to your local PostgreSQL, run `npm run db:migrate`
-- **Preview/test:** Set `DATABASE_URL` to the preview database, run `npm run db:migrate`
-- **Production:** Set `DATABASE_URL` to the production database, run `npm run db:migrate`
-- **Integration tests:** Set `TEST_DATABASE_URL` to a test database, run `npm test`
+Migrations run independently from application startup. Seeds run
+independently from migrations. The outbox worker can be invoked
+independently.
 
 ## Database Integration Test Behavior
 
-The integration test suite for `DrizzleOrganizationRepository` uses
-`TEST_DATABASE_URL`:
+Integration tests use `TEST_DATABASE_URL`:
 
-- **When `TEST_DATABASE_URL` is absent:** all database tests are skipped
-  with a visible reason. Unit and contract tests still run.
-- **When `TEST_DATABASE_URL` is present:** migrations are applied to the
-  test database, tests run with isolated data (cleanup after each test).
+- **When absent:** all database tests are skipped with a visible reason
+  and reported skip count. Unit and contract tests still run.
+- **When present:** migrations are applied, seeds are planted, and tests
+  run against the test database with isolated data cleanup.
 
-Required integration tests:
-1. Migration applies successfully
-2. Create persists OrganizationDraft
-3. Returned aggregate has version 1
-4. findById reconstructs the aggregate
-5. findBySlug reconstructs the aggregate
-6. Normalized slug is persisted
-7. Duplicate slug maps to DuplicateKeyError
-8. Raw database exceptions do not escape
-9. Mapper rejects invalid persisted version
-10. Mapper rejects malformed persisted state
-11. No database/Drizzle row type leaks to Application
-
-A reusable contract test suite (`runRepositoryContractTests`) runs the same
-core behavior against both `InMemoryOrganizationRepository` and
-`DrizzleOrganizationRepository`.
+Integration test suites:
+- `DrizzleOrganizationRepository` — Organization CRUD and mapping
+- `DrizzlePlanReader` — Plan reads, active filtering, entitlement reconstruction
+- `DrizzleFeatureReader` — Feature reads, plan entitlement listing
+- `DrizzleOrganizationCreationPersistence` — Atomic create + outbox
+- `DrizzleOutboxProcessor` — Processing, retry, failure, idempotency
 
 ## Event Publisher Ownership
 
 | Layer | What lives here |
 |---|---|
-| Application | `EventPublisher` contract (interface only) |
+| Application | `EventPublisher` contract, `OrganizationCreationPersistence` port |
 | test-support | `InMemoryEventPublisher`, `NoopEventPublisher` |
-| Infrastructure | Production event implementation (future) |
+| Infrastructure | `OutboxEventPublisher`, `DrizzleOrganizationCreationPersistence` |
 | Composition | Wires the appropriate publisher per environment |
 
-- `composeProduction` requires a concrete `EventPublisher` — never silent no-op
+- `composeProduction` uses `OutboxEventPublisher` — never silent no-op
 - `composeDevelopment` explicitly selects `NoopEventPublisher` (documented)
 - `composeTest` uses `InMemoryEventPublisher` for event capture
 
@@ -185,4 +203,10 @@ npm run db:generate
 
 # Apply migrations
 DATABASE_URL=postgresql://user:pass@host:port/dbname npm run db:migrate
+
+# Seed plans and features
+DATABASE_URL=postgresql://user:pass@host:port/dbname npm run db:seed
+
+# Run outbox processor
+DATABASE_URL=postgresql://user:pass@host:port/dbname npm run outbox:process
 ```
