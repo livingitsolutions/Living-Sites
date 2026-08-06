@@ -56,6 +56,7 @@ export interface OrganizationRepository extends OrganizationReader, Organization
  */
 export interface PlanReader {
   findById(id: PlanId): Promise<Plan | null>;
+  findActiveById(id: PlanId): Promise<Plan | null>;
   listActive(): Promise<Plan[]>;
 }
 
@@ -64,9 +65,18 @@ export interface PlanRepository extends PlanReader {
   save(aggregate: Plan, expectedVersion: AggregateVersion): Promise<SaveResult<Plan>>;
 }
 
-export interface FeatureRepository {
+/**
+ * Read-only feature repository port.
+ * CreateOrganization policy evaluation may need to resolve features
+ * and list entitlements for a plan.
+ */
+export interface FeatureReader {
   findById(id: FeatureId): Promise<Feature | null>;
   findByKey(key: string): Promise<Feature | null>;
+  listForPlan(planId: PlanId): Promise<Feature[]>;
+}
+
+export interface FeatureRepository extends FeatureReader {
   listAll(): Promise<Feature[]>;
   create(candidate: Omit<Feature, "id" | "version">): Promise<CreateResult<Feature>>;
   save(aggregate: Feature, expectedVersion: AggregateVersion): Promise<SaveResult<Feature>>;

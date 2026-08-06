@@ -15,4 +15,5 @@ export { InMemoryOrganizationRepository, InMemoryPlanRepository, InMemoryFeature
 export { InMemoryEventPublisher } from "./events/in-memory-event-publisher";
 export { NoopEventPublisher, FakeClock, DeterministicIdGenerator } from "./platform/test-runtime";
 export { runRepositoryContractTests } from "./repositories/contract-tests";
+export { runPlanReaderContractTests, runFeatureReaderContractTests, runOutboxContractTests } from "./repositories/plan-feature-outbox-contract-tests";
 //# sourceMappingURL=index.js.map

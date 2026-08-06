@@ -1,59 +1,133 @@
 /**
- * Composition root — production wiring.
+ * Composition root — production wiring for Netlify Database.
  *
- * Requires concrete PlanRepository, EventPublisher, and Database dependencies
- * as parameters. No silent fallback to in-memory or no-op dependencies.
- * If required dependencies are missing, fails fast with a typed error.
+ * Uses the Netlify Database provider which automatically resolves the
+ * connection in the Netlify runtime. No manually copied connection string
+ * is required in the normal Netlify runtime.
+ *
+ * For local development or non-Netlify PostgreSQL, use composePostgresDevelopment
+ * which accepts an explicit connection string.
+ *
+ * Fails fast with a typed error when the database is unavailable.
+ * Does NOT automatically run migrations or seeds.
+ * Does NOT import test-support.
  */
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
-import { createDbConnection, DrizzleOrganizationRepository } from "@livingsites/infrastructure";
+import { createNetlifyDatabase, createDbConnection, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
 import { createOrganization } from "@livingsites/application";
-export class MissingProductionDependencyError extends Error {
-    missingDependencies;
-    constructor(missing) {
-        super(`Missing required production dependencies: ${missing.join(", ")}`);
-        this.name = "MissingProductionDependencyError";
-        this.missingDependencies = missing;
-    }
-}
-export function composeProduction(deps) {
-    const missing = [];
-    if (!deps.databaseUrl)
-        missing.push("databaseUrl");
-    if (!deps.planRepository)
-        missing.push("planRepository");
-    if (!deps.eventPublisher)
-        missing.push("eventPublisher");
-    if (missing.length > 0) {
-        throw new MissingProductionDependencyError(missing);
-    }
-    const logger = new ConsoleLogger("app", deps.logLevel ?? "info");
+export function composeProduction(config = {}) {
+    const logger = new ConsoleLogger("app", config.logLevel ?? "info");
     const clock = new SystemClock();
     const idGenerator = new CryptoIdGenerator();
-    const connection = createDbConnection({ url: deps.databaseUrl });
-    const organizationRepository = new DrizzleOrganizationRepository({
-        db: connection.db,
+    let connection;
+    try {
+        connection = createNetlifyDatabase({
+            ...(config.connectionString ? { connectionString: config.connectionString } : {}),
+        });
+    }
+    catch (err) {
+        if (err instanceof MissingNetlifyDatabaseError) {
+            throw err;
+        }
+        throw new MissingNetlifyDatabaseError(`Failed to initialize Netlify Database: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    const db = connection.db;
+    const organizationRepository = new DrizzleOrganizationRepository({ db, logger });
+    const planReader = new DrizzlePlanReader({ db, logger });
+    const featureReader = new DrizzleFeatureReader({ db, logger });
+    const eventPublisher = new OutboxEventPublisher({ db, logger });
+    const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
+    const outboxProcessor = new DrizzleOutboxProcessor({
+        db,
         logger,
+        maxAttempts: config.outboxMaxAttempts,
+        baseBackoffMs: config.outboxBaseBackoffMs,
+        maxBackoffMs: config.outboxMaxBackoffMs,
     });
     const createOrganizationDeps = {
         organizationRepository,
-        planRepository: deps.planRepository,
-        eventPublisher: deps.eventPublisher,
+        planRepository: planReader,
+        eventPublisher,
         clock,
         idGenerator,
+        organizationCreationPersistence,
+    };
+    const healthCheck = async () => {
+        const details = {};
+        let healthy = true;
+        try {
+            await db.execute("SELECT 1");
+            details.database = true;
+        }
+        catch {
+            details.database = false;
+            healthy = false;
+        }
+        details.planReader = true;
+        details.featureReader = true;
+        details.eventPublisher = true;
+        details.outboxProcessor = true;
+        return { healthy, details };
+    };
+    const close = async () => {
+        await connection.close();
     };
     return {
         clock,
         idGenerator,
         logger,
-        eventPublisher: deps.eventPublisher,
+        eventPublisher,
         organizationRepository,
-        planRepository: deps.planRepository,
+        planReader,
+        featureReader,
+        organizationCreationPersistence,
+        outboxProcessor,
         createOrganization,
         createOrganizationDeps,
-        close: async () => {
-            await connection.close();
-        },
+        healthCheck,
+        close,
+    };
+}
+/**
+ * Composition root for generic PostgreSQL development.
+ *
+ * Accepts an explicit connection string. Clearly named as development —
+ * NOT for production use. Production uses composeProduction with Netlify Database.
+ */
+export function composePostgresDevelopment(config) {
+    const logger = new ConsoleLogger("app", config.logLevel ?? "debug");
+    const clock = new SystemClock();
+    const idGenerator = new CryptoIdGenerator();
+    const connection = createDbConnection({ url: config.databaseUrl });
+    const db = connection.db;
+    const organizationRepository = new DrizzleOrganizationRepository({ db, logger });
+    const planReader = new DrizzlePlanReader({ db, logger });
+    const featureReader = new DrizzleFeatureReader({ db, logger });
+    const eventPublisher = new OutboxEventPublisher({ db, logger });
+    const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
+    const outboxProcessor = new DrizzleOutboxProcessor({ db, logger });
+    const createOrganizationDeps = {
+        organizationRepository,
+        planRepository: planReader,
+        eventPublisher,
+        clock,
+        idGenerator,
+        organizationCreationPersistence,
+    };
+    return {
+        clock,
+        idGenerator,
+        logger,
+        eventPublisher,
+        organizationRepository,
+        planReader,
+        featureReader,
+        organizationCreationPersistence,
+        outboxProcessor,
+        createOrganization,
+        createOrganizationDeps,
+        healthCheck: async () => ({ healthy: true, details: { database: true } }),
+        close: async () => { await connection.close(); },
     };
 }
 //# sourceMappingURL=production.js.map

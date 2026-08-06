@@ -12,9 +12,11 @@
  * Production packages and production entry points must NOT import test-support.
  */
 export { InMemoryOrganizationRepository, InMemoryPlanRepository, InMemoryFeatureRepository } from "./repositories/in-memory-organization-repository";
-export type { OrganizationReader, OrganizationCreator, PlanReader } from "./repositories/in-memory-organization-repository";
+export type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader } from "./repositories/in-memory-organization-repository";
 export { InMemoryEventPublisher } from "./events/in-memory-event-publisher";
 export { NoopEventPublisher, FakeClock, DeterministicIdGenerator } from "./platform/test-runtime";
 export { runRepositoryContractTests } from "./repositories/contract-tests";
 export type { RepositoryContractFixtures } from "./repositories/contract-tests";
+export { runPlanReaderContractTests, runFeatureReaderContractTests, runOutboxContractTests } from "./repositories/plan-feature-outbox-contract-tests";
+export type { PlanReaderContractFixtures, FeatureReaderContractFixtures, OutboxContractFixtures } from "./repositories/plan-feature-outbox-contract-tests";
 //# sourceMappingURL=index.d.ts.map

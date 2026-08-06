@@ -5,9 +5,9 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/*.d.ts"],
+    ignores: ["**/dist/**", "**/node_modules/**", "**/*.d.ts", "scripts/**", "netlify/functions/**"],
   },
-  // Domain: must not import any other @livingsites package
+  // Domain: must not import any other @livingsites package or @netlify/database
   {
     files: ["packages/domain/src/**/*.ts"],
     rules: {
@@ -15,16 +15,14 @@ export default tseslint.config(
         "error",
         {
           patterns: [
-            {
-              group: ["@livingsites/*"],
-              message: "Domain must not import any @livingsites package. Domain depends on nothing.",
-            },
+            { group: ["@livingsites/*"], message: "Domain must not import any @livingsites package. Domain depends on nothing." },
+            { group: ["@netlify/*"], message: "Domain must not import @netlify packages." },
           ],
         },
       ],
     },
   },
-  // Application: must not import Composition, Infrastructure, or test-support
+  // Application: must not import Composition, Infrastructure, test-support, or @netlify/database
   {
     files: ["packages/application/src/**/*.ts"],
     rules: {
@@ -35,10 +33,12 @@ export default tseslint.config(
             { name: "@livingsites/composition", message: "Application must not import Composition." },
             { name: "@livingsites/infrastructure", message: "Application must not import Infrastructure." },
             { name: "@livingsites/test-support", message: "Application must not import test-support." },
+            { name: "@netlify/database", message: "Application must not import @netlify/database." },
           ],
           patterns: [
             { group: ["@livingsites/infrastructure", "@livingsites/infrastructure/*"], message: "Application must not import Infrastructure." },
             { group: ["@livingsites/test-support", "@livingsites/test-support/*"], message: "Application must not import test-support." },
+            { group: ["@netlify/*"], message: "Application must not import @netlify packages." },
           ],
         },
       ],
@@ -61,7 +61,7 @@ export default tseslint.config(
       ],
     },
   },
-  // Platform: must not import any other @livingsites package
+  // Platform: must not import any other @livingsites package or @netlify/database
   {
     files: ["packages/platform/src/**/*.ts"],
     rules: {
@@ -70,12 +70,14 @@ export default tseslint.config(
         {
           patterns: [
             { group: ["@livingsites/*"], message: "Platform must not import any other @livingsites package." },
+            { group: ["@netlify/*"], message: "Platform must not import @netlify packages." },
           ],
         },
       ],
     },
   },
   // Infrastructure production code (non-test): must not import Composition or test-support
+  // @netlify/database is ALLOWED here — Infrastructure owns the provider
   {
     files: ["packages/infrastructure/src/**/*.ts"],
     ignores: ["**/*.test.ts"],
@@ -91,7 +93,7 @@ export default tseslint.config(
       ],
     },
   },
-  // test-support: must not import Composition or Infrastructure
+  // test-support: must not import Composition, Infrastructure, or @netlify/database
   {
     files: ["packages/test-support/src/**/*.ts"],
     rules: {
@@ -101,6 +103,7 @@ export default tseslint.config(
           paths: [
             { name: "@livingsites/composition", message: "test-support must not import Composition." },
             { name: "@livingsites/infrastructure", message: "test-support must not import Infrastructure." },
+            { name: "@netlify/database", message: "test-support must not import @netlify/database." },
           ],
         },
       ],

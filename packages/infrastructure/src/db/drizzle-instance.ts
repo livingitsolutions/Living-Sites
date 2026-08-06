@@ -1,16 +1,22 @@
 /**
- * Drizzle instance factory.
+ * Drizzle instance factory and shared type.
  *
- * Re-exports the Drizzle constructor and type so that the rest of the
- * Infrastructure layer can create and use Drizzle instances.
+ * Uses the postgres-js driver for generic PostgreSQL connections.
+ * For Netlify Database, use the NetlifyDatabaseProvider which uses
+ * drizzle-orm/netlify-db.
+ *
+ * The DrizzleDB type is intentionally generic to accept both
+ * postgres-js and netlify-db Drizzle instances.
  */
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle as drizzlePg } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 
-export type DrizzleDB = ReturnType<typeof createDrizzle>;
+/** Shared Drizzle database type — accepts both postgres-js and netlify-db clients. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DrizzleDB = any;
 
-function createDrizzle(url: string) {
-  return drizzle(url, { schema });
+export function createDrizzle(url: string): DrizzleDB {
+  return drizzlePg(url, { schema });
 }
 
 export { createDrizzle as drizzle };

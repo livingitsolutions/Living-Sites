@@ -5,19 +5,14 @@
  * contracts are instantiated and wired together.
  *
  * Three composition modes:
- * - composeProduction: requires concrete dependencies (database, plan repo, event publisher).
- *   Fails fast if any are missing. No silent fallback.
+ * - composeProduction: uses Netlify Database provider. Fails fast if unavailable.
+ * - composePostgresDevelopment: generic PostgreSQL for local dev. Not for production.
  * - composeDevelopment: in-memory adapters for local development. Not for production.
  * - composeTest: deterministic test-support adapters with event capture.
- *
- * Dependency direction:
- *   composition → application → domain
- *   composition → infrastructure → platform
- *   composition → platform (runtime capabilities)
- *   composition → test-support (test/development adapters)
  */
-export { composeProduction, MissingProductionDependencyError } from "./production";
-export type { ProductionComposition, ProductionDependencies } from "./production";
+export { composeProduction, composePostgresDevelopment } from "./production";
+export type { ProductionComposition, ProductionCompositionConfig } from "./production";
+export { MissingNetlifyDatabaseError } from "@livingsites/infrastructure";
 export { composeDevelopment } from "./development";
 export type { DevelopmentComposition, DevelopmentCompositionConfig } from "./development";
 export { composeTest } from "./test";

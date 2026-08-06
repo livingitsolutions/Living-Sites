@@ -1,188 +1,109 @@
 # Vertical Slice: Create Organization
 
 > Architecture Version 1.0.0 — Approved and Frozen
-> Corrective milestone: Sprint 9
+> Production foundation: Sprint 10 + corrective milestone (Netlify Database)
 
 ## Capability Purpose
 
-Create a new Organization aggregate — the top-level tenant entity that owns
-websites, members, media, and all other resources on the platform.
+Create a new Organization aggregate — the top-level tenant entity.
 
-## OrganizationDraft Lifecycle
+## Production Database Provider
 
-An `OrganizationDraft` is a valid aggregate before first persistence. It is
-structurally distinct from a persisted `Organization`:
+Netlify Database is the authoritative production database provider.
+The production composition (`composeProduction`) uses the
+`NetlifyDatabaseProvider` which creates a Drizzle client via
+`drizzle-orm/netlify-db`. No manually copied connection string is
+required in the Netlify runtime.
 
-- `OrganizationDraft` has `version: DraftVersion` (branded with `__draft`, value 0)
-- `Organization` has `version: AggregateVersion` (value >= 1)
+For generic PostgreSQL development, use `composePostgresDevelopment`.
 
-The lifecycle:
-1. Application factory helper resolves ID and timestamp via injected ports
-2. Pure Domain factory creates `OrganizationDraft` (version 0)
-3. Repository `create(candidate: OrganizationDraft)` persists it
-4. Repository returns `Organization` at version 1
-5. `OrganizationDraft` and `Organization` are not interchangeable — the
-   `__draft` brand on the version field prevents accidental assignment
+## Transactional Outbox
 
-## Domain/Application Factory Separation
-
-### Domain (pure)
-
-`createOrganizationDraft(input)` accepts already-resolved domain values:
-- `OrganizationId`
-- normalized name, slug, billing email
-- optional `PlanId`
-- timestamp value (`ISODateString`)
-
-No I/O, no runtime contracts, no Platform imports. Returns `OrganizationDraft`.
-
-### Application (bridging)
-
-`createOrganizationDraftViaPorts(input)` receives `AppClock` and
-`AppIdGenerator` (application-owned ports structurally compatible with
-Platform implementations). Resolves ID and timestamp, then calls the pure
-Domain factory.
-
-Application does not import Platform. The composition root bridges Platform
-implementations to Application ports.
-
-## Repository Port Refinements
-
-The full `OrganizationRepository` is split into focused capability ports:
-
-- `OrganizationReader` — `findById`, `findBySlug`, `list`
-- `OrganizationCreator` — `create(candidate: OrganizationDraft)`
-
-The `CreateOrganization` use case depends only on `OrganizationReader &
-OrganizationCreator`. Mutation methods (`save`, `softDelete`) are on the
-full `OrganizationRepository` interface but are not implemented by the
-Drizzle adapter in this slice. This prevents untested production mutation
-code from being included.
+Organization creation persists the aggregate and the
+`OrganizationCreated` outbox record atomically in a single database
+transaction. See [ADR 008](../adr/008-transactional-outbox.md).
 
 ## Composition API
 
-### composeProduction
+### composeProduction (Netlify Database)
 
-Requires concrete dependencies as parameters:
-- `databaseUrl`
-- `planRepository` (PlanRepository)
-- `eventPublisher` (EventPublisher)
+- Uses `@netlify/database` automatically
+- Fails fast with `MissingNetlifyDatabaseError` when unavailable
+- No in-memory dependencies, no test-support imports
+- Exposes `healthCheck()` and `close()`
 
-Fails fast with `MissingProductionDependencyError` if any are missing.
-No silent fallback to in-memory or no-op dependencies.
+### composePostgresDevelopment (generic PostgreSQL)
 
-### composeDevelopment
+- Accepts explicit `databaseUrl`
+- Clearly named as development — NOT for production
 
-Uses in-memory adapters for local development. Explicitly named development
-and documented as non-production. Uses `NoopEventPublisher` by default
-(explicitly selected, not silent).
+### composeDevelopment (in-memory)
 
-### composeTest
+- In-memory adapters for local development
+- Uses `NoopEventPublisher` (explicitly selected)
 
-Uses deterministic test-support adapters. `InMemoryEventPublisher` captures
-events for assertion. No database, no network.
+### composeTest (deterministic)
 
-## Migration Workflow
+- Deterministic test-support adapters
+- `InMemoryEventPublisher` for event capture
 
-Versioned SQL migrations replace `drizzle-kit push` as the standard workflow.
+## Migration Directory
 
-### Commands
-
-```bash
-# Generate a new migration from schema changes
-npm run db:generate
-
-# Apply migrations to the database
-npm run db:migrate
-
-# Check for schema drift
-npm run db:check
-```
-
-### Migration files
+Authoritative migrations in `netlify/database/migrations/`:
 
 ```
-packages/infrastructure/drizzle/migrations/
-  0001_create_organizations.sql
-  meta/
-    _journal.json
+0001_create_organizations.sql
+0002_create_plans_features_entitlements.sql
+0003_create_application_outbox.sql
 ```
 
-Migration files are immutable after creation. The workflow is forward-only.
-No hardcoded database credentials — `DATABASE_URL` is used at the
-composition/CLI boundary only.
+## Seed Reconciliation
 
-**`db:push` is prohibited for production and is not part of the standard
-workflow.**
+Seeds use controlled upsert. See [Seeding](../operations/seeding.md).
 
-### Local, preview, test, and production execution
+## Outbox Scheduled Function
 
-- **Local development:** Set `DATABASE_URL` to your local PostgreSQL, run `npm run db:migrate`
-- **Preview/test:** Set `DATABASE_URL` to the preview database, run `npm run db:migrate`
-- **Production:** Set `DATABASE_URL` to the production database, run `npm run db:migrate`
-- **Integration tests:** Set `TEST_DATABASE_URL` to a test database, run `npm test`
+The outbox processor runs as a Netlify Scheduled Function every 5
+minutes. See [Outbox Operations](../operations/outbox.md).
 
-## Database Integration Test Behavior
+## RLS Decision
 
-The integration test suite for `DrizzleOrganizationRepository` uses
-`TEST_DATABASE_URL`:
-
-- **When `TEST_DATABASE_URL` is absent:** all database tests are skipped
-  with a visible reason. Unit and contract tests still run.
-- **When `TEST_DATABASE_URL` is present:** migrations are applied to the
-  test database, tests run with isolated data (cleanup after each test).
-
-Required integration tests:
-1. Migration applies successfully
-2. Create persists OrganizationDraft
-3. Returned aggregate has version 1
-4. findById reconstructs the aggregate
-5. findBySlug reconstructs the aggregate
-6. Normalized slug is persisted
-7. Duplicate slug maps to DuplicateKeyError
-8. Raw database exceptions do not escape
-9. Mapper rejects invalid persisted version
-10. Mapper rejects malformed persisted state
-11. No database/Drizzle row type leaks to Application
-
-A reusable contract test suite (`runRepositoryContractTests`) runs the same
-core behavior against both `InMemoryOrganizationRepository` and
-`DrizzleOrganizationRepository`.
-
-## Event Publisher Ownership
-
-| Layer | What lives here |
-|---|---|
-| Application | `EventPublisher` contract (interface only) |
-| test-support | `InMemoryEventPublisher`, `NoopEventPublisher` |
-| Infrastructure | Production event implementation (future) |
-| Composition | Wires the appropriate publisher per environment |
-
-- `composeProduction` requires a concrete `EventPublisher` — never silent no-op
-- `composeDevelopment` explicitly selects `NoopEventPublisher` (documented)
-- `composeTest` uses `InMemoryEventPublisher` for event capture
+RLS is deferred to the Authentication/Tenant Engine milestone. See
+[ADR 009](../adr/009-rls-deferred.md).
 
 ## Commands
 
 ```bash
-# Build all packages
+# Build
 npm run build
 
-# Typecheck all packages
+# Typecheck
 npm run typecheck
 
 # Lint
 npm run lint
 
-# Run unit and contract tests
-npm test
+# Unit tests
+npm run test:unit
 
-# Run database integration tests (requires TEST_DATABASE_URL)
-TEST_DATABASE_URL=postgresql://user:pass@host:port/dbname npm test
+# Database integration tests (uses @netlify/database-dev)
+npm run test:db
 
-# Generate a new migration
+# All tests
+npm run test:all
+
+# Generate migrations
 npm run db:generate
 
-# Apply migrations
-DATABASE_URL=postgresql://user:pass@host:port/dbname npm run db:migrate
+# Apply migrations (local)
+netlify database migrations apply
+
+# Seed
+npm run db:seed
+
+# Outbox worker (CLI)
+npm run outbox:process
+
+# Database status
+netlify database status
 ```

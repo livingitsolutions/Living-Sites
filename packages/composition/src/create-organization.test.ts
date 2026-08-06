@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { composeTest } from "./test";
 import { composeDevelopment } from "./development";
-import { composeProduction, MissingProductionDependencyError } from "./production";
+import { composeProduction } from "./production";
 import type { Plan, PlanId, ISODateString } from "@livingsites/domain";
 
 function makePlan(overrides: Partial<Plan> = {}): Plan {
@@ -217,34 +217,10 @@ describe("composeDevelopment", () => {
   });
 });
 
-describe("composeProduction — missing dependency failure", () => {
-  it("fails fast when databaseUrl is missing", () => {
+describe("composeProduction — missing database failure", () => {
+  it("fails fast when Netlify Database is unavailable", () => {
     expect(() =>
-      composeProduction({
-        databaseUrl: "",
-        planRepository: {} as any,
-        eventPublisher: {} as any,
-      }),
-    ).toThrow(MissingProductionDependencyError);
-  });
-
-  it("fails fast when planRepository is missing", () => {
-    expect(() =>
-      composeProduction({
-        databaseUrl: "postgres://localhost",
-        planRepository: undefined as any,
-        eventPublisher: {} as any,
-      }),
-    ).toThrow(MissingProductionDependencyError);
-  });
-
-  it("fails fast when eventPublisher is missing", () => {
-    expect(() =>
-      composeProduction({
-        databaseUrl: "postgres://localhost",
-        planRepository: {} as any,
-        eventPublisher: undefined as any,
-      }),
-    ).toThrow(MissingProductionDependencyError);
+      composeProduction({ connectionString: "postgresql://invalid:invalid@invalid:99999/invalid" }),
+    ).toThrow();
   });
 });

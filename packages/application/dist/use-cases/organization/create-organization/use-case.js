@@ -63,6 +63,47 @@ export async function createOrganization(input, deps) {
         clock: deps.clock,
         idGenerator: deps.idGenerator,
     });
+    const event = {
+        type: "organization.created",
+        occurredAt: deps.clock.nowIso(),
+        organizationId: draft.id,
+        slug: draft.slug,
+        planId: draft.planId,
+    };
+    if (deps.organizationCreationPersistence) {
+        const atomicResult = await deps.organizationCreationPersistence.createWithEvent(draft, event);
+        if (!atomicResult.ok) {
+            const err = atomicResult.error;
+            switch (err.code) {
+                case "duplicate_key":
+                    return {
+                        ok: false,
+                        error: { code: "duplicate_slug", message: err.message, slug },
+                    };
+                case "persistence_unavailable":
+                    return {
+                        ok: false,
+                        error: { code: "persistence_unavailable", message: err.message },
+                    };
+                case "invalid_persistence_state":
+                    return {
+                        ok: false,
+                        error: { code: "invalid_persistence_state", message: err.message },
+                    };
+            }
+        }
+        const created = atomicResult.value;
+        if (created.version !== 1) {
+            return {
+                ok: false,
+                error: {
+                    code: "invalid_persistence_state",
+                    message: `Expected persisted version 1, got ${created.version}.`,
+                },
+            };
+        }
+        return { ok: true, value: { organization: created } };
+    }
     const createResult = await deps.organizationRepository.create(draft);
     if (!createResult.ok) {
         const err = createResult.error;
@@ -94,13 +135,6 @@ export async function createOrganization(input, deps) {
             },
         };
     }
-    const event = {
-        type: "organization.created",
-        occurredAt: deps.clock.nowIso(),
-        organizationId: created.id,
-        slug: created.slug,
-        planId: created.planId,
-    };
     await deps.eventPublisher.publish(event);
     return { ok: true, value: { organization: created } };
 }
