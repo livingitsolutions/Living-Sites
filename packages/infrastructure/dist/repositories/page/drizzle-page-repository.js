@@ -59,7 +59,7 @@ export class DrizzlePageRepository {
     async saveBuilder(input) {
         try {
             return await this.config.db.transaction(async (tx) => {
-                const [pageRow] = await tx.update(pages).set({ section_order: input.sections.map((section) => String(section.id)), version: input.expectedVersion + 1, updated_at: new Date(input.updatedAt), updated_by: input.updatedBy }).where(and(eq(pages.id, String(input.pageId)), eq(pages.version, input.expectedVersion))).returning();
+                const [pageRow] = await tx.update(pages).set({ section_order: input.sections.map((section) => String(section.id)), status: Status.Draft, version: input.expectedVersion + 1, updated_at: new Date(input.updatedAt), updated_by: input.updatedBy }).where(and(eq(pages.id, String(input.pageId)), eq(pages.version, input.expectedVersion))).returning();
                 if (!pageRow)
                     return { ok: false, error: { aggregateId: String(input.pageId), expectedVersion: input.expectedVersion, actualVersion: input.expectedVersion } };
                 await tx.delete(pageSections).where(eq(pageSections.page_id, String(input.pageId)));

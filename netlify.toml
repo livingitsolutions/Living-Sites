@@ -1,4 +1,5 @@
 [build]
+  publish = ".next"
   functions = "netlify/functions"
 
 [functions.process-outbox]

@@ -13,8 +13,8 @@
  */
 import { betterAuth } from "better-auth";
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
-import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, DrizzleMembershipRepository, DrizzleSuperAdminStore, DrizzleWebsiteRepository, DrizzleWebsiteCreationPersistence, DrizzlePageRepository, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
-import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
+import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, DrizzleMembershipRepository, DrizzleSuperAdminStore, DrizzleWebsiteRepository, DrizzleWebsiteCreationPersistence, DrizzlePageRepository, DrizzlePagePublicationRepository, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, publishPage, resolvePublishedPage, resolvePublishedWebsite, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
 function validateConfig(config) {
     if (!config.betterAuthSecret || config.betterAuthSecret.length < 32) {
         throw new Error("BETTER_AUTH_SECRET is missing or too short (minimum 32 characters). " +
@@ -103,6 +103,7 @@ export function composeProduction(config) {
         },
         emailAndPassword: {
             enabled: true,
+            disableSignUp: registrationMode !== "open",
             requireEmailVerification: config.emailVerificationEnabled ?? false,
             minPasswordLength: 12,
             maxPasswordLength: 256,
@@ -138,6 +139,7 @@ export function composeProduction(config) {
     const websiteRepository = new DrizzleWebsiteRepository({ db, logger });
     const websiteCreationPersistence = new DrizzleWebsiteCreationPersistence({ db, logger });
     const pageRepository = new DrizzlePageRepository({ db, logger });
+    const pagePublicationRepository = new DrizzlePagePublicationRepository({ db, logger });
     const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
     const authorizationService = new AuthorizationService({
         membershipReader: membershipRepository,
@@ -201,12 +203,6 @@ export function composeProduction(config) {
         membershipRepository,
         authorizationService,
     };
-    // If superAdminEmail is configured, run bootstrap asynchronously
-    if (config.superAdminEmail) {
-        superAdminStore.bootstrap({ email: config.superAdminEmail }).catch((err) => {
-            logger.error("Failed to bootstrap super admin during startup", { error: String(err) });
-        });
-    }
     const healthCheck = async () => {
         const details = {};
         let healthy = true;
@@ -244,6 +240,8 @@ export function composeProduction(config) {
         websiteRepository,
         websiteCreationPersistence,
         pageRepository,
+        pagePublisher: pagePublicationRepository,
+        pageSnapshotReader: pagePublicationRepository,
         superAdminStore,
         authorizationService,
         authenticationPort: authAdapter,
@@ -279,6 +277,9 @@ export function composeProduction(config) {
         duplicateSection,
         reorderSections,
         getPageBuilderState,
+        publishPage,
+        resolvePublishedPage,
+        resolvePublishedWebsite,
         registrationMode,
         healthCheck,
         close,
@@ -299,10 +300,7 @@ function optionalPositiveInteger(key) {
 }
 export function composeProductionFromEnvironment() {
     const betterAuthUrl = requiredEnvironmentValue("BETTER_AUTH_URL");
-    const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? betterAuthUrl)
-        .split(",")
-        .map((origin) => origin.trim())
-        .filter(Boolean);
+    const trustedOrigins = resolveTrustedOrigins(process.env, betterAuthUrl);
     return composeProduction({
         betterAuthSecret: requiredEnvironmentValue("BETTER_AUTH_SECRET"),
         betterAuthUrl,
@@ -311,8 +309,29 @@ export function composeProductionFromEnvironment() {
         emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
         linkageBatchSize: optionalPositiveInteger("LINKAGE_RECONCILIATION_BATCH_SIZE"),
         linkageGracePeriodMs: optionalPositiveInteger("LINKAGE_RECONCILIATION_GRACE_PERIOD_MS"),
-        superAdminEmail: process.env.PLATFORM_SUPER_ADMIN_EMAIL ?? process.env.SUPER_ADMIN_EMAIL,
         logLevel: "info",
     });
+}
+export function resolveTrustedOrigins(environment, betterAuthUrl) {
+    const candidates = [
+        betterAuthUrl,
+        ...(environment.TRUSTED_ORIGINS ?? "").split(","),
+        environment.URL,
+        environment.DEPLOY_PRIME_URL,
+        environment.DEPLOY_URL,
+    ];
+    const origins = new Set();
+    for (const candidate of candidates) {
+        const value = candidate?.trim();
+        if (!value)
+            continue;
+        try {
+            origins.add(new URL(value).origin);
+        }
+        catch {
+            throw new Error(`Trusted origin is not a valid URL: ${value}`);
+        }
+    }
+    return [...origins];
 }
 //# sourceMappingURL=production.js.map

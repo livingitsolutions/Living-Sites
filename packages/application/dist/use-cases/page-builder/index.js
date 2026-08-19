@@ -9,8 +9,8 @@ async function loadPage(input, deps, permission) {
     const page = await deps.pageReader.findById(input.pageId);
     if (!page || page.websiteId !== input.websiteId)
         return { ok: false, error: { code: "not_found", message: "Page was not found in this Website." } };
-    if (permission === PagePermissions.Update && page.status !== PageStatus.Draft)
-        return { ok: false, error: { code: "draft_only", message: "Only draft Pages can be edited in the builder." } };
+    if (permission === PagePermissions.Update && page.status === PageStatus.Archived)
+        return { ok: false, error: { code: "draft_only", message: "Archived Pages cannot be edited in the builder." } };
     return { ok: true, value: page };
 }
 async function persist(page, sections, input, deps) {
@@ -24,7 +24,7 @@ export async function getPageBuilderState(input, deps) {
     if (!loaded.ok)
         return loaded;
     const editDecision = await deps.authorizationService.can({ userId: deps.authenticatedUser.userId, organizationId: input.organizationId, websiteId: input.websiteId, permission: PagePermissions.Update });
-    return { ok: true, value: { page: loaded.value, sections: loaded.value.sections, sectionTypes: SECTION_TYPES, canEdit: editDecision.allowed && loaded.value.status === PageStatus.Draft } };
+    return { ok: true, value: { page: loaded.value, sections: loaded.value.sections, sectionTypes: SECTION_TYPES, canEdit: editDecision.allowed && loaded.value.status !== PageStatus.Archived } };
 }
 export async function addSection(input, deps) {
     const loaded = await loadPage(input, deps, PagePermissions.Update);

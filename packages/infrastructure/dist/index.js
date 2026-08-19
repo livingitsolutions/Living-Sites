@@ -15,4 +15,5 @@ export { DrizzleSuperAdminStore } from "./repositories/identity/drizzle-super-ad
 export { DrizzleWebsiteRepository } from "./repositories/website";
 export { DrizzleWebsiteCreationPersistence } from "./repositories/outbox";
 export { DrizzlePageRepository } from "./repositories/page";
+export { DrizzlePagePublicationRepository } from "./repositories/page";
 //# sourceMappingURL=index.js.map

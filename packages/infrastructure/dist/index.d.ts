@@ -27,4 +27,6 @@ export { DrizzleWebsiteRepository } from "./repositories/website";
 export { DrizzleWebsiteCreationPersistence } from "./repositories/outbox";
 export { DrizzlePageRepository } from "./repositories/page";
 export type { DrizzlePageRepositoryConfig } from "./repositories/page";
+export { DrizzlePagePublicationRepository } from "./repositories/page";
+export type { DrizzlePagePublicationRepositoryConfig } from "./repositories/page";
 //# sourceMappingURL=index.d.ts.map
