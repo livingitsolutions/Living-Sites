@@ -24,10 +24,7 @@ export class AuthorizationService {
             };
         }
         // 1. Check Platform Super Admin
-        if (request.isPlatformSuperAdmin === true ||
-            request.platformRole === SystemRoles.PLATFORM_SUPER_ADMIN ||
-            request.platformRole === "PLATFORM_SUPER_ADMIN" ||
-            (this.superAdminChecker && (await this.superAdminChecker.isSuperAdmin(request.userId)))) {
+        if (this.superAdminChecker && (await this.superAdminChecker.isSuperAdmin(request.userId))) {
             return {
                 allowed: true,
                 reason: "Platform Super Admin granted platform-approved action.",
@@ -42,8 +39,16 @@ export class AuthorizationService {
             };
         }
         // 3. Load active membership
-        const membership = await this.membershipReader.findForUserAndOrganization(request.organizationId, request.userId);
+        const membership = await this.membershipReader.findForUserAndOrganization(request.organizationId, request.userId, request.websiteId ?? null);
         if (!membership || membership.status !== "active") {
+            const scopedMemberships = await this.membershipReader.listForUserAndOrganization(request.organizationId, request.userId);
+            if (scopedMemberships.length > 0) {
+                return {
+                    allowed: false,
+                    code: "scope_mismatch",
+                    reason: "User has active memberships, but none match the requested website scope.",
+                };
+            }
             return {
                 allowed: false,
                 code: "no_active_membership",
@@ -79,11 +84,11 @@ export class AuthorizationService {
         }
         return { allowed: true };
     }
-    async resolvePermissions(organizationId, userId) {
+    async resolvePermissions(organizationId, userId, websiteId) {
         if (this.superAdminChecker && (await this.superAdminChecker.isSuperAdmin(userId))) {
             return getPermissionsForRole(SystemRoles.PLATFORM_SUPER_ADMIN);
         }
-        const membership = await this.membershipReader.findForUserAndOrganization(organizationId, userId);
+        const membership = await this.membershipReader.findForUserAndOrganization(organizationId, userId, websiteId ?? null);
         if (!membership || membership.status !== "active") {
             return [];
         }

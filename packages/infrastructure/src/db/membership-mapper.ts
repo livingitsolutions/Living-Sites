@@ -17,6 +17,7 @@ import type {
 } from "@livingsites/domain";
 import type { MembershipDraft } from "@livingsites/domain";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
+import { normalizeOrganizationRole } from "@livingsites/application";
 import type { MembershipRow, MembershipInsert } from "./schema";
 
 export function rowToMembership(row: MembershipRow): Result<Membership, InvalidPersistenceStateError> {
@@ -26,6 +27,16 @@ export function rowToMembership(row: MembershipRow): Result<Membership, InvalidP
       error: {
         code: "invalid_persistence_state",
         message: `Membership row ${row.id ?? "unknown"} has missing required fields.`,
+      },
+    };
+  }
+  const role = normalizeOrganizationRole(row.role);
+  if (!role) {
+    return {
+      ok: false,
+      error: {
+        code: "invalid_persistence_state",
+        message: `Membership row ${row.id} has invalid organization role "${row.role}".`,
       },
     };
   }
@@ -41,7 +52,7 @@ export function rowToMembership(row: MembershipRow): Result<Membership, InvalidP
     id: row.id as MembershipId,
     organizationId: row.organization_id as OrganizationId,
     userId: row.user_id as UserId,
-    role: row.role as RoleValue,
+    role: role as RoleValue,
     websiteScopeId: row.website_scope_id ?? null,
     status: row.status as LifecycleStatus,
     version: row.version as AggregateVersion,

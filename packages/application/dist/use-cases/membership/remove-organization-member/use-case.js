@@ -22,7 +22,6 @@ export async function removeOrganizationMember(input, deps) {
         userId: callerUserId,
         organizationId: membership.organizationId,
         permission: OrganizationPermissions.MembersRemove,
-        isPlatformSuperAdmin: input.isPlatformSuperAdmin,
     });
     if (!authDecision.allowed) {
         return {
@@ -45,13 +44,7 @@ export async function removeOrganizationMember(input, deps) {
             };
         }
     }
-    // 4. Archive/remove membership via repository
-    const deleteResult = await deps.membershipRepository.archive(membershipId, input.expectedVersion);
-    if (!deleteResult.ok) {
-        return { ok: false, error: deleteResult.error };
-    }
     const now = deps.clock.nowIso();
-    // 5. Emit event
     const event = {
         type: "organization.member_removed",
         occurredAt: now,
@@ -59,7 +52,10 @@ export async function removeOrganizationMember(input, deps) {
         membershipId: membership.id,
         userId: membership.userId,
     };
-    await deps.eventPublisher.publish(event);
+    const deleteResult = await deps.membershipRepository.archiveWithEvent(membershipId, input.expectedVersion, event);
+    if (!deleteResult.ok) {
+        return { ok: false, error: deleteResult.error };
+    }
     return { ok: true, value: { success: true } };
 }
 //# sourceMappingURL=use-case.js.map

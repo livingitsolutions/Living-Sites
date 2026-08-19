@@ -1,4 +1,4 @@
-import { normalizeSystemRole } from "../../../authorization/roles";
+import { normalizeOrganizationRole } from "../../../authorization/roles";
 export function validateAddOrganizationMemberInput(input) {
     const organizationId = typeof input.organizationId === "string" ? input.organizationId.trim() : "";
     const userId = typeof input.userId === "string" ? input.userId.trim() : "";
@@ -13,7 +13,7 @@ export function validateAddOrganizationMemberInput(input) {
     if (!callerUserId) {
         return { ok: false, error: { code: "validation_error", message: "callerUserId is required." } };
     }
-    const role = normalizeSystemRole(rawRole);
+    const role = normalizeOrganizationRole(rawRole);
     if (!role) {
         return {
             ok: false,
@@ -32,7 +32,6 @@ export function validateAddOrganizationMemberInput(input) {
             role,
             websiteScopeId,
             callerUserId,
-            isPlatformSuperAdmin: input.isPlatformSuperAdmin ?? false,
         },
     };
 }

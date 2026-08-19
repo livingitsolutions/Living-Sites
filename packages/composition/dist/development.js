@@ -41,20 +41,17 @@ export function composeDevelopment(config = {}) {
         membershipRepository,
         userReader: userRepository,
         authorizationService,
-        eventPublisher,
         clock,
         idGenerator,
     };
     const changeOrganizationMemberRoleDeps = {
         membershipRepository,
         authorizationService,
-        eventPublisher,
         clock,
     };
     const removeOrganizationMemberDeps = {
         membershipRepository,
         authorizationService,
-        eventPublisher,
         clock,
     };
     const getOrganizationMembersDeps = {

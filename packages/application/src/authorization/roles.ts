@@ -134,6 +134,11 @@ export function normalizeSystemRole(role: string): string | null {
   return null;
 }
 
+export function normalizeOrganizationRole(role: string): string | null {
+  const normalized = normalizeSystemRole(role);
+  return normalized === SystemRoles.PLATFORM_SUPER_ADMIN ? null : normalized;
+}
+
 export function getPermissionsForRole(role: string): readonly PermissionKey[] {
   const normalized = normalizeSystemRole(role);
   if (!normalized) return [];

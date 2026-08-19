@@ -1,70 +1,53 @@
-import { normalizeSystemRole } from "@livingsites/application";
+import { normalizeOrganizationRole, normalizeSystemRole } from "@livingsites/application";
 export class InMemoryMembershipRepository {
     store = new Map();
+    publishedEvents = [];
     async findById(id) {
         const row = this.store.get(String(id));
         return row ? this.toDomain(row) : null;
     }
-    async findForUserAndOrganization(organizationId, userId) {
-        for (const row of this.store.values()) {
-            if (row.organizationId === organizationId &&
-                row.userId === userId &&
-                row.status === "active") {
-                return this.toDomain(row);
-            }
-        }
-        return null;
+    async findForUserAndOrganization(organizationId, userId, websiteId = null) {
+        const candidates = await this.listForUserAndOrganization(organizationId, userId);
+        const organizationWide = candidates.find((membership) => !membership.websiteScopeId);
+        if (organizationWide)
+            return organizationWide;
+        if (!websiteId)
+            return null;
+        return candidates.find((membership) => membership.websiteScopeId === websiteId) ?? null;
     }
-    async findMembership(organizationId, userId) {
-        return this.findForUserAndOrganization(organizationId, userId);
+    async listForUserAndOrganization(organizationId, userId) {
+        return [...this.store.values()]
+            .filter((row) => row.organizationId === organizationId && row.userId === userId && row.status === "active")
+            .map((row) => this.toDomain(row));
     }
     async listForOrganization(organizationId) {
-        const results = [];
-        for (const row of this.store.values()) {
-            if (row.organizationId === organizationId && row.status === "active") {
-                results.push(this.toDomain(row));
-            }
-        }
-        return results;
+        return [...this.store.values()]
+            .filter((row) => row.organizationId === organizationId && row.status === "active")
+            .map((row) => this.toDomain(row));
     }
     async listActiveOwners(organizationId) {
-        const results = [];
-        for (const row of this.store.values()) {
-            if (row.organizationId === organizationId &&
-                row.status === "active" &&
-                normalizeSystemRole(row.role) === "owner") {
-                results.push(this.toDomain(row));
-            }
-        }
-        return results;
+        return (await this.listForOrganization(organizationId))
+            .filter((membership) => normalizeSystemRole(membership.role) === "owner");
     }
     async listForUser(userId) {
-        const results = [];
-        for (const row of this.store.values()) {
-            if (row.userId === userId && row.status === "active") {
-                results.push(this.toDomain(row));
-            }
-        }
-        return results;
+        return [...this.store.values()]
+            .filter((row) => row.userId === userId && row.status === "active")
+            .map((row) => this.toDomain(row));
     }
     async list(params) {
-        let items = Array.from(this.store.values()).filter((r) => r.status === "active");
-        if (params.organizationId) {
-            items = items.filter((r) => r.organizationId === params.organizationId);
-        }
-        if (params.userId) {
-            items = items.filter((r) => r.userId === params.userId);
-        }
-        if (params.role) {
-            items = items.filter((r) => normalizeSystemRole(r.role) === normalizeSystemRole(String(params.role)));
-        }
-        const total = items.length;
+        let rows = [...this.store.values()].filter((row) => row.status === "active");
+        if (params.organizationId)
+            rows = rows.filter((row) => row.organizationId === params.organizationId);
+        if (params.userId)
+            rows = rows.filter((row) => row.userId === params.userId);
+        if (params.role)
+            rows = rows.filter((row) => normalizeSystemRole(row.role) === normalizeSystemRole(String(params.role)));
+        const total = rows.length;
         const page = params.page ?? 1;
         const pageSize = params.pageSize ?? 50;
         const start = (page - 1) * pageSize;
-        const paged = items.slice(start, start + pageSize).map((r) => this.toDomain(r));
         return {
-            items: paged,
+            items: rows.slice(start, start + pageSize).map((row) => this.toDomain(row)),
             total,
             page,
             pageSize,
@@ -72,43 +55,37 @@ export class InMemoryMembershipRepository {
         };
     }
     async create(candidate) {
-        // Unique check
-        for (const row of this.store.values()) {
-            if (row.organizationId === candidate.organizationId &&
-                row.userId === candidate.userId &&
-                row.status === "active") {
-                if (!candidate.websiteScopeId && !row.websiteScopeId) {
-                    return {
-                        ok: false,
-                        error: {
-                            code: "duplicate_key",
-                            message: `Active membership already exists for user "${candidate.userId}".`,
-                            field: "userId",
-                            value: String(candidate.userId),
-                        },
-                    };
-                }
-                if (candidate.websiteScopeId && row.websiteScopeId === candidate.websiteScopeId) {
-                    return {
-                        ok: false,
-                        error: {
-                            code: "duplicate_key",
-                            message: `Active membership already exists for user "${candidate.userId}" in website "${candidate.websiteScopeId}".`,
-                            field: "userId",
-                            value: String(candidate.userId),
-                        },
-                    };
-                }
-            }
+        const role = normalizeOrganizationRole(String(candidate.role));
+        if (!role) {
+            return {
+                ok: false,
+                error: { code: "invalid_persistence_state", message: `Invalid organization membership role "${candidate.role}".` },
+            };
         }
-        const id = "id" in candidate && candidate.id ? candidate.id : `mem_${this.store.size + 1}`;
+        const scope = candidate.websiteScopeId ?? null;
+        const duplicate = [...this.store.values()].some((row) => row.organizationId === candidate.organizationId
+            && row.userId === candidate.userId
+            && row.status === "active"
+            && (row.websiteScopeId ?? null) === scope);
+        if (duplicate) {
+            return {
+                ok: false,
+                error: {
+                    code: "duplicate_key",
+                    message: "Active membership already exists for this organization scope.",
+                    field: "userId",
+                    value: String(candidate.userId),
+                },
+            };
+        }
         const now = new Date().toISOString();
+        const id = ("id" in candidate && candidate.id ? candidate.id : randomUUID());
         const row = {
             id,
             organizationId: candidate.organizationId,
             userId: candidate.userId,
-            role: candidate.role,
-            websiteScopeId: candidate.websiteScopeId ?? null,
+            role: role,
+            websiteScopeId: scope,
             status: "active",
             version: 1,
             audit: {
@@ -120,71 +97,57 @@ export class InMemoryMembershipRepository {
         this.store.set(String(id), row);
         return { ok: true, value: this.toDomain(row) };
     }
+    async createWithEvent(candidate, event) {
+        const result = await this.create(candidate);
+        if (result.ok)
+            this.publishedEvents.push(event);
+        return result;
+    }
     async changeRole(membershipId, newRole, expectedVersion) {
+        const role = normalizeOrganizationRole(String(newRole));
+        if (!role) {
+            return {
+                ok: false,
+                error: { code: "invalid_persistence_state", message: `Invalid organization membership role "${newRole}".` },
+            };
+        }
         const existing = this.store.get(String(membershipId));
-        if (!existing) {
-            return {
-                ok: false,
-                error: { code: "invalid_persistence_state", message: `Membership "${membershipId}" not found.` },
-            };
-        }
-        if (existing.version !== expectedVersion) {
-            return {
-                ok: false,
-                error: {
-                    aggregateId: String(membershipId),
-                    expectedVersion,
-                    actualVersion: existing.version,
-                },
-            };
-        }
-        const isCurrentlyOwner = normalizeSystemRole(existing.role) === "owner";
-        const willBeOwner = normalizeSystemRole(String(newRole)) === "owner";
-        if (isCurrentlyOwner && !willBeOwner) {
+        if (!existing)
+            return this.notFound(membershipId);
+        if (existing.version !== expectedVersion)
+            return this.conflict(membershipId, expectedVersion, existing.version);
+        if (normalizeSystemRole(existing.role) === "owner" && role !== "owner") {
             const activeOwners = await this.listActiveOwners(existing.organizationId);
-            if (activeOwners.length <= 1 && activeOwners.some((m) => m.id === membershipId)) {
+            if (activeOwners.length <= 1 && activeOwners.some((owner) => owner.id === membershipId)) {
                 return {
                     ok: false,
-                    error: {
-                        code: "invalid_persistence_state",
-                        message: "Cannot demote the sole remaining active owner of an organization.",
-                    },
+                    error: { code: "invalid_persistence_state", message: "Cannot demote the sole remaining active owner of an organization." },
                 };
             }
         }
-        existing.role = newRole;
+        existing.role = role;
         existing.version = (existing.version + 1);
         existing.audit.updatedAt = new Date().toISOString();
         return { ok: true, value: this.toDomain(existing) };
     }
+    async changeRoleWithEvent(membershipId, newRole, expectedVersion, event) {
+        const result = await this.changeRole(membershipId, newRole, expectedVersion);
+        if (result.ok)
+            this.publishedEvents.push(event);
+        return result;
+    }
     async archive(membershipId, expectedVersion) {
         const existing = this.store.get(String(membershipId));
-        if (!existing) {
-            return {
-                ok: false,
-                error: { code: "invalid_persistence_state", message: `Membership "${membershipId}" not found.` },
-            };
-        }
-        if (existing.version !== expectedVersion) {
-            return {
-                ok: false,
-                error: {
-                    aggregateId: String(membershipId),
-                    expectedVersion,
-                    actualVersion: existing.version,
-                },
-            };
-        }
-        const isCurrentlyOwner = normalizeSystemRole(existing.role) === "owner";
-        if (isCurrentlyOwner) {
+        if (!existing)
+            return this.notFound(membershipId);
+        if (existing.version !== expectedVersion)
+            return this.conflict(membershipId, expectedVersion, existing.version);
+        if (normalizeSystemRole(existing.role) === "owner") {
             const activeOwners = await this.listActiveOwners(existing.organizationId);
-            if (activeOwners.length <= 1 && activeOwners.some((m) => m.id === membershipId)) {
+            if (activeOwners.length <= 1 && activeOwners.some((owner) => owner.id === membershipId)) {
                 return {
                     ok: false,
-                    error: {
-                        code: "invalid_persistence_state",
-                        message: "Cannot remove the sole remaining active owner of an organization.",
-                    },
+                    error: { code: "invalid_persistence_state", message: "Cannot remove the sole remaining active owner of an organization." },
                 };
             }
         }
@@ -193,33 +156,27 @@ export class InMemoryMembershipRepository {
         existing.audit.updatedAt = new Date().toISOString();
         return { ok: true, value: undefined };
     }
-    async save(aggregate, expectedVersion) {
-        const existing = this.store.get(String(aggregate.id));
-        if (!existing) {
-            return {
-                ok: false,
-                error: { code: "invalid_persistence_state", message: `Membership "${aggregate.id}" not found.` },
-            };
-        }
-        if (existing.version !== expectedVersion) {
-            return {
-                ok: false,
-                error: {
-                    aggregateId: String(aggregate.id),
-                    expectedVersion,
-                    actualVersion: existing.version,
-                },
-            };
-        }
-        existing.role = aggregate.role;
-        existing.websiteScopeId = aggregate.websiteScopeId ?? null;
-        existing.status = aggregate.status;
-        existing.version = (expectedVersion + 1);
-        existing.audit.updatedAt = new Date().toISOString();
-        return { ok: true, value: this.toDomain(existing) };
+    async archiveWithEvent(membershipId, expectedVersion, event) {
+        const result = await this.archive(membershipId, expectedVersion);
+        if (result.ok)
+            this.publishedEvents.push(event);
+        return result;
     }
     async softDelete(id, expectedVersion) {
         return this.archive(id, expectedVersion);
+    }
+    clear() {
+        this.store.clear();
+        this.publishedEvents.length = 0;
+    }
+    notFound(membershipId) {
+        return {
+            ok: false,
+            error: { code: "invalid_persistence_state", message: `Membership "${membershipId}" not found.` },
+        };
+    }
+    conflict(membershipId, expectedVersion, actualVersion) {
+        return { ok: false, error: { aggregateId: String(membershipId), expectedVersion, actualVersion } };
     }
     toDomain(row) {
         return {
@@ -233,8 +190,6 @@ export class InMemoryMembershipRepository {
             audit: row.audit,
         };
     }
-    clear() {
-        this.store.clear();
-    }
 }
+import { randomUUID } from "node:crypto";
 //# sourceMappingURL=in-memory-membership-repository.js.map

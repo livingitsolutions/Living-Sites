@@ -1,14 +1,12 @@
 import type { Result } from "@livingsites/domain";
-import type { MembershipReader, MembershipMutator } from "../../../repositories/membership";
-import type { EventPublisher } from "../../../services/event-publisher";
+import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership";
 import type { AuthorizationService } from "../../../authorization/service";
 import type { ChangeOrganizationMemberRoleInput } from "./input";
 import type { ChangeOrganizationMemberRoleOutput } from "./output";
 import type { ChangeOrganizationMemberRoleError } from "./errors";
 export interface ChangeOrganizationMemberRoleDeps {
-    readonly membershipRepository: MembershipReader & MembershipMutator;
+    readonly membershipRepository: MembershipReader & MembershipMutationPersistence;
     readonly authorizationService: AuthorizationService;
-    readonly eventPublisher: EventPublisher;
     readonly clock: {
         nowIso(): string;
     };

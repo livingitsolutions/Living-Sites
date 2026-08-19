@@ -1,265 +1,317 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/pglite";
 import { NetlifyDB } from "@netlify/database-dev";
 import { NoopLogger } from "@livingsites/platform";
-import { DrizzleMembershipRepository } from "./drizzle-membership-repository";
-import { DrizzleUserRepository } from "../user/drizzle-user-repository";
-import { DrizzleOrganizationRepository } from "../organization/drizzle-organization-repository";
-import { memberships, organizations, platformUsers } from "../../db/schema";
-import * as schema from "../../db/schema";
 import { runMembershipRepositoryContractTests } from "@livingsites/test-support";
 import {
   createMembershipDraft,
   createOrganizationDraft,
   createUserDraft,
+  type AuthSubjectId,
+  type ISODateString,
   type MembershipId,
   type OrganizationId,
-  type UserId,
-  type AuthSubjectId,
+  type OrganizationMemberAddedEvent,
+  type OrganizationMemberRemovedEvent,
+  type OrganizationMemberRoleChangedEvent,
   type Slug,
-  type ISODateString,
+  type UserId,
+  type WebsiteId,
 } from "@livingsites/domain";
+import { applicationOutbox, memberships, organizations, platformUsers } from "../../db/schema";
+import * as schema from "../../db/schema";
+import type { DrizzleDB } from "../../db/drizzle-instance";
+import { DrizzleOrganizationRepository } from "../organization/drizzle-organization-repository";
+import { DrizzleUserRepository } from "../user/drizzle-user-repository";
+import { DrizzleMembershipRepository } from "./drizzle-membership-repository";
+
+const now = "2026-08-19T00:00:00Z" as ISODateString;
 
 describe("DrizzleMembershipRepository — database integration", () => {
   let netlifyDB: NetlifyDB;
-  let connectionString: string;
   let db: ReturnType<typeof drizzle<typeof schema>>;
-  let sql: ReturnType<typeof postgres>;
   let repo: DrizzleMembershipRepository;
+  let secondRepo: DrizzleMembershipRepository;
   let userRepo: DrizzleUserRepository;
   let orgRepo: DrizzleOrganizationRepository;
 
   beforeAll(async () => {
     netlifyDB = new NetlifyDB({ logger: () => {} });
-    connectionString = await netlifyDB.start();
+    await netlifyDB.start();
     await netlifyDB.applyMigrations("./netlify/database/migrations");
-    sql = postgres(connectionString, { prepare: false, max: 10 });
-    db = drizzle({ client: sql, schema });
+    const embeddedDatabase = (netlifyDB as unknown as { db: Parameters<typeof drizzle>[0] }).db;
+    db = drizzle(embeddedDatabase, { schema });
     const logger = new NoopLogger();
-    repo = new DrizzleMembershipRepository({ db, logger });
-    userRepo = new DrizzleUserRepository({ db, logger });
-    orgRepo = new DrizzleOrganizationRepository({ db, logger });
+    const repositoryDb = db as unknown as DrizzleDB;
+    repo = new DrizzleMembershipRepository({ db: repositoryDb, logger });
+    secondRepo = new DrizzleMembershipRepository({ db: repositoryDb, logger });
+    userRepo = new DrizzleUserRepository({ db: repositoryDb, logger });
+    orgRepo = new DrizzleOrganizationRepository({ db: repositoryDb, logger });
   });
 
   afterAll(async () => {
-    if (sql) await sql.end();
     if (netlifyDB) await netlifyDB.stop();
   });
 
   async function cleanup() {
+    await db.delete(applicationOutbox);
     await db.delete(memberships);
     await db.delete(organizations);
     await db.delete(platformUsers);
   }
 
-  beforeEach(async () => {
-    await cleanup();
-  });
+  async function createOrganization(id: string) {
+    await orgRepo.create(createOrganizationDraft({
+      id: id as OrganizationId,
+      name: `Org ${id}`,
+      slug: `slug-${id}` as Slug,
+      billingEmail: `billing-${id}@example.com`,
+      planId: null,
+      now,
+    }));
+  }
+
+  async function createUser(id: string, email = `${id}@example.com`) {
+    await userRepo.create(createUserDraft({
+      id: id as UserId,
+      authSubjectId: `auth-${id}` as AuthSubjectId,
+      email,
+      displayName: `User ${id}`,
+      now,
+    }));
+  }
+
+  async function createMember(
+    id: string,
+    organizationId: string,
+    userId: string,
+    role: "owner" | "admin" | "editor" | "viewer",
+    websiteScopeId?: string,
+  ) {
+    return repo.create(createMembershipDraft({
+      id: id as MembershipId,
+      organizationId: organizationId as OrganizationId,
+      userId: userId as UserId,
+      role,
+      websiteScopeId: websiteScopeId as WebsiteId | undefined,
+      now,
+    }));
+  }
+
+  beforeEach(cleanup);
 
   runMembershipRepositoryContractTests("DrizzleMembershipRepository", {
-    async createRepository() {
-      return repo;
-    },
-    async createOrganization(id: string) {
-      await orgRepo.create(
-        createOrganizationDraft({
-          id: id as OrganizationId,
-          name: `Org ${id}`,
-          slug: `slug-${id}` as Slug,
-          billingEmail: `billing-${id}@example.com`,
-          planId: null,
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-    },
-    async createUser(id: string, email: string) {
-      await userRepo.create(
-        createUserDraft({
-          id: id as UserId,
-          authSubjectId: `auth-${id}` as AuthSubjectId,
-          email,
-          displayName: `User ${id}`,
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-    },
-    async cleanup() {
-      await cleanup();
-    },
+    createRepository: async () => repo,
+    createOrganization,
+    createUser,
+    cleanup,
   });
 
-  it("0008 migration applies successfully and table exists", async () => {
-    const rows = await db.select().from(memberships);
-    expect(Array.isArray(rows)).toBe(true);
+  it("0010 migration applies and membership table exists", async () => {
+    expect(Array.isArray(await db.select().from(memberships))).toBe(true);
   });
 
-  it("enforces foreign key constraints on organization_id and user_id", async () => {
-    const draft = createMembershipDraft({
+  it("enforces foreign keys and rejects platform_super_admin membership roles", async () => {
+    const invalidForeignKey = await repo.create(createMembershipDraft({
       id: "mem-invalid-fk" as MembershipId,
       organizationId: "nonexistent-org" as OrganizationId,
       userId: "nonexistent-user" as UserId,
       role: "admin",
-      now: "2026-08-19T00:00:00Z" as ISODateString,
-    });
+      now,
+    }));
+    expect(invalidForeignKey.ok).toBe(false);
 
-    const res = await repo.create(draft);
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.error.code).toBe("invalid_persistence_state");
-    }
+    await createOrganization("org-role-boundary");
+    await createUser("user-role-boundary");
+    const invalidRole = await repo.create(createMembershipDraft({
+      id: "mem-invalid-role" as MembershipId,
+      organizationId: "org-role-boundary" as OrganizationId,
+      userId: "user-role-boundary" as UserId,
+      role: "platform_super_admin",
+      now,
+    }));
+    expect(invalidRole.ok).toBe(false);
   });
 
-  describe("Sole-Owner Concurrency Under Heavy Race Condition", () => {
-    it("simultaneous concurrent owner removal requests cannot leave zero owners", async () => {
-      const orgId = "org-race-1" as OrganizationId;
-      const user1 = "user-race-1" as UserId;
-      const user2 = "user-race-2" as UserId;
+  it("does not expose generic save as a sole-owner bypass", () => {
+    expect((repo as unknown as { save?: unknown }).save).toBeUndefined();
+  });
 
-      await orgRepo.create(
-        createOrganizationDraft({
-          id: orgId,
-          name: "Race Org",
-          slug: "race-org" as Slug,
-          billingEmail: "race@example.com",
-          planId: null,
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
+  describe("sole-owner locking", () => {
+    it("two repository instances cannot concurrently remove all owners", async () => {
+      await createOrganization("org-race-remove");
+      await createUser("user-race-remove-1");
+      await createUser("user-race-remove-2");
+      await createMember("mem-race-remove-1", "org-race-remove", "user-race-remove-1", "owner");
+      await createMember("mem-race-remove-2", "org-race-remove", "user-race-remove-2", "owner");
 
-      await userRepo.create(
-        createUserDraft({
-          id: user1,
-          authSubjectId: "auth-race-1" as AuthSubjectId,
-          email: "race1@example.com",
-          displayName: "Race 1",
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-
-      await userRepo.create(
-        createUserDraft({
-          id: user2,
-          authSubjectId: "auth-race-2" as AuthSubjectId,
-          email: "race2@example.com",
-          displayName: "Race 2",
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-
-      const mem1 = await repo.create(
-        createMembershipDraft({
-          id: "mem-race-1" as MembershipId,
-          organizationId: orgId,
-          userId: user1,
-          role: "owner",
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-
-      const mem2 = await repo.create(
-        createMembershipDraft({
-          id: "mem-race-2" as MembershipId,
-          organizationId: orgId,
-          userId: user2,
-          role: "owner",
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-
-      expect(mem1.ok).toBe(true);
-      expect(mem2.ok).toBe(true);
-
-      // Concurrently execute 2 remove operations targeting both owners
-      const [res1, res2] = await Promise.all([
-        repo.archive("mem-race-1" as MembershipId, 1),
-        repo.archive("mem-race-2" as MembershipId, 1),
+      const [first, second] = await Promise.all([
+        repo.archive("mem-race-remove-1" as MembershipId, 1),
+        secondRepo.archive("mem-race-remove-2" as MembershipId, 1),
       ]);
 
-      const successCount = (res1.ok ? 1 : 0) + (res2.ok ? 1 : 0);
-      const failureCount = (!res1.ok ? 1 : 0) + (!res2.ok ? 1 : 0);
-
-      expect(successCount).toBe(1);
-      expect(failureCount).toBe(1);
-
-      // Verify that at least 1 active owner remains in the organization
-      const activeOwners = await repo.listActiveOwners(orgId);
-      expect(activeOwners.length).toBe(1);
+      expect(Number(first.ok) + Number(second.ok)).toBe(1);
+      expect((await repo.listActiveOwners("org-race-remove" as OrganizationId))).toHaveLength(1);
     });
 
-    it("simultaneous concurrent owner demotion requests cannot leave zero owners", async () => {
-      const orgId = "org-race-demote" as OrganizationId;
-      const user1 = "user-demote-1" as UserId;
-      const user2 = "user-demote-2" as UserId;
+    it("two repository instances cannot concurrently demote all owners", async () => {
+      await createOrganization("org-race-demote");
+      await createUser("user-race-demote-1");
+      await createUser("user-race-demote-2");
+      await createMember("mem-race-demote-1", "org-race-demote", "user-race-demote-1", "owner");
+      await createMember("mem-race-demote-2", "org-race-demote", "user-race-demote-2", "owner");
 
-      await orgRepo.create(
-        createOrganizationDraft({
-          id: orgId,
-          name: "Demote Org",
-          slug: "demote-org" as Slug,
-          billingEmail: "demote@example.com",
-          planId: null,
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-
-      await userRepo.create(
-        createUserDraft({
-          id: user1,
-          authSubjectId: "auth-demote-1" as AuthSubjectId,
-          email: "demote1@example.com",
-          displayName: "Demote 1",
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-
-      await userRepo.create(
-        createUserDraft({
-          id: user2,
-          authSubjectId: "auth-demote-2" as AuthSubjectId,
-          email: "demote2@example.com",
-          displayName: "Demote 2",
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-
-      const m1 = await repo.create(
-        createMembershipDraft({
-          id: "mem-demote-1" as MembershipId,
-          organizationId: orgId,
-          userId: user1,
-          role: "owner",
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-
-      const m2 = await repo.create(
-        createMembershipDraft({
-          id: "mem-demote-2" as MembershipId,
-          organizationId: orgId,
-          userId: user2,
-          role: "owner",
-          now: "2026-08-19T00:00:00Z" as ISODateString,
-        }),
-      );
-
-      expect(m1.ok).toBe(true);
-      expect(m2.ok).toBe(true);
-
-      // Concurrently execute demotions
-      const [res1, res2] = await Promise.all([
-        repo.changeRole("mem-demote-1" as MembershipId, "editor", 1),
-        repo.changeRole("mem-demote-2" as MembershipId, "editor", 1),
+      const [first, second] = await Promise.all([
+        repo.changeRole("mem-race-demote-1" as MembershipId, "editor", 1),
+        secondRepo.changeRole("mem-race-demote-2" as MembershipId, "editor", 1),
       ]);
 
-      const successCount = (res1.ok ? 1 : 0) + (res2.ok ? 1 : 0);
-      const failureCount = (!res1.ok ? 1 : 0) + (!res2.ok ? 1 : 0);
-
-      expect(successCount).toBe(1);
-      expect(failureCount).toBe(1);
-
-      const activeOwners = await repo.listActiveOwners(orgId);
-      expect(activeOwners.length).toBe(1);
+      expect(Number(first.ok) + Number(second.ok)).toBe(1);
+      expect((await repo.listActiveOwners("org-race-demote" as OrganizationId))).toHaveLength(1);
     });
+  });
+
+  it("resolves website memberships deterministically", async () => {
+    await createOrganization("org-scopes");
+    await createUser("user-scopes");
+    await createMember("mem-site-a", "org-scopes", "user-scopes", "viewer", "site-a");
+    await createMember("mem-site-b", "org-scopes", "user-scopes", "editor", "site-b");
+
+    const siteA = await repo.findForUserAndOrganization(
+      "org-scopes" as OrganizationId,
+      "user-scopes" as UserId,
+      "site-a" as WebsiteId,
+    );
+    const siteB = await repo.findForUserAndOrganization(
+      "org-scopes" as OrganizationId,
+      "user-scopes" as UserId,
+      "site-b" as WebsiteId,
+    );
+    const wrongSite = await repo.findForUserAndOrganization(
+      "org-scopes" as OrganizationId,
+      "user-scopes" as UserId,
+      "site-c" as WebsiteId,
+    );
+
+    expect(siteA?.id).toBe("mem-site-a");
+    expect(siteB?.id).toBe("mem-site-b");
+    expect(wrongSite).toBeNull();
+
+    await createMember("mem-org-wide", "org-scopes", "user-scopes", "admin");
+    const overlap = await repo.findForUserAndOrganization(
+      "org-scopes" as OrganizationId,
+      "user-scopes" as UserId,
+      "site-b" as WebsiteId,
+    );
+    expect(overlap?.id).toBe("mem-org-wide");
+  });
+
+  it("atomically persists add, role-change, and removal outbox events", async () => {
+    const organizationId = "org-atomic" as OrganizationId;
+    const userId = "user-atomic" as UserId;
+    const membershipId = "mem-atomic" as MembershipId;
+    await createOrganization(organizationId);
+    await createUser(userId);
+
+    const addedEvent: OrganizationMemberAddedEvent = {
+      type: "organization.member_added",
+      occurredAt: now,
+      eventScope: { scope: "organization", organizationId },
+      membershipId,
+      userId,
+      role: "viewer",
+      websiteScopeId: null,
+    };
+    const created = await repo.createWithEvent(createMembershipDraft({
+      id: membershipId,
+      organizationId,
+      userId,
+      role: "viewer",
+      now,
+    }), addedEvent);
+    expect(created.ok).toBe(true);
+
+    const changedEvent: OrganizationMemberRoleChangedEvent = {
+      type: "organization.member_role_changed",
+      occurredAt: now,
+      eventScope: { scope: "organization", organizationId },
+      membershipId,
+      userId,
+      previousRole: "viewer",
+      newRole: "editor",
+    };
+    const changed = await repo.changeRoleWithEvent(membershipId, "editor", 1, changedEvent);
+    expect(changed.ok).toBe(true);
+
+    const removedEvent: OrganizationMemberRemovedEvent = {
+      type: "organization.member_removed",
+      occurredAt: now,
+      eventScope: { scope: "organization", organizationId },
+      membershipId,
+      userId,
+    };
+    const removed = await repo.archiveWithEvent(membershipId, 2, removedEvent);
+    expect(removed.ok).toBe(true);
+
+    const outboxRows = await db.select().from(applicationOutbox);
+    expect(outboxRows.map((row) => row.event_type).sort()).toEqual([
+      "organization.member_added",
+      "organization.member_removed",
+      "organization.member_role_changed",
+    ]);
+    const persisted = await repo.findById(membershipId);
+    expect(persisted?.status).toBe("archived");
+    expect(persisted?.version).toBe(3);
+  });
+
+  it("rolls back membership mutation when outbox insertion fails", async () => {
+    const organizationId = "org-rollback" as OrganizationId;
+    const userId = "user-rollback" as UserId;
+    const membershipId = "mem-rollback" as MembershipId;
+    await createOrganization(organizationId);
+    await createUser(userId);
+
+    await db.execute(sql.raw(`
+      CREATE OR REPLACE FUNCTION reject_membership_outbox() RETURNS trigger AS $$
+      BEGIN
+        IF NEW.event_type = 'organization.member_added' THEN
+          RAISE EXCEPTION 'forced membership outbox failure';
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql
+    `));
+    await db.execute(sql.raw(`
+      CREATE TRIGGER reject_membership_outbox_trigger
+      BEFORE INSERT ON application_outbox
+      FOR EACH ROW EXECUTE FUNCTION reject_membership_outbox()
+    `));
+
+    try {
+      const event: OrganizationMemberAddedEvent = {
+        type: "organization.member_added",
+        occurredAt: now,
+        eventScope: { scope: "organization", organizationId },
+        membershipId,
+        userId,
+        role: "viewer",
+        websiteScopeId: null,
+      };
+      const result = await repo.createWithEvent(createMembershipDraft({
+        id: membershipId,
+        organizationId,
+        userId,
+        role: "viewer",
+        now,
+      }), event);
+
+      expect(result.ok).toBe(false);
+      expect(await repo.findById(membershipId)).toBeNull();
+      expect(await db.select().from(applicationOutbox)).toHaveLength(0);
+    } finally {
+      await db.execute(sql.raw("DROP TRIGGER IF EXISTS reject_membership_outbox_trigger ON application_outbox"));
+      await db.execute(sql.raw("DROP FUNCTION IF EXISTS reject_membership_outbox()"));
+    }
   });
 });

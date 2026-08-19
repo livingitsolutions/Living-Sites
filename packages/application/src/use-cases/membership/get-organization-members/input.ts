@@ -6,5 +6,4 @@ import type {
 export interface GetOrganizationMembersInput {
   readonly organizationId: OrganizationId | string;
   readonly callerUserId: UserId | string;
-  readonly isPlatformSuperAdmin?: boolean;
 }

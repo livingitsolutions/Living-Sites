@@ -25,6 +25,7 @@
     "netlify:dev": "npx netlify dev"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.3.16",
     "@eslint/js": "^9.0.0",
     "@netlify/database-dev": "0.10.1",
     "@types/node": "*",

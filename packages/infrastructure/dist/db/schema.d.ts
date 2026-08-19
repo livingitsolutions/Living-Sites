@@ -1603,6 +1603,23 @@ export declare const platformSuperAdmins: import("drizzle-orm/pg-core").PgTableW
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        singleton_key: import("drizzle-orm/pg-core").PgColumn<{
+            name: "singleton_key";
+            tableName: "platform_super_admins";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         created_at: import("drizzle-orm/pg-core").PgColumn<{
             name: "created_at";
             tableName: "platform_super_admins";

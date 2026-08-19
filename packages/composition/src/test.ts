@@ -101,7 +101,6 @@ export function composeTest(config: TestCompositionConfig = {}): TestComposition
     membershipRepository,
     userReader: userRepository,
     authorizationService,
-    eventPublisher,
     clock,
     idGenerator,
   };
@@ -109,14 +108,12 @@ export function composeTest(config: TestCompositionConfig = {}): TestComposition
   const changeOrganizationMemberRoleDeps: ChangeOrganizationMemberRoleDeps = {
     membershipRepository,
     authorizationService,
-    eventPublisher,
     clock,
   };
 
   const removeOrganizationMemberDeps: RemoveOrganizationMemberDeps = {
     membershipRepository,
     authorizationService,
-    eventPublisher,
     clock,
   };
 

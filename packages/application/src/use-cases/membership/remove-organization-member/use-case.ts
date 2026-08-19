@@ -5,8 +5,7 @@ import type {
   ISODateString,
   OrganizationMemberRemovedEvent,
 } from "@livingsites/domain";
-import type { MembershipReader, MembershipMutator } from "../../../repositories/membership";
-import type { EventPublisher } from "../../../services/event-publisher";
+import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership";
 import type { AuthorizationService } from "../../../authorization/service";
 import { OrganizationPermissions } from "../../../authorization/permissions";
 import { normalizeSystemRole } from "../../../authorization/roles";
@@ -15,9 +14,8 @@ import type { RemoveOrganizationMemberOutput } from "./output";
 import type { RemoveOrganizationMemberError } from "./errors";
 
 export interface RemoveOrganizationMemberDeps {
-  readonly membershipRepository: MembershipReader & MembershipMutator;
+  readonly membershipRepository: MembershipReader & MembershipMutationPersistence;
   readonly authorizationService: AuthorizationService;
-  readonly eventPublisher: EventPublisher;
   readonly clock: { nowIso(): string };
 }
 
@@ -49,7 +47,6 @@ export async function removeOrganizationMember(
     userId: callerUserId as UserId,
     organizationId: membership.organizationId,
     permission: OrganizationPermissions.MembersRemove,
-    isPlatformSuperAdmin: input.isPlatformSuperAdmin,
   });
 
   if (!authDecision.allowed) {
@@ -75,19 +72,7 @@ export async function removeOrganizationMember(
     }
   }
 
-  // 4. Archive/remove membership via repository
-  const deleteResult = await deps.membershipRepository.archive(
-    membershipId as MembershipId,
-    input.expectedVersion,
-  );
-
-  if (!deleteResult.ok) {
-    return { ok: false, error: deleteResult.error };
-  }
-
   const now = deps.clock.nowIso() as ISODateString;
-
-  // 5. Emit event
   const event: OrganizationMemberRemovedEvent = {
     type: "organization.member_removed",
     occurredAt: now,
@@ -96,7 +81,15 @@ export async function removeOrganizationMember(
     userId: membership.userId,
   };
 
-  await deps.eventPublisher.publish(event);
+  const deleteResult = await deps.membershipRepository.archiveWithEvent(
+    membershipId as MembershipId,
+    input.expectedVersion,
+    event,
+  );
+
+  if (!deleteResult.ok) {
+    return { ok: false, error: deleteResult.error };
+  }
 
   return { ok: true, value: { success: true } };
 }

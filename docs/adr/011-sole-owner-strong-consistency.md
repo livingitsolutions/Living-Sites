@@ -33,9 +33,17 @@ We adopt **Organization row-level locking (`SELECT id FROM organizations WHERE i
    - If more than 1 active owner exists, the transaction performs the update on the membership row with the optimistic concurrency check (`WHERE id = $id AND version = $expectedVersion`), increments the version, and commits.
 3. If the membership is not currently an owner (e.g. changing an Editor to Admin or removing a Viewer), the standard optimistic concurrency update executes without acquiring the organization row lock, avoiding unnecessary lock contention.
 
+4. Membership persistence does not expose a generic `save(aggregate)` mutation. Role changes and archival must use the invariant-aware `changeRole` and `archive` operations, preventing callers from bypassing the owner lock and owner-count check.
+
 ### Consequences
 
 - **Positive:** Guarantees strong consistency. Two concurrent removal/demotion requests are serialized on the organization row lock; the first succeeds, and the second reads the updated state (1 owner remaining) and is safely rejected.
 - **Positive:** Uses platform-native Postgres row-level locks without external dependencies (no Redis or external lock managers).
 - **Positive:** Automatically released on transaction commit or rollback.
 - **Positive:** Scoped strictly per-organization; operations across different organizations do not block each other.
+
+## Implementation Verification
+
+- `DrizzleMembershipRepository` acquires the organization row with `SELECT ... FOR UPDATE` inside the same transaction that counts active owners and updates the membership.
+- The former process-local mutex is removed and is not part of correctness.
+- Race tests invoke two independent repository instances concurrently and verify one active owner remains after competing removals and demotions.

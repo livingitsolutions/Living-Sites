@@ -1,3 +1,4 @@
+import { normalizeOrganizationRole } from "@livingsites/application";
 export function rowToMembership(row) {
     if (!row.id || !row.organization_id || !row.user_id || !row.role) {
         return {
@@ -5,6 +6,16 @@ export function rowToMembership(row) {
             error: {
                 code: "invalid_persistence_state",
                 message: `Membership row ${row.id ?? "unknown"} has missing required fields.`,
+            },
+        };
+    }
+    const role = normalizeOrganizationRole(row.role);
+    if (!role) {
+        return {
+            ok: false,
+            error: {
+                code: "invalid_persistence_state",
+                message: `Membership row ${row.id} has invalid organization role "${row.role}".`,
             },
         };
     }
@@ -18,7 +29,7 @@ export function rowToMembership(row) {
         id: row.id,
         organizationId: row.organization_id,
         userId: row.user_id,
-        role: row.role,
+        role: role,
         websiteScopeId: row.website_scope_id ?? null,
         status: row.status,
         version: row.version,

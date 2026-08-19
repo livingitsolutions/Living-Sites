@@ -105,7 +105,6 @@ export function composeDevelopment(config: DevelopmentCompositionConfig = {}): D
     membershipRepository,
     userReader: userRepository,
     authorizationService,
-    eventPublisher,
     clock,
     idGenerator,
   };
@@ -113,14 +112,12 @@ export function composeDevelopment(config: DevelopmentCompositionConfig = {}): D
   const changeOrganizationMemberRoleDeps: ChangeOrganizationMemberRoleDeps = {
     membershipRepository,
     authorizationService,
-    eventPublisher,
     clock,
   };
 
   const removeOrganizationMemberDeps: RemoveOrganizationMemberDeps = {
     membershipRepository,
     authorizationService,
-    eventPublisher,
     clock,
   };
 

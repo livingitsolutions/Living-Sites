@@ -16,5 +16,6 @@ export declare const SYSTEM_ROLE_PERMISSIONS: Readonly<Record<string, readonly P
  * Normalizes any recognized role string to canonical system role value.
  */
 export declare function normalizeSystemRole(role: string): string | null;
+export declare function normalizeOrganizationRole(role: string): string | null;
 export declare function getPermissionsForRole(role: string): readonly PermissionKey[];
 //# sourceMappingURL=roles.d.ts.map
