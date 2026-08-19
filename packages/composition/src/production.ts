@@ -39,6 +39,7 @@ import {
   MissingNetlifyDatabaseError,
 } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
+import type { DrizzleDB } from "@livingsites/infrastructure";
 import type {
   OrganizationReader,
   OrganizationCreator,
@@ -116,6 +117,7 @@ export interface ProductionCompositionConfig {
 }
 
 export interface ProductionComposition {
+  readonly database: DrizzleDB;
   readonly clock: Clock;
   readonly idGenerator: IdGenerator;
   readonly logger: Logger;
@@ -416,6 +418,7 @@ export function composeProduction(
   };
 
   return {
+    database: db,
     clock,
     idGenerator,
     logger,

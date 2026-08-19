@@ -15,6 +15,16 @@ export {
   resolveTrustedOrigins,
 } from "./production";
 export type { ProductionComposition, ProductionCompositionConfig } from "./production";
+export {
+  AdminBootstrapError,
+  reconcileProductionAdministrator,
+} from "./admin-bootstrap";
+export type {
+  AdminBootstrapErrorCode,
+  AdminBootstrapInput,
+  AdminBootstrapOptions,
+  AdminBootstrapStatus,
+} from "./admin-bootstrap";
 export { MissingNetlifyDatabaseError } from "@livingsites/infrastructure";
 export { composeDevelopment } from "./development";
 export type { DevelopmentComposition, DevelopmentCompositionConfig } from "./development";
