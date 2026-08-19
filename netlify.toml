@@ -2,6 +2,12 @@
   publish = ".next"
   functions = "netlify/functions"
 
+[dev]
+  command = "npm run dev"
+  targetPort = 3000
+  framework = "#custom"
+  autoLaunch = false
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
