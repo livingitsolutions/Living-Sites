@@ -28,15 +28,15 @@ import type {
   SaveResult,
 } from "@livingsites/application";
 import { normalizeOrganizationRole, normalizeSystemRole } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { membershipDraftToInsertData, rowToMembership } from "../../db/membership-mapper";
-import { buildOutboxInsert } from "../../db/outbox-mapper";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { membershipDraftToInsertData, rowToMembership } from "../../db/membership-mapper.js";
+import { buildOutboxInsert } from "../../db/outbox-mapper.js";
 import {
   applicationOutbox,
   memberships,
   organizations,
   type MembershipRow,
-} from "../../db/schema";
+} from "../../db/schema.js";
 
 type CreateRepoError = DuplicateKeyError | PersistenceUnavailableError | InvalidPersistenceStateError;
 type SaveRepoError = ConcurrencyConflict | PersistenceUnavailableError | InvalidPersistenceStateError;

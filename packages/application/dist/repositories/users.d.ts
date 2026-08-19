@@ -1,5 +1,5 @@
 import type { User, Role, UserId, OrganizationId, PaginatedResult, PaginationParams, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult, MutationResult } from "../contracts";
+import type { CreateResult, SaveResult, MutationResult } from "../contracts.js";
 export interface UserListParams extends PaginationParams {
     search?: string;
     status?: "active" | "archived" | "deleted";

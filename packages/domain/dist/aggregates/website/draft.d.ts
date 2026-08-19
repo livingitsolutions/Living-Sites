@@ -1,5 +1,5 @@
-import type { AggregateVersion, AuditTrail, LocaleCode, OrganizationId, Slug, ThemeId, VersionString, WebsiteId } from "../../shared";
-import type { WebsiteSettings, WebsiteStatus } from "../../website";
+import type { AggregateVersion, AuditTrail, LocaleCode, OrganizationId, Slug, ThemeId, VersionString, WebsiteId } from "../../shared/index.js";
+import type { WebsiteSettings, WebsiteStatus } from "../../website/index.js";
 export type WebsiteDraftVersion = AggregateVersion & {
     readonly __websiteDraft: true;
 };

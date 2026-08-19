@@ -5,7 +5,7 @@
  * a Form. Submissions are append-only from the public web; mutations are only
  * status transitions (new → read → archived) and deletion by site staff.
  */
-import type { FormId, FieldId, SubmissionId, WebsiteId, PageId, SectionId, MachineKey, ISODateString, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared";
+import type { FormId, FieldId, SubmissionId, WebsiteId, PageId, SectionId, MachineKey, ISODateString, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared/index.js";
 /** A form definition within a website. */
 export interface Form {
     readonly id: FormId;

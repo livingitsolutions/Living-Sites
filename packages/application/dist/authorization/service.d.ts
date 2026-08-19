@@ -8,8 +8,8 @@
  * 4. Granted permissions from assigned system role
  */
 import type { UserId, OrganizationId, WebsiteId } from "@livingsites/domain";
-import type { MembershipReader } from "../repositories/membership";
-import { type PermissionKey } from "./permissions";
+import type { MembershipReader } from "../repositories/membership.js";
+import { type PermissionKey } from "./permissions.js";
 export type AuthorizationDenialCode = "unauthenticated" | "no_active_membership" | "scope_mismatch" | "permission_denied" | "unknown_permission" | "invalid_context";
 export type AuthorizationDecision = {
     readonly allowed: true;

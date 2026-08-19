@@ -13,20 +13,20 @@ export {
   composeProduction,
   composeProductionFromEnvironment,
   resolveTrustedOrigins,
-} from "./production";
-export type { ProductionComposition, ProductionCompositionConfig } from "./production";
+} from "./production.js";
+export type { ProductionComposition, ProductionCompositionConfig } from "./production.js";
 export {
   AdminBootstrapError,
   reconcileProductionAdministrator,
-} from "./admin-bootstrap";
+} from "./admin-bootstrap.js";
 export type {
   AdminBootstrapErrorCode,
   AdminBootstrapInput,
   AdminBootstrapOptions,
   AdminBootstrapStatus,
-} from "./admin-bootstrap";
+} from "./admin-bootstrap.js";
 export { MissingNetlifyDatabaseError } from "@livingsites/infrastructure";
-export { composeDevelopment } from "./development";
-export type { DevelopmentComposition, DevelopmentCompositionConfig } from "./development";
-export { composeTest } from "./test";
-export type { TestComposition, TestCompositionConfig } from "./test";
+export { composeDevelopment } from "./development.js";
+export type { DevelopmentComposition, DevelopmentCompositionConfig } from "./development.js";
+export { composeTest } from "./test.js";
+export type { TestComposition, TestCompositionConfig } from "./test.js";

@@ -34,9 +34,9 @@ import type {
   OrganizationCreator,
   OrganizationListParams,
 } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { organizations, type OrganizationRow } from "../../db/schema";
-import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { organizations, type OrganizationRow } from "../../db/schema.js";
+import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper.js";
 
 type CreateRepoError = DuplicateKeyError | PersistenceUnavailableError | InvalidPersistenceStateError;
 

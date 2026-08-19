@@ -6,7 +6,7 @@
  * the platform (or a plugin). The SectionType defines the props schema; the
  * Section holds the concrete values.
  */
-import type { SectionId, SectionTypeId, WebsiteId, PageId, MachineKey, VersionString, AuditTrail, LifecycleStatus, LocaleCode, AggregateVersion } from "../shared";
+import type { SectionId, SectionTypeId, WebsiteId, PageId, MachineKey, VersionString, AuditTrail, LifecycleStatus, LocaleCode, AggregateVersion } from "../shared/index.js";
 /** A single section instance placed on a page. */
 export interface Section {
     readonly id: SectionId;

@@ -13,7 +13,7 @@ import type {
   AuditTrail,
   LifecycleStatus,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** A registered plugin package. Platform-level, not org-owned. */
 export interface Plugin {

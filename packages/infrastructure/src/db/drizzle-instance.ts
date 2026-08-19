@@ -9,7 +9,7 @@
  * postgres-js and netlify-db Drizzle instances.
  */
 import { drizzle as drizzlePg } from "drizzle-orm/postgres-js";
-import * as schema from "./schema";
+import * as schema from "./schema.js";
 
 /** Shared Drizzle database type — accepts both postgres-js and node-postgres clients. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

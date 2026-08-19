@@ -1,7 +1,7 @@
 import type { Website, WebsiteCreatedEvent, WebsiteDraft } from "@livingsites/domain";
 import type { CreateResult, WebsiteCreationPersistence } from "@livingsites/application";
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export declare class DrizzleWebsiteCreationPersistence implements WebsiteCreationPersistence {
     private readonly config;
     constructor(config: {

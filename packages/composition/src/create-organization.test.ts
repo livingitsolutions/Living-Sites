@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { composeTest } from "./test";
-import { composeDevelopment } from "./development";
-import { composeProduction } from "./production";
+import { composeTest } from "./test.js";
+import { composeDevelopment } from "./development.js";
+import { composeProduction } from "./production.js";
 import type { Plan, PlanId, ISODateString } from "@livingsites/domain";
 
 function makePlan(overrides: Partial<Plan> = {}): Plan {

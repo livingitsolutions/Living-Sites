@@ -1,6 +1,6 @@
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 
 const user = pgTable("ba_user", {
   id: text("id").primaryKey(),

@@ -7,14 +7,14 @@ import type {
   OrganizationMemberAddedEvent,
 } from "@livingsites/domain";
 import { createMembershipDraft } from "@livingsites/domain";
-import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership";
-import type { UserReader } from "../../../repositories/user";
-import type { AuthorizationService } from "../../../authorization/service";
-import { OrganizationPermissions } from "../../../authorization/permissions";
-import type { AddOrganizationMemberInput } from "./input";
-import type { AddOrganizationMemberOutput } from "./output";
-import type { AddOrganizationMemberError } from "./errors";
-import { validateAddOrganizationMemberInput } from "./validator";
+import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership.js";
+import type { UserReader } from "../../../repositories/user.js";
+import type { AuthorizationService } from "../../../authorization/service.js";
+import { OrganizationPermissions } from "../../../authorization/permissions.js";
+import type { AddOrganizationMemberInput } from "./input.js";
+import type { AddOrganizationMemberOutput } from "./output.js";
+import type { AddOrganizationMemberError } from "./errors.js";
+import { validateAddOrganizationMemberInput } from "./validator.js";
 
 export interface AddOrganizationMemberDeps {
   readonly membershipRepository: MembershipReader & MembershipMutationPersistence;

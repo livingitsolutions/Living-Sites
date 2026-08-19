@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { AggregateVersion, OrganizationId, Page, PageId, Section, SectionId, Slug, UserId, Website, WebsiteId } from "@livingsites/domain";
 import { PageStatus } from "@livingsites/domain";
 import { DeterministicIdGenerator, FakeClock } from "@livingsites/platform";
-import type { AuthorizationService, PageRepository } from "../..";
-import { SECTION_TYPES, validateSectionProps } from "../../section-types";
+import type { AuthorizationService, PageRepository } from "../../index.js";
+import { SECTION_TYPES, validateSectionProps } from "../../section-types/index.js";
 import { addSection, duplicateSection, getPageBuilderState, removeSection, reorderSections, updateSection, type BuilderDeps } from ".";
 
 const organizationId = "org_builder" as OrganizationId; const websiteId = "web_builder" as WebsiteId; const pageId = "page_builder" as PageId; const userId = "usr_builder" as UserId;

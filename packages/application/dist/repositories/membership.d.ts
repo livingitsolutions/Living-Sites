@@ -1,5 +1,5 @@
 import type { Membership, MembershipId, OrganizationId, UserId, WebsiteId, AggregateVersion, RoleValue, MembershipDraft, PaginationParams, SystemRole, OrganizationMemberAddedEvent, OrganizationMemberRoleChangedEvent, OrganizationMemberRemovedEvent } from "@livingsites/domain";
-import type { CreateResult, SaveResult, MutationResult } from "../contracts";
+import type { CreateResult, SaveResult, MutationResult } from "../contracts.js";
 export interface MembershipListParams extends PaginationParams {
     organizationId?: OrganizationId;
     userId?: UserId;

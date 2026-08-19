@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reconcileProductionAdministrator } from "./admin-bootstrap";
+import { reconcileProductionAdministrator } from "./admin-bootstrap.js";
 const email = "livingitsolutions@gmail.com";
 const now = "2026-08-19T00:00:00.000Z";
 const user = {

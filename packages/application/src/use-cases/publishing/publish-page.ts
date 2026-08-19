@@ -1,11 +1,11 @@
 import type { AggregateVersion, ISODateString, OrganizationId, PageId, PageSnapshot, Result, UserId, VersionString, WebsiteId } from "@livingsites/domain";
 import { PageStatus, WebsiteStatus } from "@livingsites/domain";
 import type { Clock, IdGenerator } from "@livingsites/platform";
-import { PagePermissions } from "../../authorization/permissions";
-import type { AuthorizationService } from "../../authorization/service";
-import type { PagePublisher, PageReader } from "../../repositories/page";
-import type { WebsiteReader } from "../../repositories/website";
-import { getSectionType, validateSectionProps } from "../../section-types";
+import { PagePermissions } from "../../authorization/permissions.js";
+import type { AuthorizationService } from "../../authorization/service.js";
+import type { PagePublisher, PageReader } from "../../repositories/page.js";
+import type { WebsiteReader } from "../../repositories/website.js";
+import { getSectionType, validateSectionProps } from "../../section-types/index.js";
 
 export type PublishPageErrorCode = "unauthorized" | "website_not_found" | "page_not_found" | "website_inactive" | "draft_required" | "validation_failed" | "policy_failed" | "concurrency_conflict" | "persistence_error";
 export type PublishPageError = { readonly code: PublishPageErrorCode; readonly message: string; readonly details?: readonly string[] };

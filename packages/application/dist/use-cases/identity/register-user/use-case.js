@@ -1,6 +1,6 @@
 import { createUserDraft } from "@livingsites/domain";
-import { mapAuthErrorToRegisterError } from "./errors";
-import { validatePassword, normalizeEmail, validateDisplayName } from "./validator";
+import { mapAuthErrorToRegisterError } from "./errors.js";
+import { validatePassword, normalizeEmail, validateDisplayName } from "./validator.js";
 export async function registerUser(input, deps) {
     if (deps.registrationMode === "disabled") {
         return {

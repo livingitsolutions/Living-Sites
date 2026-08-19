@@ -6,7 +6,7 @@
  */
 import { NetlifyDB } from "@netlify/database-dev";
 import postgres from "postgres";
-import type { DrizzleDB } from "./drizzle-instance";
+import type { DrizzleDB } from "./drizzle-instance.js";
 export interface TestDatabaseHarness {
     readonly db: DrizzleDB;
     readonly sqlClient: postgres.Sql;

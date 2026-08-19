@@ -1,5 +1,5 @@
-import { PagePermissions } from "../../authorization/permissions";
-import { proveWebsiteAccess } from "./shared";
+import { PagePermissions } from "../../authorization/permissions.js";
+import { proveWebsiteAccess } from "./shared.js";
 export async function getPage(input, deps) {
     const access = await proveWebsiteAccess({ ...input, userId: deps.authenticatedUser.userId, permission: PagePermissions.Read }, deps);
     if (!access.ok)

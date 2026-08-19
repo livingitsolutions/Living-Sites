@@ -1,6 +1,6 @@
 import type { Logger } from "@livingsites/platform";
 import type { OutboxProcessor, OutboxEventRecord, DispatchOutcome } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface OutboxProcessorConfig {
     readonly db: DrizzleDB;
     readonly logger: Logger;

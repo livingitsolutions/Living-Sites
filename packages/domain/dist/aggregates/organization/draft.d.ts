@@ -8,8 +8,8 @@
  * The __draft brand on the version field makes OrganizationDraft structurally
  * incompatible with Organization at the TypeScript level.
  */
-import type { OrganizationId, PlanId, Slug, AuditTrail, LifecycleStatus, AggregateVersion } from "../../shared";
-import type { FeatureOverride } from "../../organization/types";
+import type { OrganizationId, PlanId, Slug, AuditTrail, LifecycleStatus, AggregateVersion } from "../../shared/index.js";
+import type { FeatureOverride } from "../../organization/types.js";
 export type DraftVersion = AggregateVersion & {
     readonly __draft: true;
 };

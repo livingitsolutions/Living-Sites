@@ -5,7 +5,7 @@
  * ingestion and provider API calls are implementation concerns; the domain
  * models the profile and the aggregated metrics surfaced to the UI.
  */
-import type { WebsiteId, PageId, ISODateString, AuditTrail, AggregateVersion } from "../shared";
+import type { WebsiteId, PageId, ISODateString, AuditTrail, AggregateVersion } from "../shared/index.js";
 /** Per-website analytics integration configuration. */
 export interface AnalyticsProfile {
     readonly id: string;

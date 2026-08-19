@@ -4,7 +4,7 @@
  * SEOProfile is attached per-Page (and per-Website as defaults). SchemaProfile
  * defines JSON-LD structured-data blocks to emit in rendered pages.
  */
-import type { PageId, WebsiteId, MediaId, Slug, LocaleCode, MachineKey, AuditTrail, AggregateVersion } from "../shared";
+import type { PageId, WebsiteId, MediaId, Slug, LocaleCode, MachineKey, AuditTrail, AggregateVersion } from "../shared/index.js";
 /** Page- or website-level SEO configuration. */
 export interface SEOProfile {
     readonly id: string;

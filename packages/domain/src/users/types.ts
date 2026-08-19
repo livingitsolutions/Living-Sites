@@ -13,7 +13,7 @@ import type {
   AuditTrail,
   LifecycleStatus,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** Platform-level user identity. Not scoped to any single organization. */
 export interface User {
@@ -71,7 +71,7 @@ export interface Role {
   version: AggregateVersion;
 }
 
-import type { MachineKey } from "../shared";
+import type { MachineKey } from "../shared/index.js";
 type MachineKeyRole = MachineKey;
 
 export enum SystemRole {

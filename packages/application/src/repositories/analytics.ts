@@ -12,7 +12,7 @@ import type {
   CreateResult,
   SaveResult,
   MutationResult,
-} from "../contracts";
+} from "../contracts.js";
 
 export interface AnalyticsProfileRepository {
   findById(id: string): Promise<AnalyticsProfile | null>;

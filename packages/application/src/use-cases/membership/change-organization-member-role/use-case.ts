@@ -5,13 +5,13 @@ import type {
   ISODateString,
   OrganizationMemberRoleChangedEvent,
 } from "@livingsites/domain";
-import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership";
-import type { AuthorizationService } from "../../../authorization/service";
-import { OrganizationPermissions } from "../../../authorization/permissions";
-import { normalizeOrganizationRole, normalizeSystemRole } from "../../../authorization/roles";
-import type { ChangeOrganizationMemberRoleInput } from "./input";
-import type { ChangeOrganizationMemberRoleOutput } from "./output";
-import type { ChangeOrganizationMemberRoleError } from "./errors";
+import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership.js";
+import type { AuthorizationService } from "../../../authorization/service.js";
+import { OrganizationPermissions } from "../../../authorization/permissions.js";
+import { normalizeOrganizationRole, normalizeSystemRole } from "../../../authorization/roles.js";
+import type { ChangeOrganizationMemberRoleInput } from "./input.js";
+import type { ChangeOrganizationMemberRoleOutput } from "./output.js";
+import type { ChangeOrganizationMemberRoleError } from "./errors.js";
 
 export interface ChangeOrganizationMemberRoleDeps {
   readonly membershipRepository: MembershipReader & MembershipMutationPersistence;

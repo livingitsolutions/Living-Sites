@@ -8,7 +8,7 @@
  * Contracts only. No implementation in this milestone.
  */
 import type { SectionTypeRepository, SectionTypeRegistry } from "@livingsites/application";
-import type { DatabaseBackedAdapter } from "../shared";
+import type { DatabaseBackedAdapter } from "../shared.js";
 /**
  * Adapts SectionTypeRepository and SectionTypeRegistry to a database
  * provider. Composes them as named sub-adapters to avoid signature conflicts

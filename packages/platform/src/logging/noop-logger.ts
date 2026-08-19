@@ -1,7 +1,7 @@
 /**
  * NoopLogger — discards all log output.
  */
-import type { Logger, LogEntry, LogLevel } from "../index";
+import type { Logger, LogEntry, LogLevel } from "../index.js";
 
 export class NoopLogger implements Logger {
   readonly level: LogLevel;

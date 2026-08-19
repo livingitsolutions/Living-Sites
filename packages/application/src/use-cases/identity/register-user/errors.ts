@@ -1,4 +1,4 @@
-import type { AuthenticationError } from "../../../identity/port";
+import type { AuthenticationError } from "../../../identity/port.js";
 
 export type RegisterUserError =
   | { readonly code: "input_validation"; readonly message: string; readonly field: string; readonly value: string }

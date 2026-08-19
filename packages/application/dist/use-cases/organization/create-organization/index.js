@@ -1,3 +1,3 @@
-export { validateCreateOrganizationInput } from "./validator";
-export { createOrganization } from "./use-case";
+export { validateCreateOrganizationInput } from "./validator.js";
+export { createOrganization } from "./use-case.js";
 //# sourceMappingURL=index.js.map

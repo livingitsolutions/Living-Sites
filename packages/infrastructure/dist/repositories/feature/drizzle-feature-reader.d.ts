@@ -1,7 +1,7 @@
 import type { Logger } from "@livingsites/platform";
 import type { Feature, FeatureId, PlanId } from "@livingsites/domain";
 import type { FeatureReader } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface DrizzleFeatureReaderConfig {
     readonly db: DrizzleDB;
     readonly logger: Logger;

@@ -1,7 +1,7 @@
 import { createPageDraft, normalizePageSlug } from "@livingsites/domain";
-import { PagePermissions } from "../../authorization/permissions";
-import { PageSlugPolicy, PageWebsiteActivePolicy } from "../../policies/page";
-import { proveWebsiteAccess } from "./shared";
+import { PagePermissions } from "../../authorization/permissions.js";
+import { PageSlugPolicy, PageWebsiteActivePolicy } from "../../policies/page/index.js";
+import { proveWebsiteAccess } from "./shared.js";
 export async function createPage(input, deps) {
     const access = await proveWebsiteAccess({ ...input, userId: deps.authenticatedUser.userId, permission: PagePermissions.Create }, deps);
     if (!access.ok)

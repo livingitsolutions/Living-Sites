@@ -2,10 +2,10 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { drizzle } from "drizzle-orm/pglite";
 import { NetlifyDB } from "@netlify/database-dev";
 import { NoopLogger } from "@livingsites/platform";
-import { DrizzleSuperAdminStore } from "./drizzle-super-admin-store";
-import { platformSuperAdmins, platformUsers } from "../../db/schema";
-import * as schema from "../../db/schema";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import { DrizzleSuperAdminStore } from "./drizzle-super-admin-store.js";
+import { platformSuperAdmins, platformUsers } from "../../db/schema.js";
+import * as schema from "../../db/schema.js";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 
 describe("Platform Super Admin Bootstrap — integration", () => {
   let netlifyDB: NetlifyDB;

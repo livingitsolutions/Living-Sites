@@ -1,1 +1,1 @@
-export { WebsiteStatus } from "./types";
+export { WebsiteStatus } from "./types.js";

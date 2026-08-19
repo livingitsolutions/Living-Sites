@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { normalizeOrganizationRole, normalizeSystemRole } from "@livingsites/application";
-import { membershipDraftToInsertData, rowToMembership } from "../../db/membership-mapper";
-import { buildOutboxInsert } from "../../db/outbox-mapper";
-import { applicationOutbox, memberships, organizations, } from "../../db/schema";
+import { membershipDraftToInsertData, rowToMembership } from "../../db/membership-mapper.js";
+import { buildOutboxInsert } from "../../db/outbox-mapper.js";
+import { applicationOutbox, memberships, organizations, } from "../../db/schema.js";
 function isDuplicateKeyError(error) {
     if (!error || typeof error !== "object")
         return false;

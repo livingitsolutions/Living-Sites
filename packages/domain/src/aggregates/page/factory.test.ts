@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ISODateString, PageId, Slug, UserId, WebsiteId } from "../../shared";
-import { PageStatus } from "../../page";
-import { createPageDraft, normalizePageSlug } from "./factory";
+import type { ISODateString, PageId, Slug, UserId, WebsiteId } from "../../shared/index.js";
+import { PageStatus } from "../../page/index.js";
+import { createPageDraft, normalizePageSlug } from "./factory.js";
 
 describe("Page draft factory", () => {
   it("normalizes a slug and creates a version-zero draft", () => {

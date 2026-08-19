@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Membership, Organization, OrganizationId, Plan, PlanId, UserId, Website, WebsiteDraft, WebsiteId } from "@livingsites/domain";
-import { AuthorizationService } from "../../../authorization/service";
-import { createWebsite } from "./use-case";
+import { AuthorizationService } from "../../../authorization/service.js";
+import { createWebsite } from "./use-case.js";
 
 const orgA = "org_a" as OrganizationId;
 const orgB = "org_b" as OrganizationId;

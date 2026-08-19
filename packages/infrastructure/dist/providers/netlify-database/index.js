@@ -16,7 +16,7 @@ import { drizzle as drizzlePostgres } from "drizzle-orm/node-postgres";
 import { drizzle as drizzlePostgresJs } from "drizzle-orm/postgres-js";
 import { getDatabase } from "@netlify/database";
 import postgres from "postgres";
-import * as schema from "../../db/schema";
+import * as schema from "../../db/schema.js";
 export class MissingNetlifyDatabaseError extends Error {
     constructor(message) {
         super(message);

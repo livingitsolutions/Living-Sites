@@ -19,13 +19,13 @@
  * corresponding Platform User silently. See ADR 010.
  */
 import type { Result } from "@livingsites/domain";
-import type { AuthenticationPort, RegistrationInput } from "../../../identity/port";
-import type { RegistrationMode } from "../../../identity/registration-mode";
-import type { UserReader, UserCreator } from "../../../repositories/user";
-import type { EventPublisher } from "../../../services/event-publisher";
-import type { AppClock, AppIdGenerator } from "../../../services/organization-factory";
-import type { RegisterUserOutput } from "./output";
-import type { RegisterUserError } from "./errors";
+import type { AuthenticationPort, RegistrationInput } from "../../../identity/port.js";
+import type { RegistrationMode } from "../../../identity/registration-mode.js";
+import type { UserReader, UserCreator } from "../../../repositories/user.js";
+import type { EventPublisher } from "../../../services/event-publisher.js";
+import type { AppClock, AppIdGenerator } from "../../../services/organization-factory.js";
+import type { RegisterUserOutput } from "./output.js";
+import type { RegisterUserError } from "./errors.js";
 export interface RegisterUserDeps {
     readonly authenticationPort: AuthenticationPort;
     readonly userReader: UserReader;

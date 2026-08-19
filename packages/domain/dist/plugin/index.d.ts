@@ -6,7 +6,7 @@
  * extend the platform by registering SectionTypes, FormFieldTypes, themes,
  * and adapters — they never modify core entities.
  */
-import type { OrganizationId, MachineKey, VersionString, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared";
+import type { OrganizationId, MachineKey, VersionString, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared/index.js";
 /** A registered plugin package. Platform-level, not org-owned. */
 export interface Plugin {
     readonly id: string;

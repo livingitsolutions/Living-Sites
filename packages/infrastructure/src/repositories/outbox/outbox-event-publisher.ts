@@ -14,9 +14,9 @@ import { randomUUID } from "node:crypto";
 import type { Logger } from "@livingsites/platform";
 import type { DomainEvent, OrganizationCreatedEvent } from "@livingsites/domain";
 import type { EventPublisher } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { applicationOutbox } from "../../db/schema";
-import { buildOutboxInsert } from "../../db/outbox-mapper";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { applicationOutbox } from "../../db/schema.js";
+import { buildOutboxInsert } from "../../db/outbox-mapper.js";
 
 export interface OutboxEventPublisherConfig {
   readonly db: DrizzleDB;

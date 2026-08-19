@@ -1,5 +1,5 @@
-import type { MembershipId, OrganizationId, UserId, ISODateString, RoleValue } from "../../index";
-import type { MembershipDraft } from "./membership-draft";
+import type { MembershipId, OrganizationId, UserId, ISODateString, RoleValue } from "../../index.js";
+import type { MembershipDraft } from "./membership-draft.js";
 export interface CreateMembershipDraftInput {
     readonly id: MembershipId;
     readonly organizationId: OrganizationId;

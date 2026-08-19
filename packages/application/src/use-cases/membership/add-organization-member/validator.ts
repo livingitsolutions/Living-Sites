@@ -1,7 +1,7 @@
 import type { Result } from "@livingsites/domain";
-import { normalizeOrganizationRole } from "../../../authorization/roles";
-import type { AddOrganizationMemberInput } from "./input";
-import type { AddOrganizationMemberError } from "./errors";
+import { normalizeOrganizationRole } from "../../../authorization/roles.js";
+import type { AddOrganizationMemberInput } from "./input.js";
+import type { AddOrganizationMemberError } from "./errors.js";
 
 export interface NormalizedAddOrganizationMemberInput {
   readonly organizationId: string;

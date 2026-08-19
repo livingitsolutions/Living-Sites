@@ -1,6 +1,6 @@
 import { PageStatus, WebsiteStatus } from "@livingsites/domain";
-import { PagePermissions } from "../../authorization/permissions";
-import { getSectionType, validateSectionProps } from "../../section-types";
+import { PagePermissions } from "../../authorization/permissions.js";
+import { getSectionType, validateSectionProps } from "../../section-types/index.js";
 export async function publishPage(input, deps) {
     const decision = await deps.authorizationService.can({ userId: deps.authenticatedUser.userId, organizationId: input.organizationId, websiteId: input.websiteId, permission: PagePermissions.Publish });
     if (!decision.allowed)

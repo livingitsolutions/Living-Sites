@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { OrganizationId, Page, PageId, Slug, UserId, Website, WebsiteId } from "@livingsites/domain";
 import { PageStatus, WebsiteStatus } from "@livingsites/domain";
-import { publishPage } from "./publish-page";
+import { publishPage } from "./publish-page.js";
 
 const orgId = "org_a" as OrganizationId; const websiteId = "web_a" as WebsiteId; const pageId = "page_a" as PageId; const userId = "usr_a" as UserId;
 const audit = { createdAt: "2026-08-19T00:00:00.000Z", updatedAt: "2026-08-19T00:00:00.000Z" } as Page["audit"];

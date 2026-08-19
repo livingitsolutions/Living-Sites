@@ -12,8 +12,8 @@
  * - row and insert types are private.
  */
 import { eq } from "drizzle-orm";
-import { features, planFeatureEntitlements } from "../../db/schema";
-import { rowToFeature } from "../../db/plan-feature-mapper";
+import { features, planFeatureEntitlements } from "../../db/schema.js";
+import { rowToFeature } from "../../db/plan-feature-mapper.js";
 export class DrizzleFeatureReader {
     db;
     logger;

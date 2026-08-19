@@ -17,7 +17,7 @@ import type {
   AggregateVersion,
   FeatureOverride,
 } from "@livingsites/domain";
-import type { OrganizationRow } from "./schema";
+import type { OrganizationRow } from "./schema.js";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
 
 export type MapperError = InvalidPersistenceStateError;

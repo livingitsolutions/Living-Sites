@@ -25,10 +25,10 @@ import type {
   InvalidPersistenceStateError,
 } from "@livingsites/application";
 import type { OrganizationCreationPersistence } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { organizations, applicationOutbox, type OrganizationRow } from "../../db/schema";
-import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper";
-import { buildOutboxInsert } from "../../db/outbox-mapper";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { organizations, applicationOutbox, type OrganizationRow } from "../../db/schema.js";
+import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper.js";
+import { buildOutboxInsert } from "../../db/outbox-mapper.js";
 
 type CreateRepoError = DuplicateKeyError | PersistenceUnavailableError | InvalidPersistenceStateError;
 

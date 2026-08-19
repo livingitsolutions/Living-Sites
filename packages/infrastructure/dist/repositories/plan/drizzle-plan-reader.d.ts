@@ -1,7 +1,7 @@
 import type { Logger } from "@livingsites/platform";
 import type { Plan, PlanId } from "@livingsites/domain";
 import type { PlanReader } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface DrizzlePlanReaderConfig {
     readonly db: DrizzleDB;
     readonly logger: Logger;

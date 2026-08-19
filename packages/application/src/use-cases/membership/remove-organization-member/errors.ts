@@ -1,4 +1,4 @@
-import type { ConcurrencyConflict, PersistenceUnavailableError, InvalidPersistenceStateError } from "../../../contracts";
+import type { ConcurrencyConflict, PersistenceUnavailableError, InvalidPersistenceStateError } from "../../../contracts.js";
 
 export type RemoveOrganizationMemberError =
   | { readonly code: "validation_error"; readonly message: string }

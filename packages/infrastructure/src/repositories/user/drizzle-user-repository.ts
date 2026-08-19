@@ -20,9 +20,9 @@ import type {
   InvalidPersistenceStateError,
 } from "@livingsites/application";
 import type { UserReader, UserCreator } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { platformUsers } from "../../db/schema";
-import { rowToUser, userDraftToInsertData } from "../../db/user-mapper";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { platformUsers } from "../../db/schema.js";
+import { rowToUser, userDraftToInsertData } from "../../db/user-mapper.js";
 
 type PlatformUserRow = typeof platformUsers.$inferSelect;
 

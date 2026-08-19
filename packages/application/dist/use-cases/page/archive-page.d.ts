@@ -1,8 +1,8 @@
 import type { AggregateVersion, OrganizationId, Page, PageId, Result, UserId, WebsiteId } from "@livingsites/domain";
 import type { Clock } from "@livingsites/platform";
-import type { AuthorizationService } from "../../authorization/service";
-import type { PageMutationPersistence, PageReader } from "../../repositories/page";
-import type { WebsiteReader } from "../../repositories/website";
+import type { AuthorizationService } from "../../authorization/service.js";
+import type { PageMutationPersistence, PageReader } from "../../repositories/page.js";
+import type { WebsiteReader } from "../../repositories/website.js";
 export declare function archivePage(input: {
     organizationId: OrganizationId;
     websiteId: WebsiteId;

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { applicationOutbox, websites } from "../../db/schema";
-import { buildOutboxInsert } from "../../db/outbox-mapper";
-import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper";
+import { applicationOutbox, websites } from "../../db/schema.js";
+import { buildOutboxInsert } from "../../db/outbox-mapper.js";
+import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper.js";
 export class DrizzleWebsiteCreationPersistence {
     config;
     constructor(config) {

@@ -12,18 +12,18 @@
  *
  * No implementations in this milestone — architecture only.
  */
-export * from "./shared";
-export * from "./subscription";
-export * from "./website";
-export * from "./page";
-export * from "./publishing";
-export * from "./seo";
-export * from "./media";
-export * from "./storage";
-export * from "./export";
-export * from "./builder";
-export * from "./organization";
-export * from "./platform";
-export * from "./forms";
-export * from "./ai";
+export * from "./shared/index.js";
+export * from "./subscription/index.js";
+export * from "./website/index.js";
+export * from "./page/index.js";
+export * from "./publishing/index.js";
+export * from "./seo/index.js";
+export * from "./media/index.js";
+export * from "./storage/index.js";
+export * from "./export/index.js";
+export * from "./builder/index.js";
+export * from "./organization/index.js";
+export * from "./platform/index.js";
+export * from "./forms/index.js";
+export * from "./ai/index.js";
 //# sourceMappingURL=index.js.map

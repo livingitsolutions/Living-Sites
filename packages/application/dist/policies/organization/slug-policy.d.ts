@@ -1,7 +1,7 @@
 /**
  * OrganizationSlugPolicy — validates that a slug is permitted.
  */
-import type { Policy, PolicyDecision, PolicyContext } from "../shared";
+import type { Policy, PolicyDecision, PolicyContext } from "../shared/index.js";
 export interface OrganizationSlugPolicyInput {
     readonly context: PolicyContext;
     readonly slug: string;

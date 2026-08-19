@@ -11,20 +11,20 @@
  *
  * Production packages and production entry points must NOT import test-support.
  */
-export { InMemoryOrganizationRepository, InMemoryPlanRepository, InMemoryFeatureRepository } from "./repositories/in-memory-organization-repository";
-export type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader } from "./repositories/in-memory-organization-repository";
-export { InMemoryUserRepository } from "./repositories/in-memory-user-repository";
-export { InMemoryMembershipRepository } from "./repositories/in-memory-membership-repository";
-export { FakeAuthenticationAdapter } from "./identity/fake-authentication-adapter";
-export { CapturingVerificationEmailAdapter } from "./identity/capturing-verification-email-adapter";
-export { InMemoryEventPublisher } from "./events/in-memory-event-publisher";
-export { NoopEventPublisher, FakeClock, DeterministicIdGenerator } from "./platform/test-runtime";
-export { runRepositoryContractTests } from "./repositories/contract-tests";
-export type { RepositoryContractFixtures } from "./repositories/contract-tests";
-export { runUserRepositoryContractTests } from "./repositories/user-contract-tests";
-export type { UserRepositoryContractFixtures } from "./repositories/user-contract-tests";
-export { runMembershipRepositoryContractTests } from "./repositories/membership-contract-tests";
-export type { MembershipRepositoryContractFixtures } from "./repositories/membership-contract-tests";
-export { runPlanReaderContractTests, runFeatureReaderContractTests, runOutboxContractTests } from "./repositories/plan-feature-outbox-contract-tests";
-export type { PlanReaderContractFixtures, FeatureReaderContractFixtures, OutboxContractFixtures } from "./repositories/plan-feature-outbox-contract-tests";
+export { InMemoryOrganizationRepository, InMemoryPlanRepository, InMemoryFeatureRepository } from "./repositories/in-memory-organization-repository.js";
+export type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader } from "./repositories/in-memory-organization-repository.js";
+export { InMemoryUserRepository } from "./repositories/in-memory-user-repository.js";
+export { InMemoryMembershipRepository } from "./repositories/in-memory-membership-repository.js";
+export { FakeAuthenticationAdapter } from "./identity/fake-authentication-adapter.js";
+export { CapturingVerificationEmailAdapter } from "./identity/capturing-verification-email-adapter.js";
+export { InMemoryEventPublisher } from "./events/in-memory-event-publisher.js";
+export { NoopEventPublisher, FakeClock, DeterministicIdGenerator } from "./platform/test-runtime.js";
+export { runRepositoryContractTests } from "./repositories/contract-tests.js";
+export type { RepositoryContractFixtures } from "./repositories/contract-tests.js";
+export { runUserRepositoryContractTests } from "./repositories/user-contract-tests.js";
+export type { UserRepositoryContractFixtures } from "./repositories/user-contract-tests.js";
+export { runMembershipRepositoryContractTests } from "./repositories/membership-contract-tests.js";
+export type { MembershipRepositoryContractFixtures } from "./repositories/membership-contract-tests.js";
+export { runPlanReaderContractTests, runFeatureReaderContractTests, runOutboxContractTests } from "./repositories/plan-feature-outbox-contract-tests.js";
+export type { PlanReaderContractFixtures, FeatureReaderContractFixtures, OutboxContractFixtures } from "./repositories/plan-feature-outbox-contract-tests.js";
 //# sourceMappingURL=index.d.ts.map

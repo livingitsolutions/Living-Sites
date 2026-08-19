@@ -1,12 +1,12 @@
 import type { ISODateString, OrganizationId, Page, PageCreatedEvent, PageId, Result, Slug, UserId, WebsiteId } from "@livingsites/domain";
 import { createPageDraft, normalizePageSlug } from "@livingsites/domain";
 import type { Clock, IdGenerator } from "@livingsites/platform";
-import { PagePermissions } from "../../authorization/permissions";
-import type { AuthorizationService } from "../../authorization/service";
-import { PageSlugPolicy, PageWebsiteActivePolicy } from "../../policies/page";
-import type { PageCreationPersistence, PageReader } from "../../repositories/page";
-import type { WebsiteReader } from "../../repositories/website";
-import { proveWebsiteAccess } from "./shared";
+import { PagePermissions } from "../../authorization/permissions.js";
+import type { AuthorizationService } from "../../authorization/service.js";
+import { PageSlugPolicy, PageWebsiteActivePolicy } from "../../policies/page/index.js";
+import type { PageCreationPersistence, PageReader } from "../../repositories/page.js";
+import type { WebsiteReader } from "../../repositories/website.js";
+import { proveWebsiteAccess } from "./shared.js";
 
 export type CreatePageError = { readonly code: "unauthorized" | "website_not_found" | "input_validation" | "policy_denial" | "duplicate_slug" | "persistence_error"; readonly message: string; readonly field?: "title" | "slug" };
 export async function createPage(input: { organizationId: OrganizationId; websiteId: WebsiteId; title: string; slug: string; description?: string }, deps: { authenticatedUser: { userId: UserId }; authorizationService: AuthorizationService; websiteReader: WebsiteReader; pageReader: PageReader; pageCreationPersistence: PageCreationPersistence; clock: Clock; idGenerator: IdGenerator }): Promise<Result<Page, CreatePageError>> {

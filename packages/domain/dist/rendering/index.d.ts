@@ -5,8 +5,8 @@
  * output shapes and render context) so it isn't invented in the application
  * layer. The application-layer RenderingService operates on these types.
  */
-import type { WebsiteId, PageId, LocaleCode } from "../shared";
-import type { ThemeTokens } from "../theme/types";
+import type { WebsiteId, PageId, LocaleCode } from "../shared/index.js";
+import type { ThemeTokens } from "../theme/types.js";
 /** A single rendered page output. */
 export interface RenderedPage {
     readonly path: string;

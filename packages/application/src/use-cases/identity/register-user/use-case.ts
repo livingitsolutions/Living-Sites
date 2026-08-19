@@ -31,15 +31,15 @@ import type {
   AuthenticationPort,
   RegistrationInput,
   AuthenticationSession,
-} from "../../../identity/port";
-import type { RegistrationMode } from "../../../identity/registration-mode";
-import type { UserReader, UserCreator } from "../../../repositories/user";
-import type { EventPublisher } from "../../../services/event-publisher";
-import type { AppClock, AppIdGenerator } from "../../../services/organization-factory";
-import type { RegisterUserOutput } from "./output";
-import type { RegisterUserError } from "./errors";
-import { mapAuthErrorToRegisterError } from "./errors";
-import { validatePassword, normalizeEmail, validateDisplayName } from "./validator";
+} from "../../../identity/port.js";
+import type { RegistrationMode } from "../../../identity/registration-mode.js";
+import type { UserReader, UserCreator } from "../../../repositories/user.js";
+import type { EventPublisher } from "../../../services/event-publisher.js";
+import type { AppClock, AppIdGenerator } from "../../../services/organization-factory.js";
+import type { RegisterUserOutput } from "./output.js";
+import type { RegisterUserError } from "./errors.js";
+import { mapAuthErrorToRegisterError } from "./errors.js";
+import { validatePassword, normalizeEmail, validateDisplayName } from "./validator.js";
 
 export interface RegisterUserDeps {
   readonly authenticationPort: AuthenticationPort;

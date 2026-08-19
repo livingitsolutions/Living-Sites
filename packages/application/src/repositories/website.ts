@@ -1,5 +1,5 @@
 import type { AggregateVersion, OrganizationId, Website, WebsiteCreatedEvent, WebsiteDraft, WebsiteId, WebsiteSettings } from "@livingsites/domain";
-import type { CreateResult, SaveResult } from "../contracts";
+import type { CreateResult, SaveResult } from "../contracts.js";
 
 export interface WebsiteReader {
   findById(id: WebsiteId): Promise<Website | null>;

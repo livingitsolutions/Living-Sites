@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ISODateString, OrganizationId, Slug, UserId, WebsiteId } from "../../shared";
-import { createWebsiteDraft, normalizeHostname } from "./factory";
+import type { ISODateString, OrganizationId, Slug, UserId, WebsiteId } from "../../shared/index.js";
+import { createWebsiteDraft, normalizeHostname } from "./factory.js";
 
 describe("createWebsiteDraft", () => {
   it("creates a normalized version-zero draft with injected identity and time", () => {

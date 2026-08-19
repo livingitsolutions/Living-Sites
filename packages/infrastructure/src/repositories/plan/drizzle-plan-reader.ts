@@ -15,9 +15,9 @@ import { eq, and } from "drizzle-orm";
 import type { Logger } from "@livingsites/platform";
 import type { Plan, PlanId } from "@livingsites/domain";
 import type { PlanReader } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { plans, planFeatureEntitlements, features, type PlanRow, type EntitlementRow, type FeatureRow } from "../../db/schema";
-import { rowToPlan, rowsToEntitlements } from "../../db/plan-feature-mapper";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { plans, planFeatureEntitlements, features, type PlanRow, type EntitlementRow, type FeatureRow } from "../../db/schema.js";
+import { rowToPlan, rowsToEntitlements } from "../../db/plan-feature-mapper.js";
 
 export interface DrizzlePlanReaderConfig {
   readonly db: DrizzleDB;

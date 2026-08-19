@@ -6,8 +6,8 @@ import type {
   LifecycleStatus,
   AggregateVersion,
   RoleValue,
-} from "../../index";
-import { INITIAL_AGGREGATE_VERSION } from "../../shared";
+} from "../../index.js";
+import { INITIAL_AGGREGATE_VERSION } from "../../shared/index.js";
 
 export type MembershipDraftVersion = AggregateVersion & { readonly __draft: true };
 

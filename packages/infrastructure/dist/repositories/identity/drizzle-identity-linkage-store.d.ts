@@ -1,4 +1,4 @@
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface PendingIdentityLinkage {
     readonly id: string;
     readonly authSubjectId: string;

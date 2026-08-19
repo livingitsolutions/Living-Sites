@@ -19,7 +19,7 @@ import type {
   PlanTier,
   FeatureCategory,
 } from "@livingsites/domain";
-import type { PlanRow, FeatureRow, EntitlementRow } from "./schema";
+import type { PlanRow, FeatureRow, EntitlementRow } from "./schema.js";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
 
 export type PlanMapperError = InvalidPersistenceStateError;

@@ -3,5 +3,5 @@
  *
  * Each capability is a self-contained module under its own folder.
  */
-export * from "./create-organization";
+export * from "./create-organization/index.js";
 //# sourceMappingURL=index.js.map

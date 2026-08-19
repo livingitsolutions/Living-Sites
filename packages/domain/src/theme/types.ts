@@ -13,7 +13,7 @@ import type {
   VersionString,
   AuditTrail,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** Visual theme controlling the rendered appearance of a website. */
 export interface Theme {

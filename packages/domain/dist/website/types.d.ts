@@ -7,7 +7,7 @@
  * Navigation and Theme were split into their own bounded contexts
  * (./navigation, ./theme) but remain re-exported here for compatibility.
  */
-import type { WebsiteId, OrganizationId, ThemeId, Slug, LocaleCode, AuditTrail, VersionString, AggregateVersion } from "../shared";
+import type { WebsiteId, OrganizationId, ThemeId, Slug, LocaleCode, AuditTrail, VersionString, AggregateVersion } from "../shared/index.js";
 /** A website within an organization. */
 export interface Website {
     readonly id: WebsiteId;
@@ -34,7 +34,7 @@ export interface Website {
     version: AggregateVersion;
     readonly audit: AuditTrail;
     /** Soft-delete timestamp; populated only for archived websites. */
-    archivedAt: import("../shared").ISODateString | null;
+    archivedAt: import("../shared/index.js").ISODateString | null;
 }
 /** Website-scoped configuration that is not content. */
 export interface WebsiteSettings {

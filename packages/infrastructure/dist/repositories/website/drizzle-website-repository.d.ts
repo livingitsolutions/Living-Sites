@@ -1,7 +1,7 @@
 import type { OrganizationId, Website, WebsiteDraft, WebsiteId, WebsiteSettings } from "@livingsites/domain";
 import type { CreateResult, SaveResult, WebsiteRepository } from "@livingsites/application";
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export declare class DrizzleWebsiteRepository implements WebsiteRepository {
     private readonly config;
     constructor(config: {

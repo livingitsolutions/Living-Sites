@@ -1,4 +1,4 @@
-import type { PolicyDecision } from "../shared";
+import type { PolicyDecision } from "../shared/index.js";
 export declare class PageSlugPolicy {
     readonly name = "PageSlugPolicy";
     evaluate(slug: string, duplicate: boolean): PolicyDecision;

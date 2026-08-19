@@ -1,7 +1,7 @@
 import type { Membership, Organization, User } from "@livingsites/domain";
 import { describe, expect, it } from "vitest";
-import type { ProductionComposition } from "./production";
-import { AdminBootstrapError, reconcileProductionAdministrator } from "./admin-bootstrap";
+import type { ProductionComposition } from "./production.js";
+import { AdminBootstrapError, reconcileProductionAdministrator } from "./admin-bootstrap.js";
 
 const email = "livingitsolutions@gmail.com";
 const now = "2026-08-19T00:00:00.000Z";

@@ -1,9 +1,9 @@
 import type { Result } from "@livingsites/domain";
-import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership";
-import type { AuthorizationService } from "../../../authorization/service";
-import type { ChangeOrganizationMemberRoleInput } from "./input";
-import type { ChangeOrganizationMemberRoleOutput } from "./output";
-import type { ChangeOrganizationMemberRoleError } from "./errors";
+import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership.js";
+import type { AuthorizationService } from "../../../authorization/service.js";
+import type { ChangeOrganizationMemberRoleInput } from "./input.js";
+import type { ChangeOrganizationMemberRoleOutput } from "./output.js";
+import type { ChangeOrganizationMemberRoleError } from "./errors.js";
 export interface ChangeOrganizationMemberRoleDeps {
     readonly membershipRepository: MembershipReader & MembershipMutationPersistence;
     readonly authorizationService: AuthorizationService;

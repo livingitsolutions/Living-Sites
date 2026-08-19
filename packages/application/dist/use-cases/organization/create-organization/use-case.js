@@ -1,6 +1,6 @@
-import { createOrganizationDraftViaPorts } from "../../../services/organization-factory";
-import { OrganizationCreationPolicyChain } from "../../../policies/organization";
-import { validateCreateOrganizationInput } from "./validator";
+import { createOrganizationDraftViaPorts } from "../../../services/organization-factory.js";
+import { OrganizationCreationPolicyChain } from "../../../policies/organization/index.js";
+import { validateCreateOrganizationInput } from "./validator.js";
 export async function createOrganization(input, deps) {
     const validation = validateCreateOrganizationInput(input);
     if (!validation.ok) {

@@ -12,12 +12,12 @@
  */
 import { eq, and, lte, inArray, sql } from "drizzle-orm";
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { identityLinkages, type IdentityLinkageRow } from "../../db/identity-linkage-schema";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { identityLinkages, type IdentityLinkageRow } from "../../db/identity-linkage-schema.js";
 import { createUserDraft } from "@livingsites/domain";
 import type { UserId, AuthSubjectId, ISODateString } from "@livingsites/domain";
 import type { UserCreator, UserReader } from "@livingsites/application";
-import type { OrphanIdentityDisabler } from "./drizzle-orphan-identity-disabler";
+import type { OrphanIdentityDisabler } from "./drizzle-orphan-identity-disabler.js";
 
 export interface LinkageReconcilerConfig {
   readonly db: DrizzleDB;

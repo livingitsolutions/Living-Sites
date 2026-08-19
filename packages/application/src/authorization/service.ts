@@ -12,14 +12,14 @@ import type {
   OrganizationId,
   WebsiteId,
 } from "@livingsites/domain";
-import type { MembershipReader } from "../repositories/membership";
+import type { MembershipReader } from "../repositories/membership.js";
 import {
   type PermissionKey,
   isKnownPermission,
-} from "./permissions";
+} from "./permissions.js";
 import {
   getPermissionsForRole,
-} from "./roles";
+} from "./roles.js";
 import { SystemRoles } from "@livingsites/domain";
 
 export type AuthorizationDenialCode =

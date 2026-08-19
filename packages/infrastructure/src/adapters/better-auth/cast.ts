@@ -1,4 +1,4 @@
-import type { BetterAuthInstance } from "./index";
+import type { BetterAuthInstance } from "./index.js";
 
 /**
  * Cast a `betterAuth()` return value to the structural `BetterAuthInstance`.

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { validateCreateOrganizationInput } from "./validator";
-import type { CreateOrganizationInput } from "./input";
+import { validateCreateOrganizationInput } from "./validator.js";
+import type { CreateOrganizationInput } from "./input.js";
 
 function makeInput(overrides: Partial<CreateOrganizationInput> = {}): CreateOrganizationInput {
   return {

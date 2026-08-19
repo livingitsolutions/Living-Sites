@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PageStatus } from "../../page";
-import { createPageDraft, normalizePageSlug } from "./factory";
+import { PageStatus } from "../../page/index.js";
+import { createPageDraft, normalizePageSlug } from "./factory.js";
 describe("Page draft factory", () => {
     it("normalizes a slug and creates a version-zero draft", () => {
         expect(normalizePageSlug(" /Services/Home Remodel/ ")).toBe("services/home-remodel");

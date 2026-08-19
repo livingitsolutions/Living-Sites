@@ -17,7 +17,7 @@ import type {
   LifecycleStatus,
   LocaleCode,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** A single section instance placed on a page. */
 export interface Section {

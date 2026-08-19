@@ -8,7 +8,7 @@
  * Contracts only. No implementation in this milestone.
  */
 import type { WebsiteRepository } from "@livingsites/application";
-import type { DatabaseBackedAdapter } from "../shared";
+import type { DatabaseBackedAdapter } from "../shared.js";
 /**
  * Adapts WebsiteRepository to a database provider. WebsiteSettings is
  * persisted atomically with the Website root — no separate adapter needed.
@@ -16,5 +16,5 @@ import type { DatabaseBackedAdapter } from "../shared";
 export interface WebsiteRepositoryAdapter extends DatabaseBackedAdapter {
     readonly websites: WebsiteRepository;
 }
-export { DrizzleWebsiteRepository } from "./drizzle-website-repository";
+export { DrizzleWebsiteRepository } from "./drizzle-website-repository.js";
 //# sourceMappingURL=index.d.ts.map

@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { betterAuthSessions, betterAuthUsers } from "../../db/schema";
+import { betterAuthSessions, betterAuthUsers } from "../../db/schema.js";
 export class DrizzleOrphanIdentityDisabler {
     db;
     constructor(db) {

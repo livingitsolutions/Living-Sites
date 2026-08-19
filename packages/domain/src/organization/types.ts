@@ -15,7 +15,7 @@ import type {
   AuditTrail,
   LifecycleStatus,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** A single commercial tenant on the platform. */
 export interface Organization {
@@ -107,10 +107,10 @@ export interface FeatureOverride {
 }
 
 /** Re-export the OrganizationDraft from the aggregates folder. */
-export type { OrganizationDraft, DraftVersion } from "../aggregates/organization/draft";
+export type { OrganizationDraft, DraftVersion } from "../aggregates/organization/draft.js";
 
 /** Subset of FeatureCategory scoped to this context for re-export convenience. */
-import type { FeatureCategory } from "../shared";
+import type { FeatureCategory } from "../shared/index.js";
 type FeatureCategoryValue = `${FeatureCategory}`;
-import type { PlanTier } from "../shared";
+import type { PlanTier } from "../shared/index.js";
 type PlanTierValue = `${PlanTier}`;

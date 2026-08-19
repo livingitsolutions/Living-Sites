@@ -11,7 +11,7 @@ import type {
 import type {
   CreateResult,
   SaveResult,
-} from "../contracts";
+} from "../contracts.js";
 
 export interface ExportJobListParams extends PaginationParams {
   websiteId?: WebsiteId;

@@ -5,7 +5,7 @@ import type {
   Policy,
   PolicyDecision,
   PolicyContext,
-} from "../shared";
+} from "../shared/index.js";
 
 export interface OrganizationSlugPolicyInput {
   readonly context: PolicyContext;

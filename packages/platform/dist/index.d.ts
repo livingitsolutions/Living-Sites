@@ -16,13 +16,13 @@
  *
  * Architecture-only milestone: contracts and documentation only.
  */
-export * from "./config";
-export * from "./environment";
-export * from "./startup";
-export * from "./logging";
-export * from "./telemetry";
-export * from "./feature-flags";
-export * from "./clock";
-export * from "./ids";
-export * from "./health";
+export * from "./config/index.js";
+export * from "./environment/index.js";
+export * from "./startup/index.js";
+export * from "./logging/index.js";
+export * from "./telemetry/index.js";
+export * from "./feature-flags/index.js";
+export * from "./clock/index.js";
+export * from "./ids/index.js";
+export * from "./health/index.js";
 //# sourceMappingURL=index.d.ts.map

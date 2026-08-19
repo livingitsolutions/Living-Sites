@@ -1,1 +1,1 @@
-export { AnalyticsProvider, MetricKey } from "./types";
+export { AnalyticsProvider, MetricKey } from "./types.js";

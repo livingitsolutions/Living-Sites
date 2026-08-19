@@ -4,8 +4,8 @@ import type {
   AuditTrail,
   LifecycleStatus,
   AggregateVersion,
-} from "../../shared";
-import { INITIAL_AGGREGATE_VERSION } from "../../shared";
+} from "../../shared/index.js";
+import { INITIAL_AGGREGATE_VERSION } from "../../shared/index.js";
 
 export type DraftVersion = AggregateVersion & { readonly __draft: true };
 

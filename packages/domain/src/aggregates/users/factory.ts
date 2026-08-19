@@ -4,9 +4,9 @@ import type {
   ISODateString,
   AuditTrail,
   LifecycleStatus,
-} from "../../shared";
-import type { UserDraft, DraftVersion } from "./draft";
-import { DRAFT_VERSION } from "./draft";
+} from "../../shared/index.js";
+import type { UserDraft, DraftVersion } from "./draft.js";
+import { DRAFT_VERSION } from "./draft.js";
 
 export interface CreateUserDraftInput {
   readonly id: UserId;

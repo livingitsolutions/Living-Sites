@@ -1,10 +1,10 @@
 import type { Result } from "@livingsites/domain";
-import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership";
-import type { UserReader } from "../../../repositories/user";
-import type { AuthorizationService } from "../../../authorization/service";
-import type { AddOrganizationMemberInput } from "./input";
-import type { AddOrganizationMemberOutput } from "./output";
-import type { AddOrganizationMemberError } from "./errors";
+import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership.js";
+import type { UserReader } from "../../../repositories/user.js";
+import type { AuthorizationService } from "../../../authorization/service.js";
+import type { AddOrganizationMemberInput } from "./input.js";
+import type { AddOrganizationMemberOutput } from "./output.js";
+import type { AddOrganizationMemberError } from "./errors.js";
 export interface AddOrganizationMemberDeps {
     readonly membershipRepository: MembershipReader & MembershipMutationPersistence;
     readonly userReader?: UserReader;

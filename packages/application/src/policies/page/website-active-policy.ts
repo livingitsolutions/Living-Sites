@@ -1,4 +1,4 @@
-import type { PolicyDecision } from "../shared";
+import type { PolicyDecision } from "../shared/index.js";
 
 export class PageWebsiteActivePolicy {
   readonly name = "PageWebsiteActivePolicy";

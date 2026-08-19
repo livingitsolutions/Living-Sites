@@ -1,5 +1,5 @@
-import { OrganizationPermissions } from "../../../authorization/permissions";
-import { normalizeOrganizationRole, normalizeSystemRole } from "../../../authorization/roles";
+import { OrganizationPermissions } from "../../../authorization/permissions.js";
+import { normalizeOrganizationRole, normalizeSystemRole } from "../../../authorization/roles.js";
 export async function changeOrganizationMemberRole(input, deps) {
     const membershipId = typeof input.membershipId === "string" ? input.membershipId.trim() : "";
     const callerUserId = typeof input.callerUserId === "string" ? input.callerUserId.trim() : "";

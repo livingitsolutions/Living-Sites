@@ -19,7 +19,7 @@ import {
   SettingsPermissions,
   ALL_PERMISSIONS,
   type PermissionKey,
-} from "./permissions";
+} from "./permissions.js";
 import { SystemRoles } from "@livingsites/domain";
 
 export const SYSTEM_ROLE_PERMISSIONS: Readonly<Record<string, readonly PermissionKey[]>> = {

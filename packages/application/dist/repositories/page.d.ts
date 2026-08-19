@@ -1,5 +1,5 @@
 import type { AggregateVersion, OrganizationId, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PagePublishedEvent, PageRestoredEvent, PageSnapshot, PageStatus, Section, SectionSnapshotEntry, UserId, VersionString, WebsiteId } from "@livingsites/domain";
-import type { CreateResult, SaveResult } from "../contracts";
+import type { CreateResult, SaveResult } from "../contracts.js";
 import type { Result } from "@livingsites/domain";
 export interface PageReader {
     findById(id: PageId): Promise<Page | null>;

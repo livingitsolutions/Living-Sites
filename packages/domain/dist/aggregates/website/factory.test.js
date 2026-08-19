@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createWebsiteDraft, normalizeHostname } from "./factory";
+import { createWebsiteDraft, normalizeHostname } from "./factory.js";
 describe("createWebsiteDraft", () => {
     it("creates a normalized version-zero draft with injected identity and time", () => {
         const draft = createWebsiteDraft({

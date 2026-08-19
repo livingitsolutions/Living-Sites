@@ -1,6 +1,6 @@
 /**
  * Organization aggregates — draft, factory, and contracts.
  */
-export * from "./draft";
-export * from "./factory";
+export * from "./draft.js";
+export * from "./factory.js";
 //# sourceMappingURL=index.d.ts.map

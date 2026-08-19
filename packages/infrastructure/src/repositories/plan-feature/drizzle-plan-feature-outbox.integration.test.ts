@@ -12,15 +12,15 @@ import { NetlifyDB } from "@netlify/database-dev";
 import { NoopLogger } from "@livingsites/platform";
 import type { PlanId, ISODateString } from "@livingsites/domain";
 import type { OrganizationCreatedEvent } from "@livingsites/domain";
-import { DrizzlePlanReader } from "../plan/drizzle-plan-reader";
-import { DrizzleFeatureReader } from "../feature/drizzle-feature-reader";
-import { DrizzleOrganizationCreationPersistence } from "../outbox/drizzle-organization-creation-persistence";
-import { DrizzleOutboxProcessor } from "../outbox/drizzle-outbox-processor";
-import { seedPlansAndFeatures, PLAN_FREE_ID, PLAN_LIFETIME_ID } from "../../db/seed";
+import { DrizzlePlanReader } from "../plan/drizzle-plan-reader.js";
+import { DrizzleFeatureReader } from "../feature/drizzle-feature-reader.js";
+import { DrizzleOrganizationCreationPersistence } from "../outbox/drizzle-organization-creation-persistence.js";
+import { DrizzleOutboxProcessor } from "../outbox/drizzle-outbox-processor.js";
+import { seedPlansAndFeatures, PLAN_FREE_ID, PLAN_LIFETIME_ID } from "../../db/seed.js";
 import { createOrganizationDraft } from "@livingsites/domain";
 import type { OrganizationDraft, OrganizationId, Slug } from "@livingsites/domain";
-import * as schema from "../../db/schema";
-import { plans, features, planFeatureEntitlements, applicationOutbox, organizations } from "../../db/schema";
+import * as schema from "../../db/schema.js";
+import { plans, features, planFeatureEntitlements, applicationOutbox, organizations } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
 
 describe("Drizzle Plan/Feature/Outbox — database integration", () => {

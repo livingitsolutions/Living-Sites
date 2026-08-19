@@ -17,5 +17,5 @@ export interface IdGenerator {
   generatePrefixed(prefix: string): string;
 }
 
-export { CryptoIdGenerator } from "./crypto-id-generator";
-export { DeterministicIdGenerator } from "./deterministic-id-generator";
+export { CryptoIdGenerator } from "./crypto-id-generator.js";
+export { DeterministicIdGenerator } from "./deterministic-id-generator.js";

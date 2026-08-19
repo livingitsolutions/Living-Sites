@@ -1,7 +1,7 @@
 import type { Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PageRestoredEvent, PageStatus, Section, WebsiteId } from "@livingsites/domain";
 import type { CreateResult, PageRepository, SaveResult } from "@livingsites/application";
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface DrizzlePageRepositoryConfig {
     readonly db: DrizzleDB;
     readonly logger: Logger;

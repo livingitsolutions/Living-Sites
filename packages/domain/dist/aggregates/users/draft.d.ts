@@ -1,4 +1,4 @@
-import type { UserId, AuthSubjectId, AuditTrail, LifecycleStatus, AggregateVersion } from "../../shared";
+import type { UserId, AuthSubjectId, AuditTrail, LifecycleStatus, AggregateVersion } from "../../shared/index.js";
 export type DraftVersion = AggregateVersion & {
     readonly __draft: true;
 };

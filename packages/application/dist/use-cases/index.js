@@ -12,21 +12,21 @@
  *
  * No implementations in this milestone — architecture only.
  */
-export * from "./organization";
-export * from "./membership";
-export * from "./website";
-export * from "./page";
-export * from "./page-builder";
-export * from "./content";
-export * from "./builder";
-export * from "./media";
-export * from "./seo";
-export * from "./analytics";
-export * from "./forms";
-export * from "./export";
-export * from "./plugins";
-export * from "./identity";
-export * from "./platform";
-export * from "./publishing";
-export * from "./rendering";
+export * from "./organization/index.js";
+export * from "./membership/index.js";
+export * from "./website/index.js";
+export * from "./page/index.js";
+export * from "./page-builder/index.js";
+export * from "./content/index.js";
+export * from "./builder/index.js";
+export * from "./media/index.js";
+export * from "./seo/index.js";
+export * from "./analytics/index.js";
+export * from "./forms/index.js";
+export * from "./export/index.js";
+export * from "./plugins/index.js";
+export * from "./identity/index.js";
+export * from "./platform/index.js";
+export * from "./publishing/index.js";
+export * from "./rendering/index.js";
 //# sourceMappingURL=index.js.map

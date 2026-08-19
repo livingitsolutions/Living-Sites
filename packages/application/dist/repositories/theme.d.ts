@@ -1,5 +1,5 @@
 import type { Theme, ThemeId, OrganizationId, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult } from "../contracts";
+import type { CreateResult, SaveResult } from "../contracts.js";
 export interface ThemeRepository {
     findById(id: ThemeId): Promise<Theme | null>;
     listForOrganization(organizationId: OrganizationId): Promise<Theme[]>;

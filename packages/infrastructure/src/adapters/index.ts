@@ -5,11 +5,11 @@
  * without naming a specific provider. The composition root selects which
  * concrete implementation to bind to each adapter.
  */
-export * from "./database";
-export * from "./storage";
-export * from "./search";
-export * from "./email";
-export * from "./cache";
-export * from "./queue";
-export * from "./telemetry";
-export * from "./logging";
+export * from "./database/index.js";
+export * from "./storage/index.js";
+export * from "./search/index.js";
+export * from "./email/index.js";
+export * from "./cache/index.js";
+export * from "./queue/index.js";
+export * from "./telemetry/index.js";
+export * from "./logging/index.js";

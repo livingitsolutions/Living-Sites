@@ -5,7 +5,7 @@
  * Private to Infrastructure. Never leaked outside. Validates payload
  * shape and rejects malformed state.
  */
-import type { OutboxRow, OutboxInsert } from "./schema";
+import type { OutboxRow, OutboxInsert } from "./schema.js";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
 import type { OutboxEventRecord } from "@livingsites/application";
 

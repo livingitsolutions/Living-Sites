@@ -1,6 +1,6 @@
 import type { Result } from "@livingsites/domain";
-import type { AddOrganizationMemberInput } from "./input";
-import type { AddOrganizationMemberError } from "./errors";
+import type { AddOrganizationMemberInput } from "./input.js";
+import type { AddOrganizationMemberError } from "./errors.js";
 export interface NormalizedAddOrganizationMemberInput {
     readonly organizationId: string;
     readonly userId: string;

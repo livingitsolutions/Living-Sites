@@ -4,8 +4,8 @@ import type { ISODateString, OrganizationId, PageId, PagePublishedEvent, PageSna
 import type { PagePublicationCandidate, PagePublicationError, PagePublisher, PageSnapshotReader } from "@livingsites/application";
 import type { Result } from "@livingsites/domain";
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { applicationOutbox, pageSnapshots, pages } from "../../db/schema";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { applicationOutbox, pageSnapshots, pages } from "../../db/schema.js";
 
 export interface DrizzlePagePublicationRepositoryConfig {
   readonly db: DrizzleDB;

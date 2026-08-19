@@ -23,8 +23,8 @@ import type {
 import type { Result, AuthSubjectId } from "@livingsites/domain";
 import type { Logger } from "@livingsites/platform";
 
-export { asBetterAuthInstance } from "./cast";
-export { createBetterAuthDatabaseAdapter } from "./database";
+export { asBetterAuthInstance } from "./cast.js";
+export { createBetterAuthDatabaseAdapter } from "./database.js";
 
 /**
  * Minimal structural type for the Better Auth instance. We only use

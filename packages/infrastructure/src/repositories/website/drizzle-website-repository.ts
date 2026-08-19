@@ -3,9 +3,9 @@ import type { OrganizationId, Website, WebsiteDraft, WebsiteId, WebsiteSettings 
 import { normalizeHostname, WebsiteStatus } from "@livingsites/domain";
 import type { CreateResult, SaveResult, WebsiteRepository } from "@livingsites/application";
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { websites, type WebsiteRow } from "../../db/schema";
-import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { websites, type WebsiteRow } from "../../db/schema.js";
+import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper.js";
 
 function duplicate(error: unknown): boolean {
   return !!error && typeof error === "object" && ((error as { code?: string }).code === "23505" || /duplicate|unique/i.test(String((error as { message?: string }).message)));

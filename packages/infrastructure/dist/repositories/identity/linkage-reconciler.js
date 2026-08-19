@@ -11,7 +11,7 @@
  * the same linkage.
  */
 import { eq, and, lte, inArray, sql } from "drizzle-orm";
-import { identityLinkages } from "../../db/identity-linkage-schema";
+import { identityLinkages } from "../../db/identity-linkage-schema.js";
 import { createUserDraft } from "@livingsites/domain";
 export class LinkageReconciler {
     db;

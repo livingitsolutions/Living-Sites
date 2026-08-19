@@ -15,9 +15,9 @@ import type {
 } from "@livingsites/domain";
 import { createOrganizationDraft } from "@livingsites/domain";
 import { NoopLogger } from "@livingsites/platform";
-import { DrizzleOrganizationRepository } from "./drizzle-organization-repository";
-import { organizations } from "../../db/schema";
-import * as schema from "../../db/schema";
+import { DrizzleOrganizationRepository } from "./drizzle-organization-repository.js";
+import { organizations } from "../../db/schema.js";
+import * as schema from "../../db/schema.js";
 import { runRepositoryContractTests } from "@livingsites/test-support";
 
 function makeDraft(overrides: Partial<{

@@ -1,4 +1,4 @@
-import { normalizeOrganizationRole } from "../../../authorization/roles";
+import { normalizeOrganizationRole } from "../../../authorization/roles.js";
 export function validateAddOrganizationMemberInput(input) {
     const organizationId = typeof input.organizationId === "string" ? input.organizationId.trim() : "";
     const userId = typeof input.userId === "string" ? input.userId.trim() : "";

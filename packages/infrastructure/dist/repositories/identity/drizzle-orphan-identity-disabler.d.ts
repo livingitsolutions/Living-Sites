@@ -1,4 +1,4 @@
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface OrphanIdentityDisabler {
     disable(authSubjectId: string, disabledAt: Date): Promise<void>;
     isDisabled(authSubjectId: string): Promise<boolean>;

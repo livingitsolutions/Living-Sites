@@ -1,7 +1,7 @@
 import type { Logger } from "@livingsites/platform";
 import type { DomainEvent } from "@livingsites/domain";
 import type { EventPublisher } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface OutboxEventPublisherConfig {
     readonly db: DrizzleDB;
     readonly logger: Logger;

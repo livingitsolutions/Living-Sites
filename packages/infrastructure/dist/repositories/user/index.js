@@ -1,2 +1,2 @@
-export { DrizzleUserRepository } from "./drizzle-user-repository";
+export { DrizzleUserRepository } from "./drizzle-user-repository.js";
 //# sourceMappingURL=index.js.map

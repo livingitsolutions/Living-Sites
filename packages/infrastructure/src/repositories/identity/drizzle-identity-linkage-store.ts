@@ -1,5 +1,5 @@
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { identityLinkages } from "../../db/identity-linkage-schema";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { identityLinkages } from "../../db/identity-linkage-schema.js";
 
 export interface PendingIdentityLinkage {
   readonly id: string;

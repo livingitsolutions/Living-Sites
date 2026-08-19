@@ -7,8 +7,8 @@
 import { NetlifyDB } from "@netlify/database-dev";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "./schema";
-import type { DrizzleDB } from "./drizzle-instance";
+import * as schema from "./schema.js";
+import type { DrizzleDB } from "./drizzle-instance.js";
 
 export interface TestDatabaseHarness {
   readonly db: DrizzleDB;

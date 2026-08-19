@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PageStatus, WebsiteStatus } from "@livingsites/domain";
-import { resolvePublishedPage } from "./resolve-published";
+import { resolvePublishedPage } from "./resolve-published.js";
 
 const website = { id: "web_1", organizationId: "org_1", fallbackDomain: "site.example.com", customDomain: null, status: WebsiteStatus.Draft, archivedAt: null } as never;
 const home = { id: "page_home", websiteId: "web_1", slug: "home", isHomepage: true, status: PageStatus.Draft, publishedSnapshotId: "snapshot_2", archivedAt: null } as never;

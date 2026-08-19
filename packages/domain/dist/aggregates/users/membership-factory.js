@@ -1,4 +1,4 @@
-import { MEMBERSHIP_DRAFT_VERSION } from "./membership-draft";
+import { MEMBERSHIP_DRAFT_VERSION } from "./membership-draft.js";
 export function createMembershipDraft(input) {
     const audit = {
         createdAt: input.now,

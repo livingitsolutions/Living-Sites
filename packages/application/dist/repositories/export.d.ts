@@ -1,5 +1,5 @@
 import type { ExportJob, ExportJobStatusValue, ExportJobId, WebsiteId, OrganizationId, PaginatedResult, PaginationParams, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult } from "../contracts";
+import type { CreateResult, SaveResult } from "../contracts.js";
 export interface ExportJobListParams extends PaginationParams {
     websiteId?: WebsiteId;
     organizationId?: OrganizationId;

@@ -1,7 +1,7 @@
 import type { LocaleCode, Page, PageDraft, SectionId } from "@livingsites/domain";
 import { PageStatus } from "@livingsites/domain";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
-import type { PageRow, PageSectionRow } from "./schema";
+import type { PageRow, PageSectionRow } from "./schema.js";
 type MapperResult = {
     ok: true;
     value: Page;

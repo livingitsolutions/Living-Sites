@@ -4,7 +4,7 @@
  * Contracts only. No implementation in this milestone.
  */
 import type { MediaRepository, FolderRepository } from "@livingsites/application";
-import type { DatabaseBackedAdapter } from "../shared";
+import type { DatabaseBackedAdapter } from "../shared.js";
 /**
  * Adapts media-related repositories to database + storage providers.
  * Composes MediaRepository and FolderRepository as named sub-adapters to

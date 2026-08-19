@@ -11,6 +11,6 @@ export var IdFormat;
     IdFormat["Ulid"] = "ulid";
     IdFormat["Nanoid"] = "nanoid";
 })(IdFormat || (IdFormat = {}));
-export { CryptoIdGenerator } from "./crypto-id-generator";
-export { DeterministicIdGenerator } from "./deterministic-id-generator";
+export { CryptoIdGenerator } from "./crypto-id-generator.js";
+export { DeterministicIdGenerator } from "./deterministic-id-generator.js";
 //# sourceMappingURL=index.js.map

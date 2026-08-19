@@ -5,7 +5,7 @@ import type {
 } from "@livingsites/domain";
 import type {
   CreateResult,
-} from "../contracts";
+} from "../contracts.js";
 
 export interface UserReader {
   findById(id: UserId): Promise<User | null>;

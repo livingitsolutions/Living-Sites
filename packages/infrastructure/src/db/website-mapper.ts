@@ -14,7 +14,7 @@ import type {
 } from "@livingsites/domain";
 import { WebsiteStatus } from "@livingsites/domain";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
-import type { WebsiteRow } from "./schema";
+import type { WebsiteRow } from "./schema.js";
 
 type MapperResult = { ok: true; value: Website } | { ok: false; error: InvalidPersistenceStateError };
 const invalid = (message: string): MapperResult => ({ ok: false, error: { code: "invalid_persistence_state", message } });

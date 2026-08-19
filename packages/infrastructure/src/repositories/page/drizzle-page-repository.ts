@@ -4,9 +4,9 @@ import type { Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, Page
 import { PageStatus as Status } from "@livingsites/domain";
 import type { CreateResult, PageRepository, SaveResult } from "@livingsites/application";
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { pageDraftToInsert, rowToPage } from "../../db/page-mapper";
-import { applicationOutbox, pageSections, pages } from "../../db/schema";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { pageDraftToInsert, rowToPage } from "../../db/page-mapper.js";
+import { applicationOutbox, pageSections, pages } from "../../db/schema.js";
 
 export interface DrizzlePageRepositoryConfig { readonly db: DrizzleDB; readonly logger: Logger; readonly beforeOutboxInsert?: () => void }
 const duplicate = (error: unknown) => /duplicate|unique|23505/i.test(String(error));

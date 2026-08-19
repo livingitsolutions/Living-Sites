@@ -1,2 +1,2 @@
-export * from "./website-active-policy";
-export * from "./slug-policy";
+export * from "./website-active-policy.js";
+export * from "./slug-policy.js";

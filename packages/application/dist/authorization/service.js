@@ -1,5 +1,5 @@
-import { isKnownPermission, } from "./permissions";
-import { getPermissionsForRole, } from "./roles";
+import { isKnownPermission, } from "./permissions.js";
+import { getPermissionsForRole, } from "./roles.js";
 import { SystemRoles } from "@livingsites/domain";
 export class AuthorizationService {
     membershipReader;

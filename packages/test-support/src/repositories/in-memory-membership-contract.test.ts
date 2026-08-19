@@ -1,5 +1,5 @@
-import { runMembershipRepositoryContractTests } from "./membership-contract-tests";
-import { InMemoryMembershipRepository } from "./in-memory-membership-repository";
+import { runMembershipRepositoryContractTests } from "./membership-contract-tests.js";
+import { InMemoryMembershipRepository } from "./in-memory-membership-repository.js";
 
 runMembershipRepositoryContractTests("InMemoryMembershipRepository", {
   async createRepository() {

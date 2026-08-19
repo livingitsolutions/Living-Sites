@@ -16,8 +16,8 @@
  * - returns no raw database exception
  */
 import { eq } from "drizzle-orm";
-import { organizations } from "../../db/schema";
-import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper";
+import { organizations } from "../../db/schema.js";
+import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper.js";
 function isDuplicateKeyError(err) {
     if (err && typeof err === "object") {
         const error = err;

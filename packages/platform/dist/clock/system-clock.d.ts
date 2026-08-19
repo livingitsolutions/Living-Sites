@@ -1,7 +1,7 @@
 /**
  * SystemClock — production Clock implementation using the host clock.
  */
-import type { Clock } from "../index";
+import type { Clock } from "../index.js";
 export declare class SystemClock implements Clock {
     nowIso(): string;
     nowMs(): number;

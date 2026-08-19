@@ -1,4 +1,4 @@
-import { validateAndNormalizeSectionUrls } from "./url-safety";
+import { validateAndNormalizeSectionUrls } from "./url-safety.js";
 const text = (maxLength) => ({ type: "string", maxLength });
 const object = (required, properties) => ({ type: "object", required, properties, additionalProperties: false });
 const definitions = [

@@ -17,7 +17,7 @@ import type {
   CreateResult,
   SaveResult,
   MutationResult,
-} from "../contracts";
+} from "../contracts.js";
 
 export interface MembershipListParams extends PaginationParams {
   organizationId?: OrganizationId;

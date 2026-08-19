@@ -1,9 +1,9 @@
 import type { AggregateVersion, OrganizationId, Page, PageId, Result, Section, SectionId, UserId, WebsiteId } from "@livingsites/domain";
 import type { Clock, IdGenerator } from "@livingsites/platform";
-import type { AuthorizationService } from "../../authorization/service";
-import type { PageMutationPersistence, PageReader } from "../../repositories/page";
-import type { WebsiteReader } from "../../repositories/website";
-import { SECTION_TYPES } from "../../section-types";
+import type { AuthorizationService } from "../../authorization/service.js";
+import type { PageMutationPersistence, PageReader } from "../../repositories/page.js";
+import type { WebsiteReader } from "../../repositories/website.js";
+import { SECTION_TYPES } from "../../section-types/index.js";
 export type BuilderErrorCode = "unauthorized" | "website_not_found" | "not_found" | "draft_only" | "invalid_section_type" | "invalid_props" | "cross_page_section" | "invalid_order" | "concurrency_conflict" | "persistence_error";
 export type BuilderError = {
     readonly code: BuilderErrorCode;

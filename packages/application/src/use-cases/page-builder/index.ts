@@ -1,12 +1,12 @@
 import type { AggregateVersion, ISODateString, OrganizationId, Page, PageId, Result, Section, SectionId, UserId, WebsiteId } from "@livingsites/domain";
 import { PageStatus } from "@livingsites/domain";
 import type { Clock, IdGenerator } from "@livingsites/platform";
-import { PagePermissions } from "../../authorization/permissions";
-import type { AuthorizationService } from "../../authorization/service";
-import type { PageMutationPersistence, PageReader } from "../../repositories/page";
-import type { WebsiteReader } from "../../repositories/website";
-import { SECTION_TYPES, getSectionType, validateSectionProps } from "../../section-types";
-import { proveWebsiteAccess } from "../page/shared";
+import { PagePermissions } from "../../authorization/permissions.js";
+import type { AuthorizationService } from "../../authorization/service.js";
+import type { PageMutationPersistence, PageReader } from "../../repositories/page.js";
+import type { WebsiteReader } from "../../repositories/website.js";
+import { SECTION_TYPES, getSectionType, validateSectionProps } from "../../section-types/index.js";
+import { proveWebsiteAccess } from "../page/shared.js";
 
 export type BuilderErrorCode = "unauthorized" | "website_not_found" | "not_found" | "draft_only" | "invalid_section_type" | "invalid_props" | "cross_page_section" | "invalid_order" | "concurrency_conflict" | "persistence_error";
 export type BuilderError = { readonly code: BuilderErrorCode; readonly message: string };

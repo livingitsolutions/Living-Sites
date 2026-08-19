@@ -17,7 +17,7 @@ import type {
   AuditTrail,
   LifecycleStatus,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** A form definition within a website. */
 export interface Form {

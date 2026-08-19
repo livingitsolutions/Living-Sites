@@ -5,7 +5,7 @@
  * A website may have multiple menus (header, footer, mobile). MenuItems
  * target pages, URLs, media, or sections, and support nesting.
  */
-import type { WebsiteId, Slug, AuditTrail, AggregateVersion } from "../shared";
+import type { WebsiteId, Slug, AuditTrail, AggregateVersion } from "../shared/index.js";
 /** Top-level navigation menu for a website. */
 export interface Navigation {
     readonly id: string;

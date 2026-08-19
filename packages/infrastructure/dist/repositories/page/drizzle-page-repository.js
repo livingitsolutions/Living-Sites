@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import { PageStatus as Status } from "@livingsites/domain";
-import { pageDraftToInsert, rowToPage } from "../../db/page-mapper";
-import { applicationOutbox, pageSections, pages } from "../../db/schema";
+import { pageDraftToInsert, rowToPage } from "../../db/page-mapper.js";
+import { applicationOutbox, pageSections, pages } from "../../db/schema.js";
 const duplicate = (error) => /duplicate|unique|23505/i.test(String(error));
 export class DrizzlePageRepository {
     config;

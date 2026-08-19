@@ -1,8 +1,8 @@
 import type { AggregateVersion, OrganizationId, PageId, PageSnapshot, Result, UserId, VersionString, WebsiteId } from "@livingsites/domain";
 import type { Clock, IdGenerator } from "@livingsites/platform";
-import type { AuthorizationService } from "../../authorization/service";
-import type { PagePublisher, PageReader } from "../../repositories/page";
-import type { WebsiteReader } from "../../repositories/website";
+import type { AuthorizationService } from "../../authorization/service.js";
+import type { PagePublisher, PageReader } from "../../repositories/page.js";
+import type { WebsiteReader } from "../../repositories/website.js";
 export type PublishPageErrorCode = "unauthorized" | "website_not_found" | "page_not_found" | "website_inactive" | "draft_required" | "validation_failed" | "policy_failed" | "concurrency_conflict" | "persistence_error";
 export type PublishPageError = {
     readonly code: PublishPageErrorCode;

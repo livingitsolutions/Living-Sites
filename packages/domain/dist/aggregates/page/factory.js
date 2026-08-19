@@ -1,5 +1,5 @@
-import { PageStatus } from "../../page";
-import { PAGE_DRAFT_VERSION } from "./draft";
+import { PageStatus } from "../../page/index.js";
+import { PAGE_DRAFT_VERSION } from "./draft.js";
 export function normalizePageSlug(value) {
     const normalized = value.trim().toLowerCase().replace(/^\/+|\/+$/g, "").replace(/\s+/g, "-");
     if (!normalized || normalized.length > 200 || !/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/.test(normalized))

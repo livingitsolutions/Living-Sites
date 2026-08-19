@@ -11,8 +11,8 @@
 import type { AuthenticationError, AuthenticationPort, RegistrationInput, SignInInput, RegistrationResult, SignInResult, SessionResult, EmailVerificationResult } from "@livingsites/application";
 import type { Result, AuthSubjectId } from "@livingsites/domain";
 import type { Logger } from "@livingsites/platform";
-export { asBetterAuthInstance } from "./cast";
-export { createBetterAuthDatabaseAdapter } from "./database";
+export { asBetterAuthInstance } from "./cast.js";
+export { createBetterAuthDatabaseAdapter } from "./database.js";
 /**
  * Minimal structural type for the Better Auth instance. We only use
  * `.handler`, `.api.signUpEmail`, `.api.signInEmail`, `.api.signOut`,

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { applicationOutbox, pageSnapshots, pages } from "../../db/schema";
+import { applicationOutbox, pageSnapshots, pages } from "../../db/schema.js";
 function rowToSnapshot(row) {
     return {
         id: row.id, pageId: row.page_id, websiteId: row.website_id, organizationId: row.organization_id,

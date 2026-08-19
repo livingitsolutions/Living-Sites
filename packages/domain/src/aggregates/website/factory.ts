@@ -6,10 +6,10 @@ import type {
   ThemeId,
   UserId,
   WebsiteId,
-} from "../../shared";
-import { WebsiteStatus, type WebsiteSettings } from "../../website";
-import type { WebsiteDraft } from "./draft";
-import { WEBSITE_DRAFT_VERSION } from "./draft";
+} from "../../shared/index.js";
+import { WebsiteStatus, type WebsiteSettings } from "../../website/index.js";
+import type { WebsiteDraft } from "./draft.js";
+import { WEBSITE_DRAFT_VERSION } from "./draft.js";
 
 const HOSTNAME_PATTERN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 

@@ -1,1 +1,1 @@
-export { SectionCategory } from "./types";
+export { SectionCategory } from "./types.js";
