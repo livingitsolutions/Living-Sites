@@ -25,3 +25,5 @@ export { DrizzleSuperAdminStore } from "./repositories/identity/drizzle-super-ad
 export type { BootstrapSuperAdminInput, BootstrapSuperAdminOutput, BootstrapSuperAdminError } from "./repositories/identity/drizzle-super-admin-store";
 export { DrizzleWebsiteRepository } from "./repositories/website";
 export { DrizzleWebsiteCreationPersistence } from "./repositories/outbox";
+export { DrizzlePageRepository } from "./repositories/page";
+export type { DrizzlePageRepositoryConfig } from "./repositories/page";

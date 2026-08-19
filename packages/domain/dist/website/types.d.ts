@@ -16,25 +16,28 @@ export interface Website {
     /** Display name, e.g. "Tajon Construction — Marketing Site". */
     name: string;
     /** Primary public hostname, e.g. "tajonconstruction.com". */
-    customDomain?: string;
+    customDomain: string | null;
     /** Platform-provided fallback hostname, e.g. "tajon.livingsites.app". */
     fallbackDomain: string;
     status: WebsiteStatus;
     /** Current published version; null until first publish. */
     publishedVersion: VersionString | null;
     /** Active theme reference. */
-    themeId: ThemeId;
+    themeId: ThemeId | null;
     /** Default locale for content authoring and rendering. */
     defaultLocale: LocaleCode;
     /** All locales enabled on this website. */
     enabledLocales: readonly LocaleCode[];
+    /** Settings are a child of the Website aggregate and share its lifecycle/version. */
+    settings: WebsiteSettings;
     /** Optimistic concurrency version. Monotonically incremented on each save. */
     version: AggregateVersion;
     readonly audit: AuditTrail;
+    /** Soft-delete timestamp; populated only for archived websites. */
+    archivedAt: import("../shared").ISODateString | null;
 }
 /** Website-scoped configuration that is not content. */
 export interface WebsiteSettings {
-    readonly websiteId: WebsiteId;
     /** Whether the site is protected by a shared password. */
     passwordProtection: {
         enabled: boolean;
@@ -53,7 +56,6 @@ export interface WebsiteSettings {
     footerScripts: readonly string[];
     /** Favicon media reference. */
     faviconMediaId?: string;
-    readonly audit: AuditTrail;
 }
 export declare enum WebsiteStatus {
     Draft = "draft",

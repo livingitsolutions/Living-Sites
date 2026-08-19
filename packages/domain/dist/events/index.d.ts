@@ -45,10 +45,10 @@ export interface OrganizationCreatedEvent extends DomainEvent {
 export interface WebsiteCreatedEvent extends DomainEvent {
     readonly type: "website.created";
     readonly eventScope: {
-        readonly scope: "website";
+        readonly scope: "organization";
         readonly organizationId: OrganizationId;
-        readonly websiteId: WebsiteId;
     };
+    readonly websiteId: WebsiteId;
     readonly slug: string;
 }
 export interface WebsitePublishedEvent extends DomainEvent {
@@ -71,8 +71,27 @@ export interface PagePublishedEvent extends DomainEvent {
     readonly snapshotId: string;
     readonly version: VersionString;
 }
+export interface PageCreatedEvent extends DomainEvent {
+    readonly type: "page.created";
+    readonly eventScope: {
+        readonly scope: "website";
+        readonly organizationId: OrganizationId;
+        readonly websiteId: WebsiteId;
+    };
+    readonly pageId: PageId;
+    readonly slug: string;
+}
 export interface PageArchivedEvent extends DomainEvent {
     readonly type: "page.archived";
+    readonly eventScope: {
+        readonly scope: "website";
+        readonly organizationId: OrganizationId;
+        readonly websiteId: WebsiteId;
+    };
+    readonly pageId: PageId;
+}
+export interface PageRestoredEvent extends DomainEvent {
+    readonly type: "page.restored";
     readonly eventScope: {
         readonly scope: "website";
         readonly organizationId: OrganizationId;
@@ -176,5 +195,5 @@ export interface OrganizationMemberRemovedEvent extends DomainEvent {
     readonly userId: UserId;
 }
 /** Union of all known domain events for exhaustive handling. */
-export type KnownDomainEvent = OrganizationCreatedEvent | WebsiteCreatedEvent | WebsitePublishedEvent | PagePublishedEvent | PageArchivedEvent | MediaUploadedEvent | FormSubmittedEvent | FeatureEnabledEvent | PluginInstalledEvent | ExportCompletedEvent | UserRegisteredEvent | EmailVerifiedEvent | OrganizationMemberAddedEvent | OrganizationMemberRoleChangedEvent | OrganizationMemberRemovedEvent;
+export type KnownDomainEvent = OrganizationCreatedEvent | WebsiteCreatedEvent | WebsitePublishedEvent | PageCreatedEvent | PagePublishedEvent | PageArchivedEvent | PageRestoredEvent | MediaUploadedEvent | FormSubmittedEvent | FeatureEnabledEvent | PluginInstalledEvent | ExportCompletedEvent | UserRegisteredEvent | EmailVerifiedEvent | OrganizationMemberAddedEvent | OrganizationMemberRoleChangedEvent | OrganizationMemberRemovedEvent;
 //# sourceMappingURL=index.d.ts.map

@@ -23,6 +23,6 @@ export default async function WebsitesPage({ params }: { params: Promise<{ organ
 
   return <>
     <PageHeader eyebrow="Websites" title="Websites" description="Manage names, publishing status, and domains from one place." action={context.canCreateWebsite ? <CreateWebsiteForm action={createAction} /> : null} />
-    <WebsitesView websites={result.value} canCreate={context.canCreateWebsite} createAction={createAction} />
+    <WebsitesView organizationId={organizationId} websites={result.value} canCreate={context.canCreateWebsite} createAction={createAction} />
   </>;
 }

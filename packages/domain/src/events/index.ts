@@ -70,8 +70,21 @@ export interface PagePublishedEvent extends DomainEvent {
   readonly version: VersionString;
 }
 
+export interface PageCreatedEvent extends DomainEvent {
+  readonly type: "page.created";
+  readonly eventScope: { readonly scope: "website"; readonly organizationId: OrganizationId; readonly websiteId: WebsiteId };
+  readonly pageId: PageId;
+  readonly slug: string;
+}
+
 export interface PageArchivedEvent extends DomainEvent {
   readonly type: "page.archived";
+  readonly eventScope: { readonly scope: "website"; readonly organizationId: OrganizationId; readonly websiteId: WebsiteId };
+  readonly pageId: PageId;
+}
+
+export interface PageRestoredEvent extends DomainEvent {
+  readonly type: "page.restored";
   readonly eventScope: { readonly scope: "website"; readonly organizationId: OrganizationId; readonly websiteId: WebsiteId };
   readonly pageId: PageId;
 }
@@ -157,8 +170,10 @@ export type KnownDomainEvent =
   | OrganizationCreatedEvent
   | WebsiteCreatedEvent
   | WebsitePublishedEvent
+  | PageCreatedEvent
   | PagePublishedEvent
   | PageArchivedEvent
+  | PageRestoredEvent
   | MediaUploadedEvent
   | FormSubmittedEvent
   | FeatureEnabledEvent

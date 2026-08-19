@@ -7,5 +7,6 @@
  */
 export { OutboxEventPublisher } from "./outbox-event-publisher";
 export { DrizzleOrganizationCreationPersistence } from "./drizzle-organization-creation-persistence";
+export { DrizzleWebsiteCreationPersistence } from "./drizzle-website-creation-persistence";
 export { DrizzleOutboxProcessor } from "./drizzle-outbox-processor";
 //# sourceMappingURL=index.js.map

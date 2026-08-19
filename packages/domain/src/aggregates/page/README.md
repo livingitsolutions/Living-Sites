@@ -1,6 +1,6 @@
 # Page Aggregates
 
-> **Status:** Architecture only. No implementation.
+> **Status:** Persistence and basic lifecycle implemented in Sprint 15.
 
 ## Aggregates
 
@@ -18,3 +18,10 @@
 - **Transaction boundary:** Snapshot row (with embedded section/SEO JSON)
 
 See `docs/aggregates.md` §7–8 for full details.
+
+## Sprint 15 lifecycle decision
+
+Pages are created as drafts and can be updated, archived, and restored. The
+schema retains the approved published and scheduled states for compatibility,
+but this slice does not expose publication commands. Publishing remains
+deferred until immutable PageSnapshot and Section persistence are implemented.

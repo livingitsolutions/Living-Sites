@@ -1,24 +1,22 @@
-import type { Website, WebsiteSettings, WebsiteStatus, WebsiteId, OrganizationId, PaginatedResult, PaginationParams, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult, MutationResult } from "../contracts";
-export interface WebsiteListParams extends PaginationParams {
-    organizationId?: OrganizationId;
-    status?: WebsiteStatus;
-    search?: string;
-}
-export interface WebsiteRepository {
+import type { AggregateVersion, OrganizationId, Website, WebsiteCreatedEvent, WebsiteDraft, WebsiteId, WebsiteSettings } from "@livingsites/domain";
+import type { CreateResult, SaveResult } from "../contracts";
+export interface WebsiteReader {
     findById(id: WebsiteId): Promise<Website | null>;
-    findByCustomDomain(domain: string): Promise<Website | null>;
-    findByFallbackDomain(domain: string): Promise<Website | null>;
-    list(params: WebsiteListParams): Promise<PaginatedResult<Website>>;
-    create(candidate: Omit<Website, "id" | "audit" | "version">): Promise<CreateResult<Website>>;
-    save(aggregate: Website, expectedVersion: AggregateVersion): Promise<SaveResult<Website>>;
-    softDelete(id: WebsiteId, expectedVersion: AggregateVersion): Promise<MutationResult>;
+    findByOrganizationAndSlug(organizationId: OrganizationId, slug: string): Promise<Website | null>;
+    listForOrganization(organizationId: OrganizationId): Promise<readonly Website[]>;
+    findByDomain(domain: string): Promise<Website | null>;
 }
-/**
- * WebsiteSettings is a child entity of the Website aggregate. It has no
- * independent repository port. Settings are loaded and saved through the
- * WebsiteRepository as part of the Website aggregate. This type is exported
- * for use-case parameter shaping only — it is not a repository.
- */
-export type WebsiteSettingsShape = WebsiteSettings;
+export interface WebsiteCreator {
+    create(candidate: WebsiteDraft): Promise<CreateResult<Website>>;
+}
+export interface WebsiteMutator {
+    updateSettings(id: WebsiteId, settings: WebsiteSettings, expectedVersion: AggregateVersion): Promise<SaveResult<Website>>;
+    archive(id: WebsiteId, expectedVersion: AggregateVersion): Promise<SaveResult<Website>>;
+    restore(id: WebsiteId, expectedVersion: AggregateVersion): Promise<SaveResult<Website>>;
+}
+export interface WebsiteRepository extends WebsiteReader, WebsiteCreator, WebsiteMutator {
+}
+export interface WebsiteCreationPersistence {
+    createWithEvent(candidate: WebsiteDraft, event: WebsiteCreatedEvent): Promise<CreateResult<Website>>;
+}
 //# sourceMappingURL=website.d.ts.map

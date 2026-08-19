@@ -16,4 +16,5 @@ import type { DatabaseBackedAdapter } from "../shared";
 export interface WebsiteRepositoryAdapter extends DatabaseBackedAdapter {
     readonly websites: WebsiteRepository;
 }
+export { DrizzleWebsiteRepository } from "./drizzle-website-repository";
 //# sourceMappingURL=index.d.ts.map

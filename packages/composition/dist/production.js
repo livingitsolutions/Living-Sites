@@ -13,8 +13,8 @@
  */
 import { betterAuth } from "better-auth";
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
-import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, DrizzleMembershipRepository, DrizzleSuperAdminStore, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
-import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
+import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, DrizzleMembershipRepository, DrizzleSuperAdminStore, DrizzleWebsiteRepository, DrizzleWebsiteCreationPersistence, DrizzlePageRepository, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
 function validateConfig(config) {
     if (!config.betterAuthSecret || config.betterAuthSecret.length < 32) {
         throw new Error("BETTER_AUTH_SECRET is missing or too short (minimum 32 characters). " +
@@ -135,6 +135,9 @@ export function composeProduction(config) {
     const featureReader = new DrizzleFeatureReader({ db, logger });
     const userRepository = new DrizzleUserRepository({ db, logger });
     const membershipRepository = new DrizzleMembershipRepository({ db, logger });
+    const websiteRepository = new DrizzleWebsiteRepository({ db, logger });
+    const websiteCreationPersistence = new DrizzleWebsiteCreationPersistence({ db, logger });
+    const pageRepository = new DrizzlePageRepository({ db, logger });
     const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
     const authorizationService = new AuthorizationService({
         membershipReader: membershipRepository,
@@ -238,6 +241,9 @@ export function composeProduction(config) {
         userReader: userRepository,
         userCreator: userRepository,
         membershipRepository,
+        websiteRepository,
+        websiteCreationPersistence,
+        pageRepository,
         superAdminStore,
         authorizationService,
         authenticationPort: authAdapter,
@@ -258,6 +264,15 @@ export function composeProduction(config) {
         removeOrganizationMemberDeps,
         getOrganizationMembers,
         getOrganizationMembersDeps,
+        createWebsite,
+        getWebsite,
+        listOrganizationWebsites,
+        createPage,
+        getPage,
+        listWebsitePages,
+        updatePageDetails,
+        archivePage,
+        restorePage,
         registrationMode,
         healthCheck,
         close,

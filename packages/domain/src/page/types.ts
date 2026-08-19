@@ -39,6 +39,7 @@ export interface Page {
   /** Optimistic concurrency version. Monotonically incremented on each save. */
   version: AggregateVersion;
   readonly audit: AuditTrail;
+  archivedAt: ISODateString | null;
 }
 
 /**

@@ -15,6 +15,7 @@
 export * from "./shared";
 export * from "./subscription";
 export * from "./website";
+export * from "./page";
 export * from "./publishing";
 export * from "./seo";
 export * from "./media";
