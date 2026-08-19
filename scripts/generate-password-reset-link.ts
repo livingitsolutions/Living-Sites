@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { randomBytes } from "node:crypto";
-import { execFileSync } from "node:child_process";
 import postgres from "postgres";
 import { generateAdminPasswordResetLink } from "@livingsites/application";
 import type { PasswordResetEmailPort } from "@livingsites/application";
 import { composeProduction } from "../packages/composition/src/production";
+import { execNetlifyCli } from "./netlify-cli";
 
 function option(name: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -16,10 +16,7 @@ function productionDatabaseUrl(): string {
   if (configured) return configured;
 
   const branch = option("--branch") ?? "staging";
-  const output = execFileSync("netlify", ["database", "status", "--branch", branch, "--show-credentials", "--json"], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  const output = execNetlifyCli(["database", "status", "--branch", branch, "--show-credentials", "--json"]);
   const status = JSON.parse(output) as { database?: { connectionString?: string } };
   if (!status.database?.connectionString) throw new Error("Production Netlify Database credentials are unavailable.");
   return status.database.connectionString;
