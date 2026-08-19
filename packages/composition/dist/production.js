@@ -12,6 +12,7 @@
  * Does NOT contain in-memory authentication storage.
  */
 import { betterAuth } from "better-auth";
+import { nextCookies } from "better-auth/next-js";
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
 import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, DrizzleMembershipRepository, DrizzleSuperAdminStore, DrizzleWebsiteRepository, DrizzleWebsiteCreationPersistence, DrizzlePageRepository, DrizzlePagePublicationRepository, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
 import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, publishPage, resolvePublishedPage, resolvePublishedWebsite, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
@@ -107,6 +108,16 @@ export function composeProduction(config) {
             requireEmailVerification: config.emailVerificationEnabled ?? false,
             minPasswordLength: 12,
             maxPasswordLength: 256,
+            resetPasswordTokenExpiresIn: 60 * 60,
+            revokeSessionsOnPasswordReset: true,
+            sendResetPassword: async ({ user, url }) => {
+                if (!config.passwordResetEmailAdapter)
+                    return;
+                await config.passwordResetEmailAdapter.sendPasswordResetEmail({
+                    email: user.email,
+                    resetUrl: url,
+                });
+            },
         },
         session: {
             expiresIn: 7 * 24 * 60 * 60,
@@ -128,6 +139,7 @@ export function composeProduction(config) {
                 },
             },
         },
+        plugins: [nextCookies()],
     });
     const authInstance = asBetterAuthInstance(rawAuth);
     const authAdapter = new BetterAuthAdapter({ auth: authInstance, logger });
@@ -247,6 +259,7 @@ export function composeProduction(config) {
         authenticationPort: authAdapter,
         authInstance,
         emailVerificationPort: config.emailAdapter ?? null,
+        passwordResetEmailPort: config.passwordResetEmailAdapter ?? null,
         organizationCreationPersistence,
         outboxProcessor,
         linkageReconciler,

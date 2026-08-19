@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getAuth } from "@/app/lib/auth";
 import { authPageRequest, evaluateAuthPageRequest } from "@/app/lib/auth-page-request";
+import Link from "next/link";
+import { loginRegistrationContent } from "@/app/lib/login-registration";
 
 export const dynamic = "force-dynamic";
 
@@ -13,25 +15,7 @@ export default async function LoginPage() {
     redirect(decision.location);
   }
 
-  return (
-    <main style={{ maxWidth: "400px", margin: "80px auto", padding: "0 20px", fontFamily: "system-ui, sans-serif" }}>
-      <h1 style={{ fontSize: "1.75rem", marginBottom: "1.5rem" }}>Sign In</h1>
-      <form action="/api/auth/sign-in/email" method="POST" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.875rem" }}>
-          Email
-          <input type="email" name="email" required style={{ padding: "8px 12px", border: "1px solid #ccc", borderRadius: "4px" }} />
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.875rem" }}>
-          Password
-          <input type="password" name="password" required style={{ padding: "8px 12px", border: "1px solid #ccc", borderRadius: "4px" }} />
-        </label>
-        <button type="submit" style={{ padding: "10px 16px", background: "#2563eb", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.95rem" }}>
-          Sign In
-        </button>
-      </form>
-      <p style={{ marginTop: "1rem", fontSize: "0.875rem" }}>
-        Don&apos;t have an account? <a href="/register" style={{ color: "#2563eb" }}>Register</a>
-      </p>
-    </main>
-  );
+  const registrationMode = process.env.AUTH_REGISTRATION_MODE ?? "invite_only";
+  const registration = loginRegistrationContent(registrationMode);
+  return <main className="auth-page"><section className="auth-panel"><div className="auth-brand"><span>LS</span><p>Living Sites</p></div><p className="auth-eyebrow">Platform access</p><h1>Welcome back</h1><p className="auth-intro">Sign in to manage your organizations, websites, and publishing workspace.</p><form action="/api/auth/sign-in/email" method="POST" className="auth-form"><label className="auth-field">Email address<input type="email" name="email" autoComplete="email" required /></label><label className="auth-field">Password<input type="password" name="password" autoComplete="current-password" required /></label><div className="auth-form-meta"><Link href="/forgot-password">Forgot password?</Link></div><button className="auth-submit" type="submit">Sign in</button></form><p className="auth-registration-note">{registration.kind === "link" ? <>New to Living Sites? <Link href={registration.href}>{registration.text}</Link></> : registration.text}</p></section><aside className="auth-aside"><p>Living Sites CMS</p><h2>One calm workspace for every site you operate.</h2><span>Secure platform access for owners, editors, and administrators.</span></aside></main>;
 }

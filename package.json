@@ -21,6 +21,7 @@
     "db:check": "drizzle-kit check",
     "db:seed": "node scripts/seed.mjs",
     "bootstrap:admin": "TSX_TSCONFIG_PATH=scripts/tsconfig.json tsx scripts/bootstrap-admin.ts",
+    "auth:reset-link": "TSX_TSCONFIG_PATH=scripts/tsconfig.json tsx scripts/generate-password-reset-link.ts",
     "outbox:process": "node scripts/outbox-process.mjs",
     "netlify:db:status": "npx netlify database status",
     "netlify:db:migrate": "npx netlify database migrations apply",
