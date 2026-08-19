@@ -29,8 +29,8 @@ export { createBetterAuthDatabaseAdapter } from "./database";
 /**
  * Minimal structural type for the Better Auth instance. We only use
  * `.handler`, `.api.signUpEmail`, `.api.signInEmail`, `.api.signOut`,
- * `.api.getSession`, `.api.revokeSession`, `.api.verifyEmail`,
- * `.api.sendVerificationEmail`. Defining a structural interface avoids
+ * `.api.getSession`, password recovery/change APIs, `.api.revokeSession`,
+ * `.api.verifyEmail`, `.api.sendVerificationEmail`. Defining a structural interface avoids
  * the generic-incompatibility problem with `ReturnType<typeof betterAuth>`.
  */
 export interface BetterAuthInstance {
@@ -59,6 +59,15 @@ export interface BetterAuthInstance {
     revokeSession(input: { body: Record<string, unknown>; headers: Headers }): Promise<unknown>;
     verifyEmail(input: { query: { token: string } }): Promise<{ status: boolean } | null>;
     sendVerificationEmail(input: { body: Record<string, unknown> }): Promise<unknown>;
+    requestPasswordReset(input: { body: { email: string; redirectTo?: string }; headers?: Headers }): Promise<{
+      status: boolean;
+      message: string;
+    }>;
+    resetPassword(input: { body: { newPassword: string; token: string } }): Promise<{ status: boolean }>;
+    changePassword(input: {
+      body: { currentPassword: string; newPassword: string; revokeOtherSessions?: boolean };
+      headers: Headers;
+    }): Promise<{ token: string | null; user: { id: string; email: string; name: string } }>;
   };
 }
 

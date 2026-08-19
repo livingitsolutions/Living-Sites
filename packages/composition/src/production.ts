@@ -12,6 +12,7 @@
  * Does NOT contain in-memory authentication storage.
  */
 import { betterAuth } from "better-auth";
+import { nextCookies } from "better-auth/next-js";
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
 import {
@@ -51,6 +52,7 @@ import type {
   OutboxProcessor,
   AuthenticationPort,
   EmailVerificationPort,
+  PasswordResetEmailPort,
   RegistrationMode,
   WebsiteReader,
   WebsiteCreationPersistence,
@@ -108,6 +110,7 @@ export interface ProductionCompositionConfig {
   readonly registrationMode?: string;
   readonly emailVerificationEnabled?: boolean;
   readonly emailAdapter?: EmailVerificationPort;
+  readonly passwordResetEmailAdapter?: PasswordResetEmailPort;
   readonly linkageBatchSize?: number;
   readonly linkageGracePeriodMs?: number;
 }
@@ -133,6 +136,7 @@ export interface ProductionComposition {
   readonly authenticationPort: AuthenticationPort;
   readonly authInstance: BetterAuthInstance;
   readonly emailVerificationPort: EmailVerificationPort | null;
+  readonly passwordResetEmailPort: PasswordResetEmailPort | null;
   readonly organizationCreationPersistence: OrganizationCreationPersistence;
   readonly outboxProcessor: OutboxProcessor;
   readonly linkageReconciler: LinkageReconciler;
@@ -273,6 +277,15 @@ export function composeProduction(
       requireEmailVerification: config.emailVerificationEnabled ?? false,
       minPasswordLength: 12,
       maxPasswordLength: 256,
+      resetPasswordTokenExpiresIn: 60 * 60,
+      revokeSessionsOnPasswordReset: true,
+      sendResetPassword: async ({ user, url }) => {
+        if (!config.passwordResetEmailAdapter) return;
+        await config.passwordResetEmailAdapter.sendPasswordResetEmail({
+          email: user.email,
+          resetUrl: url,
+        });
+      },
     },
     session: {
       expiresIn: 7 * 24 * 60 * 60,
@@ -294,6 +307,7 @@ export function composeProduction(
         },
       },
     },
+    plugins: [nextCookies()],
   });
 
   const authInstance = asBetterAuthInstance(rawAuth);
@@ -422,6 +436,7 @@ export function composeProduction(
     authenticationPort: authAdapter,
     authInstance,
     emailVerificationPort: config.emailAdapter ?? null,
+    passwordResetEmailPort: config.passwordResetEmailAdapter ?? null,
     organizationCreationPersistence,
     outboxProcessor,
     linkageReconciler,
