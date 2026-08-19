@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, ne } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import { PageStatus as Status } from "@livingsites/domain";
 import { pageDraftToInsert, rowToPage } from "../../db/page-mapper";
-import { applicationOutbox, pages } from "../../db/schema";
+import { applicationOutbox, pageSections, pages } from "../../db/schema";
 const duplicate = (error) => /duplicate|unique|23505/i.test(String(error));
 export class DrizzlePageRepository {
     config;
@@ -13,19 +13,24 @@ export class DrizzlePageRepository {
         const [row] = await this.config.db.select().from(pages).where(eq(pages.id, String(id))).limit(1);
         if (!row)
             return null;
-        const mapped = rowToPage(row);
+        const sectionRows = await this.config.db.select().from(pageSections).where(eq(pageSections.page_id, String(id))).orderBy(asc(pageSections.sort_order));
+        const mapped = rowToPage(row, sectionRows);
         return mapped.ok ? mapped.value : null;
     }
     async findActiveBySlug(websiteId, slug) {
         const [row] = await this.config.db.select().from(pages).where(and(eq(pages.website_id, String(websiteId)), eq(pages.slug, slug), ne(pages.status, Status.Archived))).limit(1);
         if (!row)
             return null;
-        const mapped = rowToPage(row);
+        const sectionRows = await this.config.db.select().from(pageSections).where(eq(pageSections.page_id, row.id)).orderBy(asc(pageSections.sort_order));
+        const mapped = rowToPage(row, sectionRows);
         return mapped.ok ? mapped.value : null;
     }
     async listForWebsite(websiteId, options) {
         const rows = await this.config.db.select().from(pages).where(options?.status ? and(eq(pages.website_id, String(websiteId)), eq(pages.status, options.status)) : eq(pages.website_id, String(websiteId))).orderBy(pages.updated_at);
-        return rows.flatMap((row) => { const mapped = rowToPage(row); return mapped.ok ? [mapped.value] : []; });
+        if (!rows.length)
+            return [];
+        const sectionRows = await this.config.db.select().from(pageSections).where(inArray(pageSections.page_id, rows.map((row) => row.id))).orderBy(asc(pageSections.sort_order));
+        return rows.flatMap((row) => { const mapped = rowToPage(row, sectionRows.filter((section) => section.page_id === row.id)); return mapped.ok ? [mapped.value] : []; });
     }
     async createWithEvent(candidate, event) {
         try {
@@ -50,6 +55,24 @@ export class DrizzlePageRepository {
     }
     async updateDetails(input) {
         return this.update(input.pageId, input.expectedVersion, { title: input.title, slug: input.slug, description: input.description ?? null, updated_at: new Date(input.updatedAt), updated_by: input.updatedBy });
+    }
+    async saveBuilder(input) {
+        try {
+            return await this.config.db.transaction(async (tx) => {
+                const [pageRow] = await tx.update(pages).set({ section_order: input.sections.map((section) => String(section.id)), version: input.expectedVersion + 1, updated_at: new Date(input.updatedAt), updated_by: input.updatedBy }).where(and(eq(pages.id, String(input.pageId)), eq(pages.version, input.expectedVersion))).returning();
+                if (!pageRow)
+                    return { ok: false, error: { aggregateId: String(input.pageId), expectedVersion: input.expectedVersion, actualVersion: input.expectedVersion } };
+                await tx.delete(pageSections).where(eq(pageSections.page_id, String(input.pageId)));
+                if (input.sections.length)
+                    await tx.insert(pageSections).values(input.sections.map((section, index) => ({ id: String(section.id), page_id: String(input.pageId), website_id: String(section.websiteId), section_type_id: String(section.sectionTypeId), sort_order: index, props: section.props, status: section.status, created_at: new Date(section.audit.createdAt), updated_at: new Date(input.updatedAt), created_by: section.audit.createdBy ? String(section.audit.createdBy) : null, updated_by: input.updatedBy })));
+                const persistedSections = await tx.select().from(pageSections).where(eq(pageSections.page_id, String(input.pageId))).orderBy(asc(pageSections.sort_order));
+                return rowToPage(pageRow, persistedSections);
+            });
+        }
+        catch (error) {
+            this.config.logger.error("Atomic Page builder save failed", { error: String(error) });
+            return { ok: false, error: { code: "invalid_persistence_state", message: "Page and Sections were not persisted." } };
+        }
     }
     async archiveWithEvent(input, event) {
         return this.atomicMutation(input.pageId, input.expectedVersion, { status: Status.Archived, archived_at: new Date(input.archivedAt), updated_at: new Date(input.archivedAt), updated_by: input.archivedBy }, event);

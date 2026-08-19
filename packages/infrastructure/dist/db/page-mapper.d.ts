@@ -1,7 +1,7 @@
 import type { LocaleCode, Page, PageDraft, SectionId } from "@livingsites/domain";
 import { PageStatus } from "@livingsites/domain";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
-import type { PageRow } from "./schema";
+import type { PageRow, PageSectionRow } from "./schema";
 type MapperResult = {
     ok: true;
     value: Page;
@@ -9,7 +9,7 @@ type MapperResult = {
     ok: false;
     error: InvalidPersistenceStateError;
 };
-export declare function rowToPage(row: PageRow): MapperResult;
+export declare function rowToPage(row: PageRow, sectionRows?: readonly PageSectionRow[]): MapperResult;
 export declare function pageDraftToInsert(draft: PageDraft): {
     id: string;
     website_id: string;

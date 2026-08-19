@@ -36,6 +36,10 @@ export interface SectionType {
     category: SectionCategoryValue;
     /** JSON-Schema-like props definition the builder validates against. */
     propsSchema: Readonly<Record<string, unknown>>;
+    /** Validated props used when a section is first added. */
+    defaultProps: Readonly<Record<string, unknown>>;
+    /** Stable identity resolved by the trusted React renderer registry. */
+    rendererKey: MachineKey;
     /** Whether this section can be used more than once per page. */
     allowMultiple: boolean;
     /** Theme support: whether the section renders without a custom theme. */

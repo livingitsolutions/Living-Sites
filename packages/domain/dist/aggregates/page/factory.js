@@ -12,7 +12,7 @@ export function createPageDraft(input) {
         throw new Error("Page title must contain 1 to 200 characters.");
     return { id: input.id, websiteId: input.websiteId, slug: normalizePageSlug(String(input.slug)), title,
         ...(input.description?.trim() ? { description: input.description.trim() } : {}), isHomepage: input.isHomepage ?? false,
-        status: PageStatus.Draft, publishedSnapshotId: null, sectionOrder: [], availableLocales: [], parentId: input.parentId ?? null,
+        status: PageStatus.Draft, publishedSnapshotId: null, sectionOrder: [], sections: [], availableLocales: [], parentId: input.parentId ?? null,
         version: PAGE_DRAFT_VERSION, audit: { createdAt: input.now, updatedAt: input.now, ...(input.createdBy ? { createdBy: input.createdBy, updatedBy: input.createdBy } : {}) }, archivedAt: null };
 }
 //# sourceMappingURL=factory.js.map

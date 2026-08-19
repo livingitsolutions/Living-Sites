@@ -15,6 +15,7 @@ import type {
   LifecycleStatus,
   AggregateVersion,
 } from "../shared";
+import type { Section } from "../section";
 
 /** A single page within a website. */
 export interface Page {
@@ -32,6 +33,8 @@ export interface Page {
   publishedSnapshotId: string | null;
   /** Ordered section ids rendering top-to-bottom. */
   sectionOrder: readonly SectionId[];
+  /** Child entities persisted through the Page aggregate only. */
+  sections: readonly Section[];
   /** Locales this page has been translated into beyond the default. */
   availableLocales: readonly LocaleCode[];
   /** Parent page id for nested routes; null at root. */

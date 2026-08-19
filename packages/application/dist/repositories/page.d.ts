@@ -1,4 +1,4 @@
-import type { AggregateVersion, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PageRestoredEvent, PageStatus, WebsiteId } from "@livingsites/domain";
+import type { AggregateVersion, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PageRestoredEvent, PageStatus, Section, WebsiteId } from "@livingsites/domain";
 import type { CreateResult, SaveResult } from "../contracts";
 export interface PageReader {
     findById(id: PageId): Promise<Page | null>;
@@ -11,6 +11,13 @@ export interface PageCreationPersistence {
     createWithEvent(candidate: PageDraft, event: PageCreatedEvent): Promise<CreateResult<Page>>;
 }
 export interface PageMutationPersistence {
+    saveBuilder(input: {
+        readonly pageId: PageId;
+        readonly sections: readonly Section[];
+        readonly expectedVersion: AggregateVersion;
+        readonly updatedAt: string;
+        readonly updatedBy: string;
+    }): Promise<SaveResult<Page>>;
     updateDetails(input: {
         readonly pageId: PageId;
         readonly title: string;

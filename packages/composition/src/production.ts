@@ -71,6 +71,12 @@ import {
   updatePageDetails,
   archivePage,
   restorePage,
+  addSection,
+  updateSection,
+  removeSection,
+  duplicateSection,
+  reorderSections,
+  getPageBuilderState,
   AuthorizationService,
   parseRegistrationMode,
   DEFAULT_PRODUCTION_REGISTRATION_MODE,
@@ -144,6 +150,12 @@ export interface ProductionComposition {
   readonly updatePageDetails: typeof updatePageDetails;
   readonly archivePage: typeof archivePage;
   readonly restorePage: typeof restorePage;
+  readonly addSection: typeof addSection;
+  readonly updateSection: typeof updateSection;
+  readonly removeSection: typeof removeSection;
+  readonly duplicateSection: typeof duplicateSection;
+  readonly reorderSections: typeof reorderSections;
+  readonly getPageBuilderState: typeof getPageBuilderState;
   readonly registrationMode: RegistrationMode;
   readonly healthCheck: () => Promise<{ healthy: boolean; details: Record<string, boolean> }>;
   readonly close: () => Promise<void>;
@@ -427,6 +439,12 @@ export function composeProduction(
     updatePageDetails,
     archivePage,
     restorePage,
+    addSection,
+    updateSection,
+    removeSection,
+    duplicateSection,
+    reorderSections,
+    getPageBuilderState,
     registrationMode,
     healthCheck,
     close,

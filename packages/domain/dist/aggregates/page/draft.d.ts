@@ -1,5 +1,6 @@
 import type { AggregateVersion, AuditTrail, ISODateString, LocaleCode, PageId, SectionId, Slug, UserId, WebsiteId } from "../../shared";
 import type { PageStatus } from "../../page";
+import type { Section } from "../../section";
 export type PageDraftVersion = AggregateVersion & {
     readonly __pageDraft: true;
 };
@@ -13,6 +14,7 @@ export interface PageDraft {
     status: PageStatus;
     publishedSnapshotId: string | null;
     sectionOrder: readonly SectionId[];
+    sections: readonly Section[];
     availableLocales: readonly LocaleCode[];
     parentId: PageId | null;
     readonly version: PageDraftVersion;
