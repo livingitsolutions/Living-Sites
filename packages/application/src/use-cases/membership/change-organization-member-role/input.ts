@@ -10,5 +10,4 @@ export interface ChangeOrganizationMemberRoleInput {
   readonly newRole: RoleValue | string;
   readonly expectedVersion: AggregateVersion;
   readonly callerUserId: UserId | string;
-  readonly isPlatformSuperAdmin?: boolean;
 }

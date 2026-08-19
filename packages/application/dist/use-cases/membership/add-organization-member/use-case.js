@@ -6,13 +6,12 @@ export async function addOrganizationMember(input, deps) {
     if (!validation.ok) {
         return { ok: false, error: validation.error };
     }
-    const { organizationId, userId, role, websiteScopeId, callerUserId, isPlatformSuperAdmin } = validation.value;
+    const { organizationId, userId, role, websiteScopeId, callerUserId } = validation.value;
     // 1. Authorize caller
     const authDecision = await deps.authorizationService.can({
         userId: callerUserId,
         organizationId: organizationId,
         permission: OrganizationPermissions.MembersInvite,
-        isPlatformSuperAdmin,
     });
     if (!authDecision.allowed) {
         return {
@@ -31,19 +30,17 @@ export async function addOrganizationMember(input, deps) {
         }
     }
     // 3. Check for existing active membership
-    const existing = await deps.membershipRepository.findForUserAndOrganization(organizationId, userId);
-    if (existing && existing.status === "active") {
-        // If org-wide or same scope
-        if (!websiteScopeId || existing.websiteScopeId === websiteScopeId) {
-            return {
-                ok: false,
-                error: {
-                    code: "duplicate_membership",
-                    message: `User "${userId}" is already a member of organization "${organizationId}".`,
-                    userId,
-                },
-            };
-        }
+    const existingMemberships = await deps.membershipRepository.listForUserAndOrganization(organizationId, userId);
+    const duplicate = existingMemberships.some((membership) => (membership.websiteScopeId ?? null) === websiteScopeId);
+    if (duplicate) {
+        return {
+            ok: false,
+            error: {
+                code: "duplicate_membership",
+                message: `User "${userId}" already has an active membership for this organization scope.`,
+                userId,
+            },
+        };
     }
     // 4. Create membership draft
     const membershipId = (deps.idGenerator.generatePrefixed ? deps.idGenerator.generatePrefixed("mem") : deps.idGenerator.generate());
@@ -57,23 +54,19 @@ export async function addOrganizationMember(input, deps) {
         now,
         createdBy: callerUserId,
     });
-    // 5. Persist
-    const createResult = await deps.membershipRepository.create(draft);
-    if (!createResult.ok) {
-        return { ok: false, error: createResult.error };
-    }
-    const persisted = createResult.value;
-    // 6. Emit event
     const event = {
         type: "organization.member_added",
         occurredAt: now,
         eventScope: { scope: "organization", organizationId: organizationId },
-        membershipId: persisted.id,
-        userId: persisted.userId,
-        role: persisted.role,
-        websiteScopeId: persisted.websiteScopeId,
+        membershipId,
+        userId: userId,
+        role,
+        websiteScopeId,
     };
-    await deps.eventPublisher.publish(event);
-    return { ok: true, value: { membership: persisted } };
+    const createResult = await deps.membershipRepository.createWithEvent(draft, event);
+    if (!createResult.ok) {
+        return { ok: false, error: createResult.error };
+    }
+    return { ok: true, value: { membership: createResult.value } };
 }
 //# sourceMappingURL=use-case.js.map

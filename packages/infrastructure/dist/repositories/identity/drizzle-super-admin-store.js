@@ -15,6 +15,14 @@ import { randomUUID } from "node:crypto";
 import { createUserDraft } from "@livingsites/domain";
 import { platformSuperAdmins } from "../../db/schema";
 import { DrizzleUserRepository } from "../user/drizzle-user-repository";
+function isDuplicateKeyError(error) {
+    if (!error || typeof error !== "object")
+        return false;
+    const candidate = error;
+    return candidate.code === "23505"
+        || (candidate.cause !== undefined && isDuplicateKeyError(candidate.cause))
+        || /duplicate key|unique constraint/i.test(candidate.message ?? "");
+}
 export class DrizzleSuperAdminStore {
     db;
     logger;
@@ -63,16 +71,69 @@ export class DrizzleSuperAdminStore {
             };
         }
         try {
-            // Check if any super admin exists
-            const existingAdmins = await this.listSuperAdmins();
-            const alreadyAdmin = existingAdmins.find((a) => a.email === email);
-            if (alreadyAdmin) {
-                const user = await this.userRepository.findById(alreadyAdmin.user_id);
-                if (user) {
+            return await this.db.transaction(async (transaction) => {
+                const existingAdmins = await transaction.select().from(platformSuperAdmins);
+                const existingAdmin = existingAdmins[0];
+                const transactionalUserRepository = new DrizzleUserRepository({ db: transaction, logger: this.logger });
+                if (existingAdmin) {
+                    if (existingAdmin.email !== email) {
+                        return {
+                            ok: false,
+                            error: {
+                                code: "bootstrap_locked",
+                                message: "Platform Super Admin has already been bootstrapped. Additional super admins cannot be bootstrapped.",
+                            },
+                        };
+                    }
+                    const user = await transactionalUserRepository.findById(existingAdmin.user_id);
+                    if (!user) {
+                        return {
+                            ok: false,
+                            error: { code: "persistence_error", message: "Bootstrapped super admin user record is missing." },
+                        };
+                    }
                     return { ok: true, value: { user, alreadyExisted: true } };
                 }
-            }
-            if (existingAdmins.length > 0 && !alreadyAdmin) {
+                let user = await transactionalUserRepository.findByEmail(email);
+                if (!user) {
+                    const now = new Date().toISOString();
+                    const draft = createUserDraft({
+                        id: randomUUID(),
+                        authSubjectId: randomUUID(),
+                        email,
+                        displayName: input.displayName ?? "Platform Super Admin",
+                        now,
+                    });
+                    const createResult = await transactionalUserRepository.create(draft);
+                    if (!createResult.ok) {
+                        return {
+                            ok: false,
+                            error: { code: "persistence_error", message: `Failed to create platform user: ${createResult.error.message}` },
+                        };
+                    }
+                    user = createResult.value;
+                }
+                await transaction.insert(platformSuperAdmins).values({
+                    id: randomUUID(),
+                    user_id: String(user.id),
+                    email,
+                    singleton_key: 1,
+                    created_at: new Date(),
+                    created_by: input.createdBy ?? "system_bootstrap",
+                });
+                this.logger.info("Platform Super Admin successfully bootstrapped", { email });
+                return { ok: true, value: { user, alreadyExisted: false } };
+            });
+        }
+        catch (err) {
+            if (isDuplicateKeyError(err)) {
+                const existingAdmins = await this.listSuperAdmins();
+                const existingAdmin = existingAdmins[0];
+                if (existingAdmin?.email === email) {
+                    const user = await this.userRepository.findById(existingAdmin.user_id);
+                    if (user)
+                        return { ok: true, value: { user, alreadyExisted: true } };
+                }
                 return {
                     ok: false,
                     error: {
@@ -81,43 +142,6 @@ export class DrizzleSuperAdminStore {
                     },
                 };
             }
-            // Find or create platform user for this email
-            let user = await this.userRepository.findByEmail(email);
-            if (!user) {
-                const now = new Date().toISOString();
-                const userId = randomUUID();
-                const authSubjectId = randomUUID();
-                const draft = createUserDraft({
-                    id: userId,
-                    authSubjectId,
-                    email,
-                    displayName: input.displayName ?? "Platform Super Admin",
-                    now,
-                });
-                const createResult = await this.userRepository.create(draft);
-                if (!createResult.ok) {
-                    return {
-                        ok: false,
-                        error: { code: "persistence_error", message: `Failed to create platform user: ${createResult.error.message}` },
-                    };
-                }
-                user = createResult.value;
-            }
-            // Record in platform_super_admins
-            await this.db.insert(platformSuperAdmins).values({
-                id: randomUUID(),
-                user_id: String(user.id),
-                email,
-                created_at: new Date(),
-                created_by: input.createdBy ?? "system_bootstrap",
-            });
-            this.logger.info("Platform Super Admin successfully bootstrapped", { email });
-            return {
-                ok: true,
-                value: { user, alreadyExisted: false },
-            };
-        }
-        catch (err) {
             this.logger.error("Bootstrap super admin error", { error: String(err) });
             return {
                 ok: false,

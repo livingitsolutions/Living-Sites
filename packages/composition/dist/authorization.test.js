@@ -9,6 +9,9 @@ describe("AuthorizationService", () => {
         membershipRepo = new InMemoryMembershipRepository();
         authService = new AuthorizationService({
             membershipReader: membershipRepo,
+            superAdminChecker: {
+                isSuperAdmin: (userId) => userId === "super-user-1",
+            },
         });
     });
     describe("Platform Super Admin", () => {
@@ -17,7 +20,6 @@ describe("AuthorizationService", () => {
                 userId: "super-user-1",
                 organizationId: "org-any",
                 permission: OrganizationPermissions.MembersRemove,
-                platformRole: SystemRoles.PLATFORM_SUPER_ADMIN,
             });
             expect(decision.allowed).toBe(true);
         });
@@ -25,9 +27,21 @@ describe("AuthorizationService", () => {
             const decision = await authService.can({
                 userId: "super-user-1",
                 permission: SettingsPermissions.Update,
-                isPlatformSuperAdmin: true,
             });
             expect(decision.allowed).toBe(true);
+        });
+        it("ignores spoofed caller-supplied super-admin fields", async () => {
+            const service = new AuthorizationService({ membershipReader: membershipRepo });
+            const spoofedRequest = {
+                userId: "spoofed-user",
+                permission: SettingsPermissions.Update,
+                isPlatformSuperAdmin: true,
+                platformRole: SystemRoles.PLATFORM_SUPER_ADMIN,
+            };
+            const decision = await service.can(spoofedRequest);
+            expect(decision.allowed).toBe(false);
+            if (!decision.allowed)
+                expect(decision.code).toBe("invalid_context");
         });
     });
     describe("Organization Roles", () => {
@@ -263,6 +277,58 @@ describe("AuthorizationService", () => {
             if (!deniedDec.allowed) {
                 expect(deniedDec.code).toBe("scope_mismatch");
             }
+        });
+        it("resolves multiple website memberships by exact website", async () => {
+            await membershipRepo.create({
+                organizationId: "org-1",
+                userId: "multi-site-user",
+                role: "viewer",
+                websiteScopeId: "site-101",
+                status: "active",
+            });
+            await membershipRepo.create({
+                organizationId: "org-1",
+                userId: "multi-site-user",
+                role: "editor",
+                websiteScopeId: "site-202",
+                status: "active",
+            });
+            const first = await authService.can({
+                userId: "multi-site-user",
+                organizationId: "org-1",
+                websiteId: "site-101",
+                permission: PagePermissions.Create,
+            });
+            const second = await authService.can({
+                userId: "multi-site-user",
+                organizationId: "org-1",
+                websiteId: "site-202",
+                permission: PagePermissions.Create,
+            });
+            expect(first.allowed).toBe(false);
+            expect(second.allowed).toBe(true);
+        });
+        it("prefers organization-wide membership over a website-specific overlap", async () => {
+            await membershipRepo.create({
+                organizationId: "org-1",
+                userId: "overlap-user",
+                role: "viewer",
+                status: "active",
+            });
+            await membershipRepo.create({
+                organizationId: "org-1",
+                userId: "overlap-user",
+                role: "editor",
+                websiteScopeId: "site-101",
+                status: "active",
+            });
+            const decision = await authService.can({
+                userId: "overlap-user",
+                organizationId: "org-1",
+                websiteId: "site-101",
+                permission: PagePermissions.Create,
+            });
+            expect(decision.allowed).toBe(false);
         });
     });
     describe("Unknown permissions and validation", () => {

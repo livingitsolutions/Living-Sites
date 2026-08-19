@@ -7,9 +7,8 @@ import type {
   OrganizationMemberAddedEvent,
 } from "@livingsites/domain";
 import { createMembershipDraft } from "@livingsites/domain";
-import type { MembershipReader, MembershipCreator } from "../../../repositories/membership";
+import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership";
 import type { UserReader } from "../../../repositories/user";
-import type { EventPublisher } from "../../../services/event-publisher";
 import type { AuthorizationService } from "../../../authorization/service";
 import { OrganizationPermissions } from "../../../authorization/permissions";
 import type { AddOrganizationMemberInput } from "./input";
@@ -18,10 +17,9 @@ import type { AddOrganizationMemberError } from "./errors";
 import { validateAddOrganizationMemberInput } from "./validator";
 
 export interface AddOrganizationMemberDeps {
-  readonly membershipRepository: MembershipReader & MembershipCreator;
+  readonly membershipRepository: MembershipReader & MembershipMutationPersistence;
   readonly userReader?: UserReader;
   readonly authorizationService: AuthorizationService;
-  readonly eventPublisher: EventPublisher;
   readonly clock: { nowIso(): string };
   readonly idGenerator: { generatePrefixed(prefix: string): string; generate(): string };
 }
@@ -35,14 +33,13 @@ export async function addOrganizationMember(
     return { ok: false, error: validation.error };
   }
 
-  const { organizationId, userId, role, websiteScopeId, callerUserId, isPlatformSuperAdmin } = validation.value;
+  const { organizationId, userId, role, websiteScopeId, callerUserId } = validation.value;
 
   // 1. Authorize caller
   const authDecision = await deps.authorizationService.can({
     userId: callerUserId as UserId,
     organizationId: organizationId as OrganizationId,
     permission: OrganizationPermissions.MembersInvite,
-    isPlatformSuperAdmin,
   });
 
   if (!authDecision.allowed) {
@@ -64,22 +61,22 @@ export async function addOrganizationMember(
   }
 
   // 3. Check for existing active membership
-  const existing = await deps.membershipRepository.findForUserAndOrganization(
+  const existingMemberships = await deps.membershipRepository.listForUserAndOrganization(
     organizationId as OrganizationId,
     userId as UserId,
   );
-  if (existing && existing.status === "active") {
-    // If org-wide or same scope
-    if (!websiteScopeId || existing.websiteScopeId === websiteScopeId) {
-      return {
-        ok: false,
-        error: {
-          code: "duplicate_membership",
-          message: `User "${userId}" is already a member of organization "${organizationId}".`,
-          userId,
-        },
-      };
-    }
+  const duplicate = existingMemberships.some((membership) =>
+    (membership.websiteScopeId ?? null) === websiteScopeId,
+  );
+  if (duplicate) {
+    return {
+      ok: false,
+      error: {
+        code: "duplicate_membership",
+        message: `User "${userId}" already has an active membership for this organization scope.`,
+        userId,
+      },
+    };
   }
 
   // 4. Create membership draft
@@ -96,26 +93,20 @@ export async function addOrganizationMember(
     createdBy: callerUserId as UserId,
   });
 
-  // 5. Persist
-  const createResult = await deps.membershipRepository.create(draft);
-  if (!createResult.ok) {
-    return { ok: false, error: createResult.error };
-  }
-
-  const persisted = createResult.value;
-
-  // 6. Emit event
   const event: OrganizationMemberAddedEvent = {
     type: "organization.member_added",
     occurredAt: now,
     eventScope: { scope: "organization", organizationId: organizationId as OrganizationId },
-    membershipId: persisted.id,
-    userId: persisted.userId,
-    role: persisted.role,
-    websiteScopeId: persisted.websiteScopeId,
+    membershipId,
+    userId: userId as UserId,
+    role,
+    websiteScopeId,
   };
 
-  await deps.eventPublisher.publish(event);
+  const createResult = await deps.membershipRepository.createWithEvent(draft, event);
+  if (!createResult.ok) {
+    return { ok: false, error: createResult.error };
+  }
 
-  return { ok: true, value: { membership: persisted } };
+  return { ok: true, value: { membership: createResult.value } };
 }

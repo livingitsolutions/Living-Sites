@@ -5,6 +5,5 @@ export interface AddOrganizationMemberInput {
     readonly role: RoleValue | string;
     readonly websiteScopeId?: WebsiteId | string | null;
     readonly callerUserId: UserId | string;
-    readonly isPlatformSuperAdmin?: boolean;
 }
 //# sourceMappingURL=input.d.ts.map

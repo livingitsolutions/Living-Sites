@@ -1,16 +1,14 @@
 import type { Result } from "@livingsites/domain";
-import type { MembershipReader, MembershipCreator } from "../../../repositories/membership";
+import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership";
 import type { UserReader } from "../../../repositories/user";
-import type { EventPublisher } from "../../../services/event-publisher";
 import type { AuthorizationService } from "../../../authorization/service";
 import type { AddOrganizationMemberInput } from "./input";
 import type { AddOrganizationMemberOutput } from "./output";
 import type { AddOrganizationMemberError } from "./errors";
 export interface AddOrganizationMemberDeps {
-    readonly membershipRepository: MembershipReader & MembershipCreator;
+    readonly membershipRepository: MembershipReader & MembershipMutationPersistence;
     readonly userReader?: UserReader;
     readonly authorizationService: AuthorizationService;
-    readonly eventPublisher: EventPublisher;
     readonly clock: {
         nowIso(): string;
     };

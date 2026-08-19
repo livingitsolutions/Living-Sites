@@ -1,5 +1,5 @@
 import type { Result } from "@livingsites/domain";
-import { normalizeSystemRole } from "../../../authorization/roles";
+import { normalizeOrganizationRole } from "../../../authorization/roles";
 import type { AddOrganizationMemberInput } from "./input";
 import type { AddOrganizationMemberError } from "./errors";
 
@@ -9,7 +9,6 @@ export interface NormalizedAddOrganizationMemberInput {
   readonly role: string;
   readonly websiteScopeId: string | null;
   readonly callerUserId: string;
-  readonly isPlatformSuperAdmin: boolean;
 }
 
 export function validateAddOrganizationMemberInput(
@@ -30,7 +29,7 @@ export function validateAddOrganizationMemberInput(
     return { ok: false, error: { code: "validation_error", message: "callerUserId is required." } };
   }
 
-  const role = normalizeSystemRole(rawRole);
+  const role = normalizeOrganizationRole(rawRole);
   if (!role) {
     return {
       ok: false,
@@ -51,7 +50,6 @@ export function validateAddOrganizationMemberInput(
       role,
       websiteScopeId,
       callerUserId,
-      isPlatformSuperAdmin: input.isPlatformSuperAdmin ?? false,
     },
   };
 }

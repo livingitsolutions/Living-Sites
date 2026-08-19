@@ -122,6 +122,10 @@ export function normalizeSystemRole(role) {
     }
     return null;
 }
+export function normalizeOrganizationRole(role) {
+    const normalized = normalizeSystemRole(role);
+    return normalized === SystemRoles.PLATFORM_SUPER_ADMIN ? null : normalized;
+}
 export function getPermissionsForRole(role) {
     const normalized = normalizeSystemRole(role);
     if (!normalized)

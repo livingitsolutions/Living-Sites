@@ -1,5 +1,5 @@
 import { OrganizationPermissions } from "../../../authorization/permissions";
-import { normalizeSystemRole } from "../../../authorization/roles";
+import { normalizeOrganizationRole, normalizeSystemRole } from "../../../authorization/roles";
 export async function changeOrganizationMemberRole(input, deps) {
     const membershipId = typeof input.membershipId === "string" ? input.membershipId.trim() : "";
     const callerUserId = typeof input.callerUserId === "string" ? input.callerUserId.trim() : "";
@@ -10,7 +10,7 @@ export async function changeOrganizationMemberRole(input, deps) {
     if (!callerUserId) {
         return { ok: false, error: { code: "validation_error", message: "callerUserId is required." } };
     }
-    const newRole = normalizeSystemRole(rawRole);
+    const newRole = normalizeOrganizationRole(rawRole);
     if (!newRole) {
         return {
             ok: false,
@@ -30,7 +30,6 @@ export async function changeOrganizationMemberRole(input, deps) {
         userId: callerUserId,
         organizationId: membership.organizationId,
         permission: OrganizationPermissions.MembersUpdate,
-        isPlatformSuperAdmin: input.isPlatformSuperAdmin,
     });
     if (!authDecision.allowed) {
         return {
@@ -54,24 +53,20 @@ export async function changeOrganizationMemberRole(input, deps) {
         }
     }
     const previousRole = membership.role;
-    // 4. Mutate role via repository
-    const updateResult = await deps.membershipRepository.changeRole(membershipId, newRole, input.expectedVersion);
-    if (!updateResult.ok) {
-        return { ok: false, error: updateResult.error };
-    }
-    const updated = updateResult.value;
     const now = deps.clock.nowIso();
-    // 5. Emit event
     const event = {
         type: "organization.member_role_changed",
         occurredAt: now,
-        eventScope: { scope: "organization", organizationId: updated.organizationId },
-        membershipId: updated.id,
-        userId: updated.userId,
+        eventScope: { scope: "organization", organizationId: membership.organizationId },
+        membershipId: membership.id,
+        userId: membership.userId,
         previousRole,
-        newRole: updated.role,
+        newRole,
     };
-    await deps.eventPublisher.publish(event);
-    return { ok: true, value: { membership: updated } };
+    const updateResult = await deps.membershipRepository.changeRoleWithEvent(membershipId, newRole, input.expectedVersion, event);
+    if (!updateResult.ok) {
+        return { ok: false, error: updateResult.error };
+    }
+    return { ok: true, value: { membership: updateResult.value } };
 }
 //# sourceMappingURL=use-case.js.map

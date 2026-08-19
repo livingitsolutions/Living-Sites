@@ -24,8 +24,6 @@ export interface AuthorizationRequest {
     readonly permission: PermissionKey | string;
     readonly organizationId?: OrganizationId;
     readonly websiteId?: WebsiteId;
-    readonly platformRole?: string;
-    readonly isPlatformSuperAdmin?: boolean;
 }
 export interface PlatformSuperAdminChecker {
     isSuperAdmin(userId: UserId): Promise<boolean> | boolean;
@@ -39,6 +37,6 @@ export declare class AuthorizationService {
     private readonly superAdminChecker?;
     constructor(config: AuthorizationServiceConfig);
     can(request: AuthorizationRequest): Promise<AuthorizationDecision>;
-    resolvePermissions(organizationId: OrganizationId, userId: UserId): Promise<readonly PermissionKey[]>;
+    resolvePermissions(organizationId: OrganizationId, userId: UserId, websiteId?: WebsiteId | null): Promise<readonly PermissionKey[]>;
 }
 //# sourceMappingURL=service.d.ts.map

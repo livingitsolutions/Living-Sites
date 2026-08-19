@@ -5,19 +5,17 @@ import type {
   ISODateString,
   OrganizationMemberRoleChangedEvent,
 } from "@livingsites/domain";
-import type { MembershipReader, MembershipMutator } from "../../../repositories/membership";
-import type { EventPublisher } from "../../../services/event-publisher";
+import type { MembershipReader, MembershipMutationPersistence } from "../../../repositories/membership";
 import type { AuthorizationService } from "../../../authorization/service";
 import { OrganizationPermissions } from "../../../authorization/permissions";
-import { normalizeSystemRole } from "../../../authorization/roles";
+import { normalizeOrganizationRole, normalizeSystemRole } from "../../../authorization/roles";
 import type { ChangeOrganizationMemberRoleInput } from "./input";
 import type { ChangeOrganizationMemberRoleOutput } from "./output";
 import type { ChangeOrganizationMemberRoleError } from "./errors";
 
 export interface ChangeOrganizationMemberRoleDeps {
-  readonly membershipRepository: MembershipReader & MembershipMutator;
+  readonly membershipRepository: MembershipReader & MembershipMutationPersistence;
   readonly authorizationService: AuthorizationService;
-  readonly eventPublisher: EventPublisher;
   readonly clock: { nowIso(): string };
 }
 
@@ -35,7 +33,7 @@ export async function changeOrganizationMemberRole(
   if (!callerUserId) {
     return { ok: false, error: { code: "validation_error", message: "callerUserId is required." } };
   }
-  const newRole = normalizeSystemRole(rawRole);
+  const newRole = normalizeOrganizationRole(rawRole);
   if (!newRole) {
     return {
       ok: false,
@@ -57,7 +55,6 @@ export async function changeOrganizationMemberRole(
     userId: callerUserId as UserId,
     organizationId: membership.organizationId,
     permission: OrganizationPermissions.MembersUpdate,
-    isPlatformSuperAdmin: input.isPlatformSuperAdmin,
   });
 
   if (!authDecision.allowed) {
@@ -85,32 +82,27 @@ export async function changeOrganizationMemberRole(
 
   const previousRole = membership.role;
 
-  // 4. Mutate role via repository
-  const updateResult = await deps.membershipRepository.changeRole(
+  const now = deps.clock.nowIso() as ISODateString;
+  const event: OrganizationMemberRoleChangedEvent = {
+    type: "organization.member_role_changed",
+    occurredAt: now,
+    eventScope: { scope: "organization", organizationId: membership.organizationId },
+    membershipId: membership.id,
+    userId: membership.userId,
+    previousRole,
+    newRole,
+  };
+
+  const updateResult = await deps.membershipRepository.changeRoleWithEvent(
     membershipId as MembershipId,
     newRole as import("@livingsites/domain").RoleValue,
     input.expectedVersion,
+    event,
   );
 
   if (!updateResult.ok) {
     return { ok: false, error: updateResult.error };
   }
 
-  const updated = updateResult.value;
-  const now = deps.clock.nowIso() as ISODateString;
-
-  // 5. Emit event
-  const event: OrganizationMemberRoleChangedEvent = {
-    type: "organization.member_role_changed",
-    occurredAt: now,
-    eventScope: { scope: "organization", organizationId: updated.organizationId },
-    membershipId: updated.id,
-    userId: updated.userId,
-    previousRole,
-    newRole: updated.role,
-  };
-
-  await deps.eventPublisher.publish(event);
-
-  return { ok: true, value: { membership: updated } };
+  return { ok: true, value: { membership: updateResult.value } };
 }

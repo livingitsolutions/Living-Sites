@@ -13,7 +13,6 @@ export async function getOrganizationMembers(input, deps) {
         userId: callerUserId,
         organizationId: organizationId,
         permission: OrganizationPermissions.MembersRead,
-        isPlatformSuperAdmin: input.isPlatformSuperAdmin,
     });
     if (!authDecision.allowed) {
         return {

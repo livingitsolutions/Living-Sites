@@ -9,8 +9,7 @@
  * pending linkage produces the same result.
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/pglite";
 import { NetlifyDB } from "@netlify/database-dev";
 import { NoopLogger } from "@livingsites/platform";
 import { DrizzleUserRepository } from "../user/drizzle-user-repository";
@@ -20,34 +19,34 @@ import { betterAuthSessions, betterAuthUsers, platformUsers } from "../../db/sch
 import * as schema from "../../db/schema";
 import { SystemClock, CryptoIdGenerator } from "@livingsites/platform";
 import { DrizzleOrphanIdentityDisabler } from "./drizzle-orphan-identity-disabler";
+import type { DrizzleDB } from "../../db/drizzle-instance";
 
 describe("LinkageReconciler — orphan identity recovery", () => {
   let netlifyDB: NetlifyDB;
-  let sql: ReturnType<typeof postgres>;
   let db: ReturnType<typeof drizzle<typeof schema>>;
   let userRepo: DrizzleUserRepository;
   let reconciler: LinkageReconciler;
 
   beforeAll(async () => {
     netlifyDB = new NetlifyDB({ logger: () => {} });
-    const connectionString = await netlifyDB.start();
+    await netlifyDB.start();
     await netlifyDB.applyMigrations("./netlify/database/migrations");
-    sql = postgres(connectionString);
-    db = drizzle({ client: sql, schema });
-    userRepo = new DrizzleUserRepository({ db, logger: new NoopLogger() });
+    const embeddedDatabase = (netlifyDB as unknown as { db: Parameters<typeof drizzle>[0] }).db;
+    db = drizzle(embeddedDatabase, { schema });
+    const repositoryDb = db as unknown as DrizzleDB;
+    userRepo = new DrizzleUserRepository({ db: repositoryDb, logger: new NoopLogger() });
     reconciler = new LinkageReconciler({
-      db,
+      db: repositoryDb,
       logger: new NoopLogger(),
       userCreator: userRepo,
       userReader: userRepo,
-      identityDisabler: new DrizzleOrphanIdentityDisabler(db),
+      identityDisabler: new DrizzleOrphanIdentityDisabler(repositoryDb),
       idGenerator: new CryptoIdGenerator(),
       clock: new SystemClock(),
     });
   });
 
   afterAll(async () => {
-    if (sql) await sql.end();
     if (netlifyDB) await netlifyDB.stop();
   });
 

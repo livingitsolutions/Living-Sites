@@ -5,7 +5,8 @@
  * Infrastructure public barrel — they stay private to the Drizzle adapter
  * modules. Only adapters and composition-facing factories are exported.
  */
-import { pgTable, text, integer, numeric, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { check, pgTable, text, integer, numeric, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
 
 /* ---------- Organizations ---------- */
 
@@ -138,7 +139,9 @@ export const memberships = pgTable("memberships", {
   created_by: text("created_by"),
   updated_by: text("updated_by"),
   deleted_at: timestamp("deleted_at", { withTimezone: true }),
-});
+}, (table) => [
+  check("memberships_role_check", sql`${table.role} IN ('owner', 'admin', 'editor', 'viewer')`),
+]);
 
 /* ---------- Platform Super Admins ---------- */
 
@@ -146,9 +149,12 @@ export const platformSuperAdmins = pgTable("platform_super_admins", {
   id: text("id").primaryKey(),
   user_id: text("user_id").notNull().unique().references(() => platformUsers.id, { onDelete: "cascade" }),
   email: text("email").notNull().unique(),
+  singleton_key: integer("singleton_key").notNull().default(1).unique(),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   created_by: text("created_by"),
-});
+}, (table) => [
+  check("platform_super_admins_singleton_check", sql`${table.singleton_key} = 1`),
+]);
 
 /* ---------- Better Auth Tables ---------- */
 

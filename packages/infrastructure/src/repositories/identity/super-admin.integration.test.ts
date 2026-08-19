@@ -1,29 +1,30 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/pglite";
 import { NetlifyDB } from "@netlify/database-dev";
 import { NoopLogger } from "@livingsites/platform";
 import { DrizzleSuperAdminStore } from "./drizzle-super-admin-store";
 import { platformSuperAdmins, platformUsers } from "../../db/schema";
 import * as schema from "../../db/schema";
+import type { DrizzleDB } from "../../db/drizzle-instance";
 
 describe("Platform Super Admin Bootstrap — integration", () => {
   let netlifyDB: NetlifyDB;
   let db: ReturnType<typeof drizzle<typeof schema>>;
-  let sql: ReturnType<typeof postgres>;
   let store: DrizzleSuperAdminStore;
+  let secondStore: DrizzleSuperAdminStore;
 
   beforeAll(async () => {
     netlifyDB = new NetlifyDB({ logger: () => {} });
-    const connectionString = await netlifyDB.start();
+    await netlifyDB.start();
     await netlifyDB.applyMigrations("./netlify/database/migrations");
-    sql = postgres(connectionString, { max: 10 });
-    db = drizzle({ client: sql, schema });
-    store = new DrizzleSuperAdminStore({ db, logger: new NoopLogger() });
+    const embeddedDatabase = (netlifyDB as unknown as { db: Parameters<typeof drizzle>[0] }).db;
+    db = drizzle(embeddedDatabase, { schema });
+    const repositoryDb = db as unknown as DrizzleDB;
+    store = new DrizzleSuperAdminStore({ db: repositoryDb, logger: new NoopLogger() });
+    secondStore = new DrizzleSuperAdminStore({ db: repositoryDb, logger: new NoopLogger() });
   });
 
   afterAll(async () => {
-    if (sql) await sql.end();
     if (netlifyDB) await netlifyDB.stop();
   });
 
@@ -71,5 +72,19 @@ describe("Platform Super Admin Bootstrap — integration", () => {
     if (!res2.ok) {
       expect(res2.error.code).toBe("bootstrap_locked");
     }
+  });
+
+  it("concurrent different-email bootstraps establish exactly one super admin", async () => {
+    const [first, second] = await Promise.all([
+      store.bootstrap({ email: "concurrent-first@platform.test" }),
+      secondStore.bootstrap({ email: "concurrent-second@platform.test" }),
+    ]);
+
+    expect(Number(first.ok) + Number(second.ok)).toBe(1);
+    const rejected = first.ok ? second : first;
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) expect(rejected.error.code).toBe("bootstrap_locked");
+    expect(await db.select().from(platformSuperAdmins)).toHaveLength(1);
+    expect(await db.select().from(platformUsers)).toHaveLength(1);
   });
 });

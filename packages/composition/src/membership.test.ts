@@ -9,7 +9,6 @@ import {
 import {
   InMemoryMembershipRepository,
   InMemoryUserRepository,
-  InMemoryEventPublisher,
   FakeClock,
   DeterministicIdGenerator,
 } from "@livingsites/test-support";
@@ -18,7 +17,6 @@ import type { OrganizationId, UserId, MembershipId } from "@livingsites/domain";
 describe("Membership Use Cases", () => {
   let membershipRepo: InMemoryMembershipRepository;
   let userRepo: InMemoryUserRepository;
-  let eventPublisher: InMemoryEventPublisher;
   let clock: FakeClock;
   let idGenerator: DeterministicIdGenerator;
   let authService: AuthorizationService;
@@ -34,7 +32,6 @@ describe("Membership Use Cases", () => {
   beforeEach(async () => {
     membershipRepo = new InMemoryMembershipRepository();
     userRepo = new InMemoryUserRepository();
-    eventPublisher = new InMemoryEventPublisher();
     clock = new FakeClock(1000);
     idGenerator = new DeterministicIdGenerator();
     authService = new AuthorizationService({ membershipReader: membershipRepo });
@@ -108,7 +105,6 @@ describe("Membership Use Cases", () => {
           membershipRepository: membershipRepo,
           userReader: userRepo,
           authorizationService: authService,
-          eventPublisher,
           clock,
           idGenerator,
         },
@@ -123,8 +119,8 @@ describe("Membership Use Cases", () => {
       expect(res.value.membership.version).toBe(1);
 
       // Verify event emission
-      expect(eventPublisher.published).toHaveLength(1);
-      expect(eventPublisher.published[0]?.type).toBe("organization.member_added");
+      expect(membershipRepo.publishedEvents).toHaveLength(1);
+      expect(membershipRepo.publishedEvents[0]?.type).toBe("organization.member_added");
     });
 
     it("rejects caller lacking invite permission", async () => {
@@ -148,7 +144,6 @@ describe("Membership Use Cases", () => {
           membershipRepository: membershipRepo,
           userReader: userRepo,
           authorizationService: authService,
-          eventPublisher,
           clock,
           idGenerator,
         },
@@ -172,7 +167,6 @@ describe("Membership Use Cases", () => {
           membershipRepository: membershipRepo,
           userReader: userRepo,
           authorizationService: authService,
-          eventPublisher,
           clock,
           idGenerator,
         },
@@ -196,7 +190,6 @@ describe("Membership Use Cases", () => {
           membershipRepository: membershipRepo,
           userReader: userRepo,
           authorizationService: authService,
-          eventPublisher,
           clock,
           idGenerator,
         },
@@ -206,6 +199,45 @@ describe("Membership Use Cases", () => {
       if (!res.ok) {
         expect("code" in res.error && res.error.code).toBe("duplicate_membership");
       }
+    });
+
+    it("does not trust a spoofed super-admin flag in use-case input", async () => {
+      const spoofedInput = {
+        organizationId: orgA,
+        userId: editorA,
+        role: "editor",
+        callerUserId: callerB,
+        isPlatformSuperAdmin: true,
+      };
+
+      const res = await addOrganizationMember(spoofedInput, {
+        membershipRepository: membershipRepo,
+        userReader: userRepo,
+        authorizationService: authService,
+        clock,
+        idGenerator,
+      });
+
+      expect(res.ok).toBe(false);
+      if (!res.ok) expect(res.error.code).toBe("unauthorized");
+    });
+
+    it("rejects platform_super_admin as an organization membership role", async () => {
+      const res = await addOrganizationMember({
+        organizationId: orgA,
+        userId: editorA,
+        role: "platform_super_admin",
+        callerUserId: ownerA,
+      }, {
+        membershipRepository: membershipRepo,
+        userReader: userRepo,
+        authorizationService: authService,
+        clock,
+        idGenerator,
+      });
+
+      expect(res.ok).toBe(false);
+      if (!res.ok) expect(res.error.code).toBe("validation_error");
     });
   });
 
@@ -221,7 +253,6 @@ describe("Membership Use Cases", () => {
         {
           membershipRepository: membershipRepo,
           authorizationService: authService,
-          eventPublisher,
           clock,
         },
       );
@@ -232,8 +263,8 @@ describe("Membership Use Cases", () => {
       expect(res.value.membership.role).toBe("editor");
       expect(res.value.membership.version).toBe(2);
 
-      expect(eventPublisher.published).toHaveLength(1);
-      expect(eventPublisher.published[0]?.type).toBe("organization.member_role_changed");
+      expect(membershipRepo.publishedEvents).toHaveLength(1);
+      expect(membershipRepo.publishedEvents[0]?.type).toBe("organization.member_role_changed");
     });
 
     it("prevents demoting the sole remaining owner", async () => {
@@ -247,7 +278,6 @@ describe("Membership Use Cases", () => {
         {
           membershipRepository: membershipRepo,
           authorizationService: authService,
-          eventPublisher,
           clock,
         },
       );
@@ -269,7 +299,6 @@ describe("Membership Use Cases", () => {
         {
           membershipRepository: membershipRepo,
           authorizationService: authService,
-          eventPublisher,
           clock,
         },
       );
@@ -292,14 +321,13 @@ describe("Membership Use Cases", () => {
         {
           membershipRepository: membershipRepo,
           authorizationService: authService,
-          eventPublisher,
           clock,
         },
       );
 
       expect(res.ok).toBe(true);
-      expect(eventPublisher.published).toHaveLength(1);
-      expect(eventPublisher.published[0]?.type).toBe("organization.member_removed");
+      expect(membershipRepo.publishedEvents).toHaveLength(1);
+      expect(membershipRepo.publishedEvents[0]?.type).toBe("organization.member_removed");
 
       const active = await membershipRepo.findForUserAndOrganization(orgA, adminA);
       expect(active).toBeNull();
@@ -315,7 +343,6 @@ describe("Membership Use Cases", () => {
         {
           membershipRepository: membershipRepo,
           authorizationService: authService,
-          eventPublisher,
           clock,
         },
       );

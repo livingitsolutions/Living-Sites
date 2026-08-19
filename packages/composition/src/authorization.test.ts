@@ -7,6 +7,7 @@ import {
   MediaPermissions,
   FormPermissions,
   SettingsPermissions,
+  type AuthorizationRequest,
 } from "@livingsites/application";
 import { SystemRoles, type OrganizationId, type UserId, type WebsiteId } from "@livingsites/domain";
 import { InMemoryMembershipRepository } from "@livingsites/test-support";
@@ -19,6 +20,9 @@ describe("AuthorizationService", () => {
     membershipRepo = new InMemoryMembershipRepository();
     authService = new AuthorizationService({
       membershipReader: membershipRepo,
+      superAdminChecker: {
+        isSuperAdmin: (userId) => userId === ("super-user-1" as UserId),
+      },
     });
   });
 
@@ -28,7 +32,6 @@ describe("AuthorizationService", () => {
         userId: "super-user-1" as UserId,
         organizationId: "org-any" as OrganizationId,
         permission: OrganizationPermissions.MembersRemove,
-        platformRole: SystemRoles.PLATFORM_SUPER_ADMIN,
       });
 
       expect(decision.allowed).toBe(true);
@@ -38,10 +41,23 @@ describe("AuthorizationService", () => {
       const decision = await authService.can({
         userId: "super-user-1" as UserId,
         permission: SettingsPermissions.Update,
-        isPlatformSuperAdmin: true,
       });
 
       expect(decision.allowed).toBe(true);
+    });
+
+    it("ignores spoofed caller-supplied super-admin fields", async () => {
+      const service = new AuthorizationService({ membershipReader: membershipRepo });
+      const spoofedRequest = {
+        userId: "spoofed-user" as UserId,
+        permission: SettingsPermissions.Update,
+        isPlatformSuperAdmin: true,
+        platformRole: SystemRoles.PLATFORM_SUPER_ADMIN,
+      } as unknown as AuthorizationRequest;
+
+      const decision = await service.can(spoofedRequest);
+      expect(decision.allowed).toBe(false);
+      if (!decision.allowed) expect(decision.code).toBe("invalid_context");
     });
   });
 
@@ -306,6 +322,64 @@ describe("AuthorizationService", () => {
       if (!deniedDec.allowed) {
         expect(deniedDec.code).toBe("scope_mismatch");
       }
+    });
+
+    it("resolves multiple website memberships by exact website", async () => {
+      await membershipRepo.create({
+        organizationId: "org-1" as OrganizationId,
+        userId: "multi-site-user" as UserId,
+        role: "viewer",
+        websiteScopeId: "site-101",
+        status: "active",
+      });
+      await membershipRepo.create({
+        organizationId: "org-1" as OrganizationId,
+        userId: "multi-site-user" as UserId,
+        role: "editor",
+        websiteScopeId: "site-202",
+        status: "active",
+      });
+
+      const first = await authService.can({
+        userId: "multi-site-user" as UserId,
+        organizationId: "org-1" as OrganizationId,
+        websiteId: "site-101" as WebsiteId,
+        permission: PagePermissions.Create,
+      });
+      const second = await authService.can({
+        userId: "multi-site-user" as UserId,
+        organizationId: "org-1" as OrganizationId,
+        websiteId: "site-202" as WebsiteId,
+        permission: PagePermissions.Create,
+      });
+
+      expect(first.allowed).toBe(false);
+      expect(second.allowed).toBe(true);
+    });
+
+    it("prefers organization-wide membership over a website-specific overlap", async () => {
+      await membershipRepo.create({
+        organizationId: "org-1" as OrganizationId,
+        userId: "overlap-user" as UserId,
+        role: "viewer",
+        status: "active",
+      });
+      await membershipRepo.create({
+        organizationId: "org-1" as OrganizationId,
+        userId: "overlap-user" as UserId,
+        role: "editor",
+        websiteScopeId: "site-101",
+        status: "active",
+      });
+
+      const decision = await authService.can({
+        userId: "overlap-user" as UserId,
+        organizationId: "org-1" as OrganizationId,
+        websiteId: "site-101" as WebsiteId,
+        permission: PagePermissions.Create,
+      });
+
+      expect(decision.allowed).toBe(false);
     });
   });
 
