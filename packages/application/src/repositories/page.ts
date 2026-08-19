@@ -1,5 +1,6 @@
-import type { AggregateVersion, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PageRestoredEvent, PageStatus, Section, WebsiteId } from "@livingsites/domain";
+import type { AggregateVersion, OrganizationId, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PagePublishedEvent, PageRestoredEvent, PageSnapshot, PageStatus, Section, SectionSnapshotEntry, UserId, VersionString, WebsiteId } from "@livingsites/domain";
 import type { CreateResult, SaveResult } from "../contracts";
+import type { Result } from "@livingsites/domain";
 
 export interface PageReader {
   findById(id: PageId): Promise<Page | null>;
@@ -14,3 +15,34 @@ export interface PageMutationPersistence {
   restoreWithEvent(input: { readonly pageId: PageId; readonly expectedVersion: AggregateVersion; readonly restoredAt: string; readonly restoredBy: string }, event: PageRestoredEvent): Promise<SaveResult<Page>>;
 }
 export interface PageRepository extends PageReader, PageCreationPersistence, PageMutationPersistence {}
+
+export interface PageSnapshotReader {
+  findById(id: string): Promise<PageSnapshot | null>;
+  findLatestForPage(pageId: PageId): Promise<PageSnapshot | null>;
+  findByRevision(pageId: PageId, revisionNumber: number): Promise<PageSnapshot | null>;
+}
+
+export interface PagePublicationCandidate {
+  readonly id: string;
+  readonly pageId: PageId;
+  readonly websiteId: WebsiteId;
+  readonly organizationId: OrganizationId;
+  readonly releaseVersion?: VersionString;
+  readonly page: PageSnapshot["page"];
+  readonly sections: readonly SectionSnapshotEntry[];
+  readonly seo?: PageSnapshot["seo"];
+  readonly publishedAt: PageSnapshot["publishedAt"];
+  readonly publishedBy: UserId;
+}
+
+export type PagePublicationError =
+  | { readonly code: "concurrency_conflict"; readonly message: string }
+  | { readonly code: "persistence_error"; readonly message: string };
+
+export interface PagePublisher {
+  publish(input: {
+    readonly candidate: PagePublicationCandidate;
+    readonly expectedPageVersion: AggregateVersion;
+    readonly event: Omit<PagePublishedEvent, "revisionNumber" | "pageVersion">;
+  }): Promise<Result<PageSnapshot, PagePublicationError>>;
+}

@@ -14,6 +14,7 @@ import type {
   AuditTrail,
   LifecycleStatus,
   AggregateVersion,
+  OrganizationId,
 } from "../shared";
 import type { Section } from "../section";
 
@@ -61,15 +62,27 @@ export interface Page {
 export interface PageSnapshot {
   readonly id: string;
   readonly pageId: PageId;
+  readonly websiteId: WebsiteId;
+  readonly organizationId: OrganizationId;
   /** Immutable, monotonically increasing revision number per Page. */
   readonly revisionNumber: number;
   /** Optional human-facing release label, e.g. "1.0.0". */
   readonly releaseVersion?: import("../shared").VersionString;
+  readonly page: PageSnapshotMetadata;
+  readonly createdAt: ISODateString;
   readonly publishedAt: ISODateString;
-  readonly publishedBy?: string;
+  readonly publishedBy: string;
   /** Serialized section tree at publish time. Opaque to the domain core. */
   readonly sections: readonly SectionSnapshotEntry[];
   readonly seo?: SeoSnapshot;
+}
+
+export interface PageSnapshotMetadata {
+  readonly title: string;
+  readonly description?: string;
+  readonly slug: string;
+  readonly path: string;
+  readonly isHomepage: boolean;
 }
 
 export interface SectionSnapshotEntry {

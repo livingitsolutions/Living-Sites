@@ -20,7 +20,7 @@ async function loadPage(input: Context, deps: BuilderDeps, permission: typeof Pa
   if (!access.ok) return access;
   const page = await deps.pageReader.findById(input.pageId);
   if (!page || page.websiteId !== input.websiteId) return { ok: false, error: { code: "not_found", message: "Page was not found in this Website." } };
-  if (permission === PagePermissions.Update && page.status !== PageStatus.Draft) return { ok: false, error: { code: "draft_only", message: "Only draft Pages can be edited in the builder." } };
+  if (permission === PagePermissions.Update && page.status === PageStatus.Archived) return { ok: false, error: { code: "draft_only", message: "Archived Pages cannot be edited in the builder." } };
   return { ok: true, value: page };
 }
 
@@ -34,7 +34,7 @@ export async function getPageBuilderState(input: Context, deps: BuilderDeps): Pr
   const loaded = await loadPage(input, deps, PagePermissions.Read);
   if (!loaded.ok) return loaded;
   const editDecision = await deps.authorizationService.can({ userId: deps.authenticatedUser.userId, organizationId: input.organizationId, websiteId: input.websiteId, permission: PagePermissions.Update });
-  return { ok: true, value: { page: loaded.value, sections: loaded.value.sections, sectionTypes: SECTION_TYPES, canEdit: editDecision.allowed && loaded.value.status === PageStatus.Draft } };
+  return { ok: true, value: { page: loaded.value, sections: loaded.value.sections, sectionTypes: SECTION_TYPES, canEdit: editDecision.allowed && loaded.value.status !== PageStatus.Archived } };
 }
 
 export async function addSection(input: MutationContext & { readonly sectionTypeKey: string; readonly props?: Readonly<Record<string, unknown>> }, deps: BuilderDeps): Promise<Result<PageBuilderState, BuilderError>> {
