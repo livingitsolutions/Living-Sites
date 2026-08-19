@@ -61,6 +61,33 @@ export const websites = pgTable("websites", {
   check("websites_fallback_domain_lowercase_check", sql`${table.fallback_domain} = lower(${table.fallback_domain})`),
 ]);
 
+/* ---------- Pages ---------- */
+
+export const pageStatusEnum = pgEnum("page_status", ["draft", "published", "scheduled", "archived"]);
+export const pages = pgTable("pages", {
+  id: text("id").primaryKey(),
+  website_id: text("website_id").notNull().references(() => websites.id, { onDelete: "restrict" }),
+  title: text("title").notNull(),
+  slug: text("slug").notNull(),
+  description: text("description"),
+  is_homepage: boolean("is_homepage").notNull().default(false),
+  status: pageStatusEnum("status").notNull().default("draft"),
+  published_snapshot_id: text("published_snapshot_id"),
+  section_order: jsonb("section_order").notNull().default([]),
+  available_locales: jsonb("available_locales").notNull().default([]),
+  parent_id: text("parent_id"),
+  version: integer("version").notNull().default(1),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+  created_by: text("created_by"),
+  updated_by: text("updated_by"),
+  archived_at: timestamp("archived_at", { withTimezone: true }),
+}, (table) => [
+  uniqueIndex("pages_website_active_slug_unique").on(table.website_id, table.slug).where(sql`${table.status} <> 'archived'`),
+  index("pages_website_id_idx").on(table.website_id),
+  check("pages_version_check", sql`${table.version} >= 1`),
+]);
+
 /* ---------- Plans ---------- */
 
 export const planTierEnum = pgEnum("plan_tier", ["starter", "pro", "business", "enterprise"]);
@@ -247,6 +274,8 @@ type OrganizationInsert = typeof organizations.$inferInsert;
 
 type WebsiteRow = typeof websites.$inferSelect;
 type WebsiteInsert = typeof websites.$inferInsert;
+type PageRow = typeof pages.$inferSelect;
+type PageInsert = typeof pages.$inferInsert;
 
 type PlanRow = typeof plans.$inferSelect;
 type PlanInsert = typeof plans.$inferInsert;
@@ -271,6 +300,8 @@ export type {
   OrganizationInsert,
   WebsiteRow,
   WebsiteInsert,
+  PageRow,
+  PageInsert,
   PlanRow,
   PlanInsert,
   FeatureRow,

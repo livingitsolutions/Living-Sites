@@ -7,6 +7,7 @@ export interface MembershipListParams extends PaginationParams {
 }
 export interface MembershipReader {
     findById(id: MembershipId): Promise<Membership | null>;
+    listForUser(userId: UserId): Promise<Membership[]>;
     findForUserAndOrganization(organizationId: OrganizationId, userId: UserId, websiteId?: WebsiteId | null): Promise<Membership | null>;
     listForUserAndOrganization(organizationId: OrganizationId, userId: UserId): Promise<Membership[]>;
     listForOrganization(organizationId: OrganizationId): Promise<Membership[]>;

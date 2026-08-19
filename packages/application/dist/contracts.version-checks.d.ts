@@ -13,7 +13,7 @@
  * - save does not require an aggregate with an ID.
  */
 import type { Organization, Plan, Feature, User, Membership, Role, Website, WebsiteSettings, Navigation, MenuItem, Theme, Page, PageSnapshot, Section, SectionType, Media, Folder, Form, FormField, Submission, SEOProfile, SchemaProfile, AnalyticsProfile, ExportJob, Plugin, PluginInstallation, AggregateVersion, ConcurrencyConflict } from "@livingsites/domain";
-import type { OrganizationRepository, PlanRepository, FeatureRepository, UserRepository, MembershipRepository, RoleRepository, WebsiteRepository, NavigationRepository, ThemeRepository, PageRepository, PageSnapshotRepository, SectionTypeRepository, MediaRepository, FolderRepository, FormRepository, SubmissionRepository, SEOProfileRepository, SchemaProfileRepository, AnalyticsProfileRepository, ExportJobRepository, RepositoryError, CreateResult, SaveResult, CreateError, SaveError, DuplicateKeyError, PersistenceUnavailableError, InvalidPersistenceStateError } from "@livingsites/application";
+import type { OrganizationRepository, PlanRepository, FeatureRepository, UserRepository, MembershipRepository, RoleRepository, WebsiteRepository, NavigationRepository, ThemeRepository, SectionTypeRepository, MediaRepository, FolderRepository, FormRepository, SubmissionRepository, SEOProfileRepository, SchemaProfileRepository, AnalyticsProfileRepository, ExportJobRepository, RepositoryError, CreateResult, SaveResult, CreateError, SaveError, DuplicateKeyError, PersistenceUnavailableError, InvalidPersistenceStateError } from "@livingsites/application";
 type HasVersion<T> = T extends {
     version: AggregateVersion;
 } ? true : false;
@@ -96,8 +96,6 @@ declare const _navigationHasCreate: HasCreate<NavigationRepository>;
 declare const _navigationHasSave: HasSave<NavigationRepository>;
 declare const _themeHasCreate: HasCreate<ThemeRepository>;
 declare const _themeHasSave: HasSave<ThemeRepository>;
-declare const _pageHasCreate: HasCreate<PageRepository>;
-declare const _pageHasSave: HasSave<PageRepository>;
 declare const _sectionTypeHasCreate: HasCreate<SectionTypeRepository>;
 declare const _sectionTypeHasSave: HasSave<SectionTypeRepository>;
 declare const _mediaHasCreate: HasCreate<MediaRepository>;
@@ -123,7 +121,6 @@ declare const _roleCreateNoVersion: CreateHasNoExpectedVersion<RoleRepository>;
 declare const _websiteCreateNoVersion: CreateHasNoExpectedVersion<WebsiteRepository>;
 declare const _navigationCreateNoVersion: CreateHasNoExpectedVersion<NavigationRepository>;
 declare const _themeCreateNoVersion: CreateHasNoExpectedVersion<ThemeRepository>;
-declare const _pageCreateNoVersion: CreateHasNoExpectedVersion<PageRepository>;
 declare const _sectionTypeCreateNoVersion: CreateHasNoExpectedVersion<SectionTypeRepository>;
 declare const _mediaCreateNoVersion: CreateHasNoExpectedVersion<MediaRepository>;
 declare const _folderCreateNoVersion: CreateHasNoExpectedVersion<FolderRepository>;
@@ -141,7 +138,6 @@ declare const _roleSaveHasVersion: SaveHasExpectedVersion<RoleRepository>;
 declare const _websiteSaveHasVersion: SaveHasExpectedVersion<WebsiteRepository>;
 declare const _navigationSaveHasVersion: SaveHasExpectedVersion<NavigationRepository>;
 declare const _themeSaveHasVersion: SaveHasExpectedVersion<ThemeRepository>;
-declare const _pageSaveHasVersion: SaveHasExpectedVersion<PageRepository>;
 declare const _sectionTypeSaveHasVersion: SaveHasExpectedVersion<SectionTypeRepository>;
 declare const _mediaSaveHasVersion: SaveHasExpectedVersion<MediaRepository>;
 declare const _folderSaveHasVersion: SaveHasExpectedVersion<FolderRepository>;
@@ -159,7 +155,6 @@ declare const _roleSaveRequiresId: SaveRequiresId<RoleRepository>;
 declare const _websiteSaveRequiresId: SaveRequiresId<WebsiteRepository>;
 declare const _navigationSaveRequiresId: SaveRequiresId<NavigationRepository>;
 declare const _themeSaveRequiresId: SaveRequiresId<ThemeRepository>;
-declare const _pageSaveRequiresId: SaveRequiresId<PageRepository>;
 declare const _sectionTypeSaveRequiresId: SaveRequiresId<SectionTypeRepository>;
 declare const _mediaSaveRequiresId: SaveRequiresId<MediaRepository>;
 declare const _folderSaveRequiresId: SaveRequiresId<FolderRepository>;
@@ -168,9 +163,6 @@ declare const _seoProfileSaveRequiresId: SaveRequiresId<SEOProfileRepository>;
 declare const _schemaProfileSaveRequiresId: SaveRequiresId<SchemaProfileRepository>;
 declare const _analyticsProfileSaveRequiresId: SaveRequiresId<AnalyticsProfileRepository>;
 declare const _exportJobSaveRequiresId: SaveRequiresId<ExportJobRepository>;
-declare const _snapshotHasCreate: HasCreate<PageSnapshotRepository>;
-declare const _snapshotNoSave: HasSave<PageSnapshotRepository>;
-declare const _snapshotCreateNoVersion: CreateHasNoExpectedVersion<PageSnapshotRepository>;
 declare const _submissionCreateNoVersion: CreateHasNoExpectedVersion<SubmissionRepository>;
 type UpdateStatusHasExpectedVersion<T> = T extends {
     updateStatus: infer F;
@@ -201,5 +193,5 @@ type _ConflictInSaveError = ConcurrencyConflict extends SaveError ? true : false
 declare const _conflictInSaveError: _ConflictInSaveError;
 type _ConflictNotInCreateError = ConcurrencyConflict extends CreateError ? true : false;
 declare const _conflictNotInCreateError: _ConflictNotInCreateError;
-export { _orgHasVersion, _planHasVersion, _featureHasVersion, _userHasVersion, _membershipHasVersion, _roleHasVersion, _websiteHasVersion, _navigationHasVersion, _themeHasVersion, _pageHasVersion, _sectionTypeHasVersion, _mediaHasVersion, _folderHasVersion, _formHasVersion, _submissionHasVersion, _seoHasVersion, _schemaHasVersion, _analyticsHasVersion, _exportJobHasVersion, _pluginHasVersion, _pluginInstallationHasVersion, _sectionNoVersion, _formFieldNoVersion, _menuItemNoVersion, _websiteSettingsNoVersion, _snapshotNoVersion, _snapshotHasRevision, _orgHasCreate, _orgHasSave, _planHasCreate, _planHasSave, _featureHasCreate, _featureHasSave, _userHasCreate, _userHasSave, _membershipHasCreate, _membershipHasSave, _roleHasCreate, _roleHasSave, _websiteHasCreate, _websiteHasSave, _navigationHasCreate, _navigationHasSave, _themeHasCreate, _themeHasSave, _pageHasCreate, _pageHasSave, _sectionTypeHasCreate, _sectionTypeHasSave, _mediaHasCreate, _mediaHasSave, _folderHasCreate, _folderHasSave, _formHasCreate, _formHasSave, _seoProfileHasCreate, _seoProfileHasSave, _schemaProfileHasCreate, _schemaProfileHasSave, _analyticsProfileHasCreate, _analyticsProfileHasSave, _exportJobHasCreate, _exportJobHasSave, _orgCreateNoVersion, _planCreateNoVersion, _featureCreateNoVersion, _userCreateNoVersion, _membershipCreateNoVersion, _roleCreateNoVersion, _websiteCreateNoVersion, _navigationCreateNoVersion, _themeCreateNoVersion, _pageCreateNoVersion, _sectionTypeCreateNoVersion, _mediaCreateNoVersion, _folderCreateNoVersion, _formCreateNoVersion, _seoProfileCreateNoVersion, _schemaProfileCreateNoVersion, _analyticsProfileCreateNoVersion, _exportJobCreateNoVersion, _orgSaveHasVersion, _planSaveHasVersion, _featureSaveHasVersion, _userSaveHasVersion, _membershipSaveHasVersion, _roleSaveHasVersion, _websiteSaveHasVersion, _navigationSaveHasVersion, _themeSaveHasVersion, _pageSaveHasVersion, _sectionTypeSaveHasVersion, _mediaSaveHasVersion, _folderSaveHasVersion, _formSaveHasVersion, _seoProfileSaveHasVersion, _schemaProfileSaveHasVersion, _analyticsProfileSaveHasVersion, _exportJobSaveHasVersion, _orgSaveRequiresId, _planSaveRequiresId, _featureSaveRequiresId, _userSaveRequiresId, _membershipSaveRequiresId, _roleSaveRequiresId, _websiteSaveRequiresId, _navigationSaveRequiresId, _themeSaveRequiresId, _pageSaveRequiresId, _sectionTypeSaveRequiresId, _mediaSaveRequiresId, _folderSaveRequiresId, _formSaveRequiresId, _seoProfileSaveRequiresId, _schemaProfileSaveRequiresId, _analyticsProfileSaveRequiresId, _exportJobSaveRequiresId, _snapshotHasCreate, _snapshotNoSave, _snapshotCreateNoVersion, _submissionCreateNoVersion, _submissionUpdateStatusHasVersion, _repoErrorShape, _dupKeyErrorShape, _persistenceUnavailableShape, _invalidPersistenceStateShape, _conflictShape, _saveResultIsCorrect, _createResultIsCorrect, _conflictInSaveError, _conflictNotInCreateError, };
+export { _orgHasVersion, _planHasVersion, _featureHasVersion, _userHasVersion, _membershipHasVersion, _roleHasVersion, _websiteHasVersion, _navigationHasVersion, _themeHasVersion, _pageHasVersion, _sectionTypeHasVersion, _mediaHasVersion, _folderHasVersion, _formHasVersion, _submissionHasVersion, _seoHasVersion, _schemaHasVersion, _analyticsHasVersion, _exportJobHasVersion, _pluginHasVersion, _pluginInstallationHasVersion, _sectionNoVersion, _formFieldNoVersion, _menuItemNoVersion, _websiteSettingsNoVersion, _snapshotNoVersion, _snapshotHasRevision, _orgHasCreate, _orgHasSave, _planHasCreate, _planHasSave, _featureHasCreate, _featureHasSave, _userHasCreate, _userHasSave, _membershipHasCreate, _membershipHasSave, _roleHasCreate, _roleHasSave, _websiteHasCreate, _websiteHasSave, _navigationHasCreate, _navigationHasSave, _themeHasCreate, _themeHasSave, _sectionTypeHasCreate, _sectionTypeHasSave, _mediaHasCreate, _mediaHasSave, _folderHasCreate, _folderHasSave, _formHasCreate, _formHasSave, _seoProfileHasCreate, _seoProfileHasSave, _schemaProfileHasCreate, _schemaProfileHasSave, _analyticsProfileHasCreate, _analyticsProfileHasSave, _exportJobHasCreate, _exportJobHasSave, _orgCreateNoVersion, _planCreateNoVersion, _featureCreateNoVersion, _userCreateNoVersion, _membershipCreateNoVersion, _roleCreateNoVersion, _websiteCreateNoVersion, _navigationCreateNoVersion, _themeCreateNoVersion, _sectionTypeCreateNoVersion, _mediaCreateNoVersion, _folderCreateNoVersion, _formCreateNoVersion, _seoProfileCreateNoVersion, _schemaProfileCreateNoVersion, _analyticsProfileCreateNoVersion, _exportJobCreateNoVersion, _orgSaveHasVersion, _planSaveHasVersion, _featureSaveHasVersion, _userSaveHasVersion, _membershipSaveHasVersion, _roleSaveHasVersion, _websiteSaveHasVersion, _navigationSaveHasVersion, _themeSaveHasVersion, _sectionTypeSaveHasVersion, _mediaSaveHasVersion, _folderSaveHasVersion, _formSaveHasVersion, _seoProfileSaveHasVersion, _schemaProfileSaveHasVersion, _analyticsProfileSaveHasVersion, _exportJobSaveHasVersion, _orgSaveRequiresId, _planSaveRequiresId, _featureSaveRequiresId, _userSaveRequiresId, _membershipSaveRequiresId, _roleSaveRequiresId, _websiteSaveRequiresId, _navigationSaveRequiresId, _themeSaveRequiresId, _sectionTypeSaveRequiresId, _mediaSaveRequiresId, _folderSaveRequiresId, _formSaveRequiresId, _seoProfileSaveRequiresId, _schemaProfileSaveRequiresId, _analyticsProfileSaveRequiresId, _exportJobSaveRequiresId, _submissionCreateNoVersion, _submissionUpdateStatusHasVersion, _repoErrorShape, _dupKeyErrorShape, _persistenceUnavailableShape, _invalidPersistenceStateShape, _conflictShape, _saveResultIsCorrect, _createResultIsCorrect, _conflictInSaveError, _conflictNotInCreateError, };
 //# sourceMappingURL=contracts.version-checks.d.ts.map

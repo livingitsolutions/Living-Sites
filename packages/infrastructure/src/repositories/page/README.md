@@ -1,32 +1,27 @@
 # Page Repository Adapter
 
-> **Status:** Contracts only. No implementation in this milestone.
+> **Status:** Implemented for Page management in Sprint 15.
 
 ## Purpose
 
-The `PageRepositoryAdapter` adapts the application-layer `PageRepository` and
-`PageSnapshotRepository` interfaces to infrastructure providers. It adds
-infrastructure lifecycle methods via `DatabaseBackedAdapter`.
+`DrizzlePageRepository` implements focused Page read, creation, metadata
+update, archive, and restore capabilities against Netlify Database.
 
-`PageRepository` owns the Page aggregate root, including its Section child
-entities. Sections have no public repository port — they are persisted
-atomically with the Page through the `PageRepository`. The adapter may use
-an internal table mapper for sections, but that mapper is a private
-implementation detail, not an application-layer port.
+The Page row is the aggregate persistence boundary. Section persistence is
+intentionally absent until the Page Builder slice; no standalone Section
+repository was introduced.
 
-## Planned contracts
+## Capabilities
 
-- **`PageRepositoryAdapter`** — composes `PageRepository` and
-  `PageSnapshotRepository` as named sub-adapters with `DatabaseBackedAdapter`
-  lifecycle methods.
+- Read one Page or list a Website's Pages.
+- Detect active Website-scoped slug conflicts.
+- Create Page and PageCreated outbox event atomically.
+- Update basic details with optimistic concurrency.
+- Archive or restore with durable events atomically.
 
 ## Principles
 
 1. The adapter implements the application-layer contracts — use cases see no
    difference.
-2. Snapshot persistence uses the same database adapter, storing snapshots as
-   immutable JSON blobs with version tracking.
-3. The adapter uses `DatabaseAdapter` for data access, `Logger` for operation
-   logging, and `Clock` for snapshot timestamps.
-4. Internal table mappers for sections are private to the adapter — they are
-   not exposed as application-layer ports.
+2. Publishing and snapshot persistence remain deferred.
+3. Durable lifecycle events use the existing application outbox transaction.

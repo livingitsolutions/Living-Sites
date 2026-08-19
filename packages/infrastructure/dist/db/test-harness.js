@@ -29,6 +29,7 @@ export async function createTestDatabaseHarness(migrationsDir = "./netlify/datab
     async function reset() {
         if (!db)
             return;
+        await db.delete(schema.websites);
         await db.delete(schema.platformSuperAdmins);
         await db.delete(schema.memberships);
         await db.delete(schema.applicationOutbox);
