@@ -34,6 +34,7 @@ import {
   DrizzleWebsiteRepository,
   DrizzleWebsiteCreationPersistence,
   DrizzlePageRepository,
+  DrizzlePagePublicationRepository,
   MissingNetlifyDatabaseError,
 } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
@@ -54,6 +55,8 @@ import type {
   WebsiteReader,
   WebsiteCreationPersistence,
   PageRepository,
+  PagePublisher,
+  PageSnapshotReader,
 } from "@livingsites/application";
 import {
   createOrganization,
@@ -77,6 +80,9 @@ import {
   duplicateSection,
   reorderSections,
   getPageBuilderState,
+  publishPage,
+  resolvePublishedPage,
+  resolvePublishedWebsite,
   AuthorizationService,
   parseRegistrationMode,
   DEFAULT_PRODUCTION_REGISTRATION_MODE,
@@ -121,6 +127,8 @@ export interface ProductionComposition {
   readonly websiteRepository: WebsiteReader;
   readonly websiteCreationPersistence: WebsiteCreationPersistence;
   readonly pageRepository: PageRepository;
+  readonly pagePublisher: PagePublisher;
+  readonly pageSnapshotReader: PageSnapshotReader;
   readonly superAdminStore: DrizzleSuperAdminStore;
   readonly authorizationService: AuthorizationService;
   readonly authenticationPort: AuthenticationPort;
@@ -156,6 +164,9 @@ export interface ProductionComposition {
   readonly duplicateSection: typeof duplicateSection;
   readonly reorderSections: typeof reorderSections;
   readonly getPageBuilderState: typeof getPageBuilderState;
+  readonly publishPage: typeof publishPage;
+  readonly resolvePublishedPage: typeof resolvePublishedPage;
+  readonly resolvePublishedWebsite: typeof resolvePublishedWebsite;
   readonly registrationMode: RegistrationMode;
   readonly healthCheck: () => Promise<{ healthy: boolean; details: Record<string, boolean> }>;
   readonly close: () => Promise<void>;
@@ -295,6 +306,7 @@ export function composeProduction(
   const websiteRepository = new DrizzleWebsiteRepository({ db, logger });
   const websiteCreationPersistence = new DrizzleWebsiteCreationPersistence({ db, logger });
   const pageRepository = new DrizzlePageRepository({ db, logger });
+  const pagePublicationRepository = new DrizzlePagePublicationRepository({ db, logger });
   const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
   const authorizationService = new AuthorizationService({
     membershipReader: membershipRepository,
@@ -410,6 +422,8 @@ export function composeProduction(
     websiteRepository,
     websiteCreationPersistence,
     pageRepository,
+    pagePublisher: pagePublicationRepository,
+    pageSnapshotReader: pagePublicationRepository,
     superAdminStore,
     authorizationService,
     authenticationPort: authAdapter,
@@ -445,6 +459,9 @@ export function composeProduction(
     duplicateSection,
     reorderSections,
     getPageBuilderState,
+    publishPage,
+    resolvePublishedPage,
+    resolvePublishedWebsite,
     registrationMode,
     healthCheck,
     close,

@@ -1,4 +1,5 @@
 import type { ISODateString, MachineKey, SectionType, SectionTypeId, VersionString } from "@livingsites/domain";
+import { validateAndNormalizeSectionUrls } from "./url-safety";
 
 type FieldSchema = { readonly type: "string"; readonly maxLength?: number } | { readonly type: "array"; readonly maxItems?: number; readonly items: ObjectSchema };
 type ObjectSchema = { readonly type: "object"; readonly required: readonly string[]; readonly properties: Readonly<Record<string, FieldSchema>>; readonly additionalProperties: false };
@@ -44,5 +45,7 @@ function validateObject(schema: ObjectSchema, value: unknown, path = "props"): s
 
 export function validateSectionProps(type: SectionType, props: unknown): { readonly ok: true; readonly value: Readonly<Record<string, unknown>> } | { readonly ok: false; readonly errors: readonly string[] } {
   const errors = validateObject(type.propsSchema as ObjectSchema, props);
-  return errors.length ? { ok: false, errors } : { ok: true, value: props as Readonly<Record<string, unknown>> };
+  if (errors.length) return { ok: false, errors };
+  const urls = validateAndNormalizeSectionUrls(String(type.rendererKey), props as Readonly<Record<string, unknown>>);
+  return urls.ok ? { ok: true, value: urls.value ?? props as Readonly<Record<string, unknown>> } : { ok: false, errors: [urls.message] };
 }

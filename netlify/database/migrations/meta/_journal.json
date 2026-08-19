@@ -92,6 +92,13 @@
       "when": 1787140800000,
       "tag": "0013_create_page_sections",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1787142287652,
+      "tag": "0014_create_page_snapshots",
+      "breakpoints": true
     }
   ]
 }
