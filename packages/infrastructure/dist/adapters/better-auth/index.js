@@ -1,9 +1,10 @@
 export { asBetterAuthInstance } from "./cast";
+export { createBetterAuthDatabaseAdapter } from "./database";
 function mapAuthError(err) {
     const e = err;
     const message = typeof e?.message === "string" ? e.message : "Authentication error.";
     const code = typeof e?.code === "string" ? e.code : "";
-    if (code === "INVALID_PASSWORD" || code === "INVALID_EMAIL" || code === "INVALID_CREDENTIALS") {
+    if (code === "INVALID_PASSWORD" || code === "INVALID_EMAIL" || code === "INVALID_CREDENTIALS" || /invalid.*(?:email|password|credential)/i.test(message)) {
         return { code: "invalid_credentials", message: "Invalid email or password." };
     }
     if (code === "USER_ALREADY_EXISTS" || code === "USER_EXISTS" || /already.*exists/i.test(message)) {
@@ -34,6 +35,10 @@ function toSession(token, user, expiresAt) {
         expiresAt: expiresAt instanceof Date ? expiresAt.toISOString() : String(expiresAt),
     };
 }
+function sessionCookie(headers) {
+    const setCookie = headers.get("set-cookie");
+    return setCookie?.split(";", 1)[0] ?? null;
+}
 export class BetterAuthAdapter {
     _auth;
     logger;
@@ -46,13 +51,15 @@ export class BetterAuthAdapter {
     }
     async registerWithEmail(input) {
         try {
-            const result = await this._auth.api.signUpEmail({
+            const call = await this._auth.api.signUpEmail({
                 body: {
                     email: input.email,
                     password: input.password,
                     name: input.displayName,
                 },
+                returnHeaders: true,
             });
+            const result = call.response;
             if (!result) {
                 return { ok: false, error: { code: "identity_provider_failure", message: "Registration returned no result." } };
             }
@@ -60,7 +67,7 @@ export class BetterAuthAdapter {
             if (!user) {
                 return { ok: false, error: { code: "identity_provider_failure", message: "Registration did not return a user." } };
             }
-            const token = result.token;
+            const token = sessionCookie(call.headers);
             if (!token) {
                 return { ok: false, error: { code: "identity_provider_failure", message: "Registration did not return a session token." } };
             }
@@ -74,17 +81,19 @@ export class BetterAuthAdapter {
     }
     async signInWithEmail(input) {
         try {
-            const result = await this._auth.api.signInEmail({
+            const call = await this._auth.api.signInEmail({
                 body: {
                     email: input.email,
                     password: input.password,
                 },
+                returnHeaders: true,
             });
+            const result = call.response;
             if (!result) {
                 return { ok: false, error: { code: "invalid_credentials", message: "Invalid email or password." } };
             }
             const user = result.user;
-            const token = result.token;
+            const token = sessionCookie(call.headers);
             if (!user || !token) {
                 return { ok: false, error: { code: "invalid_credentials", message: "Invalid email or password." } };
             }
@@ -99,7 +108,7 @@ export class BetterAuthAdapter {
     async signOut(sessionToken) {
         try {
             await this._auth.api.signOut({
-                headers: new Headers({ authorization: `Bearer ${sessionToken}` }),
+                headers: new Headers({ cookie: sessionToken }),
             });
             return { ok: true, value: undefined };
         }
@@ -111,7 +120,7 @@ export class BetterAuthAdapter {
     async getSession(sessionToken) {
         try {
             const result = await this._auth.api.getSession({
-                headers: new Headers({ authorization: `Bearer ${sessionToken}` }),
+                headers: new Headers({ cookie: sessionToken }),
             });
             if (!result) {
                 return { ok: false, error: { code: "session_not_found", message: "No active session." } };
@@ -130,10 +139,7 @@ export class BetterAuthAdapter {
     }
     async revokeSession(sessionToken) {
         try {
-            await this._auth.api.revokeSession({
-                body: { token: sessionToken },
-                headers: new Headers({ authorization: `Bearer ${sessionToken}` }),
-            });
+            await this._auth.api.signOut({ headers: new Headers({ cookie: sessionToken }) });
             return { ok: true, value: undefined };
         }
         catch (err) {

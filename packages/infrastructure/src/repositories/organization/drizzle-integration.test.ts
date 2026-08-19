@@ -1,14 +1,12 @@
 /**
  * Database integration test suite for DrizzleOrganizationRepository.
  *
- * Uses TEST_DATABASE_URL environment variable.
- * - When TEST_DATABASE_URL is absent, all tests are skipped with a visible reason.
- * - When present, migrations are applied and tests run against the test database.
+ * Uses @netlify/database-dev and requires no external connection variable.
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
+import { NetlifyDB } from "@netlify/database-dev";
 import type {
   OrganizationDraft,
   OrganizationId,
@@ -21,13 +19,6 @@ import { DrizzleOrganizationRepository } from "./drizzle-organization-repository
 import { organizations } from "../../db/schema";
 import * as schema from "../../db/schema";
 import { runRepositoryContractTests } from "@livingsites/test-support";
-
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-const shouldSkip = !TEST_DATABASE_URL;
-
-const skipReason = "TEST_DATABASE_URL is not set. Set it to a test PostgreSQL connection string to run database integration tests.";
-
-const describeOrSkip = shouldSkip ? describe.skip : describe;
 
 function makeDraft(overrides: Partial<{
   id: string;
@@ -45,20 +36,24 @@ function makeDraft(overrides: Partial<{
   });
 }
 
-describeOrSkip("DrizzleOrganizationRepository — database integration", () => {
+describe("DrizzleOrganizationRepository — database integration", () => {
+  let netlifyDB: NetlifyDB;
   let db: ReturnType<typeof drizzle<typeof schema>>;
   let sql: ReturnType<typeof postgres>;
   let repo: DrizzleOrganizationRepository;
 
   beforeAll(async () => {
-    sql = postgres(TEST_DATABASE_URL!);
+    netlifyDB = new NetlifyDB({ logger: () => {} });
+    const connectionString = await netlifyDB.start();
+    await netlifyDB.applyMigrations("./netlify/database/migrations");
+    sql = postgres(connectionString);
     db = drizzle({ client: sql, schema });
-    await migrate(db, { migrationsFolder: "./netlify/database/migrations" });
     repo = new DrizzleOrganizationRepository({ db, logger: new NoopLogger() });
   });
 
   afterAll(async () => {
     if (sql) await sql.end();
+    if (netlifyDB) await netlifyDB.stop();
   });
 
   beforeEach(async () => {
@@ -135,9 +130,3 @@ describeOrSkip("DrizzleOrganizationRepository — database integration", () => {
     expect(found).toBeNull();
   });
 });
-
-if (shouldSkip) {
-  describe.skip("DrizzleOrganizationRepository — database integration (SKIPPED)", () => {
-    it(`skipped — ${skipReason}`, () => {});
-  });
-}

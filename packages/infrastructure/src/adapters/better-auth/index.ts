@@ -24,6 +24,7 @@ import type { Result, AuthSubjectId } from "@livingsites/domain";
 import type { Logger } from "@livingsites/platform";
 
 export { asBetterAuthInstance } from "./cast";
+export { createBetterAuthDatabaseAdapter } from "./database";
 
 /**
  * Minimal structural type for the Better Auth instance. We only use
@@ -35,15 +36,21 @@ export { asBetterAuthInstance } from "./cast";
 export interface BetterAuthInstance {
   handler(req: Request): Response | Promise<Response>;
   readonly api: {
-    signUpEmail(input: { body: Record<string, unknown> }): Promise<{
-      token: string | null;
-      user: { id: string; email: string; emailVerified: boolean; name: string };
-    } | null>;
-    signInEmail(input: { body: Record<string, unknown> }): Promise<{
-      token: string;
-      user: { id: string; email: string; emailVerified: boolean; name: string };
-      redirect: boolean;
-    } | null>;
+    signUpEmail(input: { body: Record<string, unknown>; returnHeaders: true }): Promise<{
+      headers: Headers;
+      response: {
+        token: string | null;
+        user: { id: string; email: string; emailVerified: boolean; name: string };
+      } | null;
+    }>;
+    signInEmail(input: { body: Record<string, unknown>; returnHeaders: true }): Promise<{
+      headers: Headers;
+      response: {
+        token: string;
+        user: { id: string; email: string; emailVerified: boolean; name: string };
+        redirect: boolean;
+      } | null;
+    }>;
     signOut(input: { headers: Headers }): Promise<{ status: boolean }>;
     getSession(input: { headers: Headers }): Promise<{
       session: { token: string; expiresAt: Date };
@@ -65,7 +72,7 @@ function mapAuthError(err: unknown): AuthenticationError {
   const message = typeof e?.message === "string" ? e.message : "Authentication error.";
   const code = typeof e?.code === "string" ? e.code : "";
 
-  if (code === "INVALID_PASSWORD" || code === "INVALID_EMAIL" || code === "INVALID_CREDENTIALS") {
+  if (code === "INVALID_PASSWORD" || code === "INVALID_EMAIL" || code === "INVALID_CREDENTIALS" || /invalid.*(?:email|password|credential)/i.test(message)) {
     return { code: "invalid_credentials", message: "Invalid email or password." };
   }
   if (code === "USER_ALREADY_EXISTS" || code === "USER_EXISTS" || /already.*exists/i.test(message)) {
@@ -99,6 +106,11 @@ function toSession(token: string, user: { id: string; email: string; emailVerifi
   };
 }
 
+function sessionCookie(headers: Headers): string | null {
+  const setCookie = headers.get("set-cookie");
+  return setCookie?.split(";", 1)[0] ?? null;
+}
+
 export class BetterAuthAdapter implements AuthenticationPort {
   private readonly _auth: BetterAuthInstance;
   private readonly logger: Logger;
@@ -114,13 +126,15 @@ export class BetterAuthAdapter implements AuthenticationPort {
 
   async registerWithEmail(input: RegistrationInput): Promise<RegistrationResult> {
     try {
-      const result = await this._auth.api.signUpEmail({
+      const call = await this._auth.api.signUpEmail({
         body: {
           email: input.email,
           password: input.password,
           name: input.displayName,
         },
+        returnHeaders: true,
       });
+      const result = call.response;
 
       if (!result) {
         return { ok: false, error: { code: "identity_provider_failure", message: "Registration returned no result." } };
@@ -131,7 +145,7 @@ export class BetterAuthAdapter implements AuthenticationPort {
         return { ok: false, error: { code: "identity_provider_failure", message: "Registration did not return a user." } };
       }
 
-      const token = result.token;
+      const token = sessionCookie(call.headers);
       if (!token) {
         return { ok: false, error: { code: "identity_provider_failure", message: "Registration did not return a session token." } };
       }
@@ -146,19 +160,21 @@ export class BetterAuthAdapter implements AuthenticationPort {
 
   async signInWithEmail(input: SignInInput): Promise<SignInResult> {
     try {
-      const result = await this._auth.api.signInEmail({
+      const call = await this._auth.api.signInEmail({
         body: {
           email: input.email,
           password: input.password,
         },
+        returnHeaders: true,
       });
+      const result = call.response;
 
       if (!result) {
         return { ok: false, error: { code: "invalid_credentials", message: "Invalid email or password." } };
       }
 
       const user = result.user;
-      const token = result.token;
+      const token = sessionCookie(call.headers);
 
       if (!user || !token) {
         return { ok: false, error: { code: "invalid_credentials", message: "Invalid email or password." } };
@@ -175,7 +191,7 @@ export class BetterAuthAdapter implements AuthenticationPort {
   async signOut(sessionToken: string): Promise<Result<void, AuthenticationError>> {
     try {
       await this._auth.api.signOut({
-        headers: new Headers({ authorization: `Bearer ${sessionToken}` }),
+        headers: new Headers({ cookie: sessionToken }),
       });
       return { ok: true, value: undefined };
     } catch (err) {
@@ -187,7 +203,7 @@ export class BetterAuthAdapter implements AuthenticationPort {
   async getSession(sessionToken: string): Promise<SessionResult> {
     try {
       const result = await this._auth.api.getSession({
-        headers: new Headers({ authorization: `Bearer ${sessionToken}` }),
+        headers: new Headers({ cookie: sessionToken }),
       });
 
       if (!result) {
@@ -210,10 +226,7 @@ export class BetterAuthAdapter implements AuthenticationPort {
 
   async revokeSession(sessionToken: string): Promise<Result<void, AuthenticationError>> {
     try {
-      await this._auth.api.revokeSession({
-        body: { token: sessionToken },
-        headers: new Headers({ authorization: `Bearer ${sessionToken}` }),
-      });
+      await this._auth.api.signOut({ headers: new Headers({ cookie: sessionToken }) });
       return { ok: true, value: undefined };
     } catch (err) {
       this.logger.error("revokeSession failed", { error: String(err) });

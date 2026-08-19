@@ -15,8 +15,8 @@ export { createNetlifyDatabase, MissingNetlifyDatabaseError } from "./providers/
 export type { NetlifyDatabaseProvider, NetlifyDatabaseProviderConfig, NetlifyDrizzleDB } from "./providers/netlify-database";
 export { DrizzleUserRepository } from "./repositories/user";
 export type { DrizzleUserRepositoryConfig } from "./repositories/user";
-export { BetterAuthAdapter, asBetterAuthInstance } from "./adapters/better-auth";
+export { BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter } from "./adapters/better-auth";
 export type { BetterAuthAdapterConfig, BetterAuthInstance } from "./adapters/better-auth";
-export { LinkageReconciler } from "./repositories/identity";
-export type { LinkageReconcilerConfig, ReconciliationResult } from "./repositories/identity";
+export { LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore } from "./repositories/identity";
+export type { LinkageReconcilerConfig, ReconciliationResult, OrphanIdentityDisabler, PendingIdentityLinkage } from "./repositories/identity";
 //# sourceMappingURL=index.d.ts.map

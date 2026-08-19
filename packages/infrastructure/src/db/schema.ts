@@ -131,6 +131,8 @@ export const betterAuthUsers = pgTable("ba_user", {
   email_verified: boolean("email_verified").notNull().default(false),
   name: text("name").notNull(),
   image: text("image"),
+  disabled: boolean("disabled").notNull().default(false),
+  disabled_at: timestamp("disabled_at", { withTimezone: true }),
 });
 
 export const betterAuthSessions = pgTable("ba_session", {
@@ -149,6 +151,7 @@ export const betterAuthAccounts = pgTable("ba_account", {
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   provider_id: text("provider_id").notNull(),
+  issuer: text("issuer").notNull(),
   account_id: text("account_id").notNull(),
   user_id: text("user_id").notNull().references(() => betterAuthUsers.id, { onDelete: "cascade" }),
   access_token: text("access_token"),

@@ -16,8 +16,11 @@ import { organizations, applicationOutbox } from "../../db/schema";
 import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper";
 import { buildOutboxInsert } from "../../db/outbox-mapper";
 function isDuplicateKeyError(err) {
-    if (err && typeof err === "object" && "code" in err) {
-        return err.code === "23505";
+    if (err && typeof err === "object") {
+        const error = err;
+        return error.code === "23505"
+            || (error.cause !== undefined && isDuplicateKeyError(error.cause))
+            || /duplicate key|unique constraint/i.test(error.message ?? "");
     }
     return false;
 }

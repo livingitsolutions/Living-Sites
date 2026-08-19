@@ -12,55 +12,43 @@
  * - Platform User linkage
  *
  * Uses @netlify/database-dev to provision a local test database.
- * Skips when TEST_DATABASE_URL is not set.
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
+import { NetlifyDB } from "@netlify/database-dev";
 import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { NoopLogger } from "@livingsites/platform";
 import { DrizzleUserRepository } from "../user/drizzle-user-repository";
-import { BetterAuthAdapter, asBetterAuthInstance } from "../../adapters/better-auth";
+import { BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter } from "../../adapters/better-auth";
 import { platformUsers, betterAuthUsers, betterAuthSessions, betterAuthAccounts, betterAuthVerifications } from "../../db/schema";
 import { identityLinkages } from "../../db/identity-linkage-schema";
 import * as schema from "../../db/schema";
 import { createUserDraft } from "@livingsites/domain";
 import type { UserId, AuthSubjectId, ISODateString } from "@livingsites/domain";
 
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-const shouldSkip = !TEST_DATABASE_URL;
-const skipReason = "TEST_DATABASE_URL is not set. Set it to a test PostgreSQL connection string to run auth integration tests.";
-const describeOrSkip = shouldSkip ? describe.skip : describe;
-
 const TEST_SECRET = "test-secret-at-least-32-characters-long-xxxxx";
 const TEST_URL = "http://localhost:3000";
 
-describeOrSkip("Better Auth + Drizzle integration", () => {
+describe("Better Auth + Drizzle integration", () => {
+  let netlifyDB: NetlifyDB;
   let sql: ReturnType<typeof postgres>;
   let db: ReturnType<typeof drizzle<typeof schema>>;
   let authAdapter: BetterAuthAdapter;
   let userRepo: DrizzleUserRepository;
 
   beforeAll(async () => {
-    sql = postgres(TEST_DATABASE_URL!);
+    netlifyDB = new NetlifyDB({ logger: () => {} });
+    const connectionString = await netlifyDB.start();
+    await netlifyDB.applyMigrations("./netlify/database/migrations");
+    sql = postgres(connectionString);
     db = drizzle({ client: sql, schema });
-    await migrate(db, { migrationsFolder: "./netlify/database/migrations" });
 
     const auth = betterAuth({
       secret: TEST_SECRET,
       baseURL: TEST_URL,
       trustedOrigins: [TEST_URL],
-      database: drizzleAdapter(db, {
-        provider: "pg",
-        schema: {
-          user: "ba_user",
-          session: "ba_session",
-          account: "ba_account",
-          verification: "ba_verification",
-        },
-      }),
+      database: createBetterAuthDatabaseAdapter(db),
       emailAndPassword: {
         enabled: true,
         requireEmailVerification: false,
@@ -75,6 +63,7 @@ describeOrSkip("Better Auth + Drizzle integration", () => {
 
   afterAll(async () => {
     if (sql) await sql.end();
+    if (netlifyDB) await netlifyDB.stop();
   });
 
   beforeEach(async () => {
@@ -252,9 +241,3 @@ describeOrSkip("Better Auth + Drizzle integration", () => {
     expect(found?.email).toBe("linkage@example.com");
   });
 });
-
-if (shouldSkip) {
-  describe.skip("Better Auth + Drizzle integration (SKIPPED)", () => {
-    it(`skipped — ${skipReason}`, () => {});
-  });
-}

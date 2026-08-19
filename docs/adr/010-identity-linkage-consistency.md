@@ -43,7 +43,7 @@ A `LinkageReconciler` worker runs periodically to:
 2. Attempt to create the Platform User for each
 3. If successful, mark as `linked` and record the `platform_user_id`
 4. If failed, increment `attempts` and schedule next retry with exponential backoff
-5. If `attempts > max_attempts`, mark as `failed`
+5. When `attempts` reaches `max_attempts`, disable the Better Auth identity, revoke its sessions, and mark the linkage as `failed`
 
 The worker is idempotent: running it multiple times with the same pending linkages produces the same result as running it once. It uses atomic claim-and-process to prevent concurrent workers from processing the same linkage.
 
@@ -63,4 +63,4 @@ If Better Auth adds database hooks or a pre/post-create callback that provides a
 - The reconciliation worker automatically creates the missing Platform User on retry
 - The compensation flow handles all detectable failures within the use case
 - The `UserRegistered` event is only emitted after successful Platform User persistence, so downstream consumers never see a registration event without a corresponding User
-- Failed linkages (after max attempts) require manual cleanup but are visible in the `identity_linkages` table
+- Failed linkages remain visible in `identity_linkages` for audit, while their Better Auth identities are disabled and cannot create sessions

@@ -1,4 +1,5 @@
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
+import { LinkageReconciler } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
 import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, RegistrationMode } from "@livingsites/application";
 import { createOrganization, registerUser } from "@livingsites/application";
@@ -15,6 +16,8 @@ export interface ProductionCompositionConfig {
     readonly registrationMode?: string;
     readonly emailVerificationEnabled?: boolean;
     readonly emailAdapter?: EmailVerificationPort;
+    readonly linkageBatchSize?: number;
+    readonly linkageGracePeriodMs?: number;
 }
 export interface ProductionComposition {
     readonly clock: Clock;
@@ -31,6 +34,7 @@ export interface ProductionComposition {
     readonly emailVerificationPort: EmailVerificationPort | null;
     readonly organizationCreationPersistence: OrganizationCreationPersistence;
     readonly outboxProcessor: OutboxProcessor;
+    readonly linkageReconciler: LinkageReconciler;
     readonly createOrganization: typeof createOrganization;
     readonly createOrganizationDeps: CreateOrganizationDeps;
     readonly registerUser: typeof registerUser;
@@ -43,4 +47,5 @@ export interface ProductionComposition {
     readonly close: () => Promise<void>;
 }
 export declare function composeProduction(config: ProductionCompositionConfig): ProductionComposition;
+export declare function composeProductionFromEnvironment(): ProductionComposition;
 //# sourceMappingURL=production.d.ts.map

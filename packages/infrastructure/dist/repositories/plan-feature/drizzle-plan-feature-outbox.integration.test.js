@@ -3,15 +3,12 @@
  * OutboxEventPublisher, DrizzleOrganizationCreationPersistence, and
  * DrizzleOutboxProcessor.
  *
- * Uses TEST_DATABASE_URL environment variable.
- * - When TEST_DATABASE_URL is absent, all tests are skipped with a visible reason.
- * - When present, migrations are applied, seeds are planted, and tests
- *   run against the test database.
+ * Uses @netlify/database-dev and requires no external connection variable.
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
+import { NetlifyDB } from "@netlify/database-dev";
 import { NoopLogger } from "@livingsites/platform";
 import { DrizzlePlanReader } from "../plan/drizzle-plan-reader";
 import { DrizzleFeatureReader } from "../feature/drizzle-feature-reader";
@@ -22,11 +19,8 @@ import { createOrganizationDraft } from "@livingsites/domain";
 import * as schema from "../../db/schema";
 import { plans, features, planFeatureEntitlements, applicationOutbox, organizations } from "../../db/schema";
 import { eq } from "drizzle-orm";
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-const shouldSkip = !TEST_DATABASE_URL;
-const skipReason = "TEST_DATABASE_URL is not set. Set it to a test PostgreSQL connection string to run database integration tests.";
-const describeOrSkip = shouldSkip ? describe.skip : describe;
-describeOrSkip("Drizzle Plan/Feature/Outbox — database integration", () => {
+describe("Drizzle Plan/Feature/Outbox — database integration", () => {
+    let netlifyDB;
     let db;
     let sqlClient;
     let planReader;
@@ -35,19 +29,23 @@ describeOrSkip("Drizzle Plan/Feature/Outbox — database integration", () => {
     let outboxProcessor;
     const logger = new NoopLogger();
     beforeAll(async () => {
-        sqlClient = postgres(TEST_DATABASE_URL);
+        netlifyDB = new NetlifyDB({ logger: () => { } });
+        const connectionString = await netlifyDB.start();
+        await netlifyDB.applyMigrations("./netlify/database/migrations");
+        sqlClient = postgres(connectionString);
         db = drizzle({ client: sqlClient, schema });
-        await migrate(db, { migrationsFolder: "./netlify/database/migrations" });
         planReader = new DrizzlePlanReader({ db, logger });
         featureReader = new DrizzleFeatureReader({ db, logger });
         creationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
-        outboxProcessor = new DrizzleOutboxProcessor({ db, logger, maxAttempts: 3, baseBackoffMs: 10, maxBackoffMs: 100 });
     });
     afterAll(async () => {
         if (sqlClient)
             await sqlClient.end();
+        if (netlifyDB)
+            await netlifyDB.stop();
     });
     beforeEach(async () => {
+        outboxProcessor = new DrizzleOutboxProcessor({ db, logger, maxAttempts: 3, baseBackoffMs: 10, maxBackoffMs: 100 });
         await db.delete(applicationOutbox);
         await db.delete(planFeatureEntitlements);
         await db.delete(features);
@@ -266,10 +264,5 @@ function makeEventHelper(draftId, slug) {
         slug,
         planId: null,
     };
-}
-if (shouldSkip) {
-    describe.skip("Drizzle Plan/Feature/Outbox — database integration (SKIPPED)", () => {
-        it(`skipped — ${skipReason}`, () => { });
-    });
 }
 //# sourceMappingURL=drizzle-plan-feature-outbox.integration.test.js.map
