@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "next dev",
     "build": "npm run build --prefix packages/domain && npm run build --prefix packages/platform && npm run build --prefix packages/application && npm run build --prefix packages/infrastructure && npm run build --prefix packages/test-support && npm run build --prefix packages/composition && next build",
     "typecheck": "npm run typecheck --prefix packages/domain && npm run typecheck --prefix packages/platform && npm run typecheck --prefix packages/application && npm run typecheck --prefix packages/infrastructure && npm run typecheck --prefix packages/test-support && npm run typecheck --prefix packages/composition",
     "lint": "eslint .",
