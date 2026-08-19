@@ -16,7 +16,7 @@ import {
   type Slug,
   type ISODateString,
 } from "@livingsites/domain";
-import { OrganizationPermissions } from "@livingsites/application";
+import { OrganizationPermissions, WebsitePermissions } from "@livingsites/application";
 
 const baseURL = "http://localhost:3000";
 
@@ -57,6 +57,8 @@ describe("Organization-scoped Admin Route Protection", () => {
 
   beforeEach(async () => {
     await db.delete(schema.platformSuperAdmins);
+    await db.delete(schema.applicationOutbox);
+    await db.delete(schema.websites);
     await db.delete(schema.memberships);
     await db.delete(schema.platformUsers);
     await db.delete(schema.organizations);
@@ -212,6 +214,13 @@ describe("Organization-scoped Admin Route Protection", () => {
       permission: OrganizationPermissions.MembersUpdate,
     });
     expect(manageDecision.allowed).toBe(false);
+
+    const createWebsiteDecision = await composition.authorizationService.can({
+      userId: userViewer,
+      organizationId: orgA,
+      permission: WebsitePermissions.Create,
+    });
+    expect(createWebsiteDecision.allowed).toBe(false);
   });
 
   it("server-side authorization denies Editor member management", async () => {
@@ -221,6 +230,40 @@ describe("Organization-scoped Admin Route Protection", () => {
       permission: OrganizationPermissions.MembersUpdate,
     });
     expect(manageDecision.allowed).toBe(false);
+
+    const createWebsiteDecision = await composition.authorizationService.can({
+      userId: userEditor,
+      organizationId: orgA,
+      permission: WebsitePermissions.Create,
+    });
+    expect(createWebsiteDecision.allowed).toBe(true);
+  });
+
+  it("authorized user creates a Website and duplicate slug returns a typed error", async () => {
+    const deps = {
+      authenticatedUser: { userId: userA },
+      authorizationService: composition.authorizationService,
+      organizationReader: composition.organizationRepository,
+      planReader: composition.planReader,
+      websiteReader: composition.websiteRepository,
+      websiteCreationPersistence: composition.websiteCreationPersistence,
+      clock: composition.clock,
+      idGenerator: composition.idGenerator,
+    };
+    const created = await composition.createWebsite({ organizationId: orgA, name: "Alpha Website", slug: "alpha-website" }, deps);
+    expect(created.ok).toBe(true);
+    const duplicate = await composition.createWebsite({ organizationId: orgA, name: "Duplicate", slug: "alpha-website" }, deps);
+    expect(duplicate.ok).toBe(false);
+    if (!duplicate.ok) expect(duplicate.error.code).toBe("duplicate_slug");
+  });
+
+  it("archived membership is denied", async () => {
+    const membership = await composition.membershipRepository.findForUserAndOrganization(orgA, userViewer);
+    expect(membership).not.toBeNull();
+    if (!membership) return;
+    await composition.membershipRepository.archive(membership.id, membership.version);
+    const decision = await composition.authorizationService.can({ userId: userViewer, organizationId: orgA, permission: OrganizationPermissions.Read });
+    expect(decision.allowed).toBe(false);
   });
 
   it("server-side authorization grants Platform Super Admin access across any organization", async () => {
