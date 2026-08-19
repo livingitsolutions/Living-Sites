@@ -1,0 +1,1 @@
+{"version":3,"file":"slug-policy.d.ts","sourceRoot":"","sources":["../../../src/policies/page/slug-policy.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,WAAW,CAAC;AAEhD,qBAAa,cAAc;IACzB,QAAQ,CAAC,IAAI,oBAAoB;IACjC,QAAQ,CAAC,IAAI,EAAE,MAAM,EAAE,SAAS,EAAE,OAAO,GAAG,cAAc;CAM3D"}

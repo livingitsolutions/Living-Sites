@@ -1,0 +1,28 @@
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { NetlifyDB } from "@netlify/database-dev";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import type { ISODateString, OrganizationId, PageArchivedEvent, PageCreatedEvent, PageId, PageRestoredEvent, Slug, UserId, WebsiteId } from "@livingsites/domain";
+import { createPageDraft } from "@livingsites/domain";
+import { NoopLogger } from "@livingsites/platform";
+import * as schema from "../../db/schema";
+import { applicationOutbox, organizations, pages, websites } from "../../db/schema";
+import { DrizzlePageRepository } from "./drizzle-page-repository";
+
+const orgId = "org_pages" as OrganizationId; const websiteId = "web_pages" as WebsiteId; const now = "2026-08-19T00:00:00.000Z" as ISODateString; const userId = "usr_owner" as UserId;
+const draft = (id: string, slug = "about") => createPageDraft({ id: id as PageId, websiteId, title: "About", slug: slug as Slug, now, createdBy: userId });
+const createdEvent = (id: PageId): PageCreatedEvent => ({ type: "page.created", occurredAt: now, eventScope: { scope: "website", organizationId: orgId, websiteId }, pageId: id, slug: "about" });
+const archivedEvent = (id: PageId): PageArchivedEvent => ({ type: "page.archived", occurredAt: now, eventScope: { scope: "website", organizationId: orgId, websiteId }, pageId: id });
+const restoredEvent = (id: PageId): PageRestoredEvent => ({ type: "page.restored", occurredAt: now, eventScope: { scope: "website", organizationId: orgId, websiteId }, pageId: id });
+
+describe("DrizzlePageRepository — Netlify Database", () => {
+  let netlifyDB: NetlifyDB; let sqlClient: ReturnType<typeof postgres>; let db: ReturnType<typeof drizzle<typeof schema>>; let repository: DrizzlePageRepository;
+  beforeAll(async () => { netlifyDB = new NetlifyDB({ logger: () => {} }); const connectionString = await netlifyDB.start(); await netlifyDB.applyMigrations("./netlify/database/migrations"); sqlClient = postgres(connectionString); db = drizzle({ client: sqlClient, schema }); repository = new DrizzlePageRepository({ db, logger: new NoopLogger() }); });
+  afterAll(async () => { await sqlClient.end(); await netlifyDB.stop(); });
+  beforeEach(async () => { await db.delete(applicationOutbox); await db.delete(pages); await db.delete(websites); await db.delete(organizations); await db.insert(organizations).values({ id: orgId, name: "Pages Org", slug: "pages-org", billing_email: "pages@example.com", status: "active", feature_overrides: "[]", version: 1, created_at: new Date(now), updated_at: new Date(now) }); await db.insert(websites).values({ id: websiteId, organization_id: orgId, name: "Pages", slug: "pages", fallback_domain: "pages.example.com", status: "draft", default_locale: "en-US", enabled_locales: ["en-US"], settings: { passwordProtection: null, searchEngineIndexing: true, socialDefaults: {}, headerScripts: [], footerScripts: [] }, version: 1, created_at: new Date(now), updated_at: new Date(now) }); });
+
+  it("creates version one, lists, gets, and enforces active slug uniqueness", async () => { const candidate = draft("page_a"); const created = await repository.createWithEvent(candidate, createdEvent(candidate.id)); expect(created.ok && created.value.version).toBe(1); expect((await repository.findById(candidate.id))?.title).toBe("About"); expect(await repository.listForWebsite(websiteId)).toHaveLength(1); expect((await repository.createWithEvent(draft("page_b"), createdEvent("page_b" as PageId))).ok).toBe(false); });
+  it("uses optimistic concurrency for details", async () => { const candidate = draft("page_update"); await repository.createWithEvent(candidate, createdEvent(candidate.id)); const updated = await repository.updateDetails({ pageId: candidate.id, title: "About us", slug: "about-us", expectedVersion: 1, updatedAt: now, updatedBy: userId }); expect(updated.ok && updated.value.version).toBe(2); expect((await repository.updateDetails({ pageId: candidate.id, title: "Stale", slug: "stale", expectedVersion: 1, updatedAt: now, updatedBy: userId })).ok).toBe(false); });
+  it("archives and restores with durable events", async () => { const candidate = draft("page_lifecycle"); await repository.createWithEvent(candidate, createdEvent(candidate.id)); const archived = await repository.archiveWithEvent({ pageId: candidate.id, expectedVersion: 1, archivedAt: now, archivedBy: userId }, archivedEvent(candidate.id)); expect(archived.ok && archived.value.status).toBe("archived"); const restored = await repository.restoreWithEvent({ pageId: candidate.id, expectedVersion: 2, restoredAt: now, restoredBy: userId }, restoredEvent(candidate.id)); expect(restored.ok && restored.value.status).toBe("draft"); expect(await db.select().from(applicationOutbox)).toHaveLength(3); });
+  it("rolls back aggregate creation when outbox insert fails", async () => { const candidate = draft("page_rollback"); const failing = new DrizzlePageRepository({ db, logger: new NoopLogger(), beforeOutboxInsert: () => { throw new Error("forced event failure"); } }); expect((await failing.createWithEvent(candidate, createdEvent(candidate.id))).ok).toBe(false); expect(await db.select().from(pages)).toHaveLength(0); expect(await db.select().from(applicationOutbox)).toHaveLength(0); });
+});

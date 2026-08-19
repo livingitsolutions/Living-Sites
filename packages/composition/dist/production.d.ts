@@ -1,8 +1,8 @@
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
 import { LinkageReconciler, DrizzleSuperAdminStore } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
-import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, MembershipRepository, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, RegistrationMode } from "@livingsites/application";
-import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, AuthorizationService } from "@livingsites/application";
+import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, MembershipRepository, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, RegistrationMode, WebsiteReader, WebsiteCreationPersistence, PageRepository } from "@livingsites/application";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, AuthorizationService } from "@livingsites/application";
 import type { CreateOrganizationDeps, RegisterUserDeps, AddOrganizationMemberDeps, ChangeOrganizationMemberRoleDeps, RemoveOrganizationMemberDeps, GetOrganizationMembersDeps } from "@livingsites/application";
 export interface ProductionCompositionConfig {
     readonly connectionString?: string;
@@ -31,6 +31,9 @@ export interface ProductionComposition {
     readonly userReader: UserReader;
     readonly userCreator: UserCreator;
     readonly membershipRepository: MembershipRepository;
+    readonly websiteRepository: WebsiteReader;
+    readonly websiteCreationPersistence: WebsiteCreationPersistence;
+    readonly pageRepository: PageRepository;
     readonly superAdminStore: DrizzleSuperAdminStore;
     readonly authorizationService: AuthorizationService;
     readonly authenticationPort: AuthenticationPort;
@@ -51,6 +54,15 @@ export interface ProductionComposition {
     readonly removeOrganizationMemberDeps: RemoveOrganizationMemberDeps;
     readonly getOrganizationMembers: typeof getOrganizationMembers;
     readonly getOrganizationMembersDeps: GetOrganizationMembersDeps;
+    readonly createWebsite: typeof createWebsite;
+    readonly getWebsite: typeof getWebsite;
+    readonly listOrganizationWebsites: typeof listOrganizationWebsites;
+    readonly createPage: typeof createPage;
+    readonly getPage: typeof getPage;
+    readonly listWebsitePages: typeof listWebsitePages;
+    readonly updatePageDetails: typeof updatePageDetails;
+    readonly archivePage: typeof archivePage;
+    readonly restorePage: typeof restorePage;
     readonly registrationMode: RegistrationMode;
     readonly healthCheck: () => Promise<{
         healthy: boolean;

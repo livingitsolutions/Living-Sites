@@ -6,7 +6,7 @@
  * modules. Only adapters and composition-facing factories are exported.
  */
 import { sql } from "drizzle-orm";
-import { check, pgTable, text, integer, numeric, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { check, pgTable, text, integer, numeric, boolean, timestamp, pgEnum, jsonb, uniqueIndex, index } from "drizzle-orm/pg-core";
 /* ---------- Organizations ---------- */
 export const orgStatusEnum = pgEnum("org_status", ["active", "archived", "deleted"]);
 export const organizations = pgTable("organizations", {
@@ -24,6 +24,61 @@ export const organizations = pgTable("organizations", {
     updated_by: text("updated_by"),
     deleted_at: timestamp("deleted_at", { withTimezone: true }),
 });
+/* ---------- Websites ---------- */
+export const websiteStatusEnum = pgEnum("website_status", ["draft", "published", "unpublished", "archived"]);
+export const websites = pgTable("websites", {
+    id: text("id").primaryKey(),
+    organization_id: text("organization_id").notNull().references(() => organizations.id, { onDelete: "restrict" }),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    custom_domain: text("custom_domain"),
+    fallback_domain: text("fallback_domain").notNull(),
+    status: websiteStatusEnum("status").notNull().default("draft"),
+    theme_id: text("theme_id"),
+    published_release_label: text("published_release_label"),
+    default_locale: text("default_locale").notNull().default("en-US"),
+    enabled_locales: jsonb("enabled_locales").notNull().default(["en-US"]),
+    settings: jsonb("settings").notNull().default({}),
+    version: integer("version").notNull().default(1),
+    created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+    created_by: text("created_by"),
+    updated_by: text("updated_by"),
+    archived_at: timestamp("archived_at", { withTimezone: true }),
+}, (table) => [
+    uniqueIndex("websites_organization_slug_unique").on(table.organization_id, table.slug),
+    uniqueIndex("websites_custom_domain_unique").on(table.custom_domain).where(sql `${table.custom_domain} IS NOT NULL`),
+    uniqueIndex("websites_fallback_domain_unique").on(table.fallback_domain),
+    index("websites_organization_id_idx").on(table.organization_id),
+    check("websites_version_check", sql `${table.version} >= 1`),
+    check("websites_custom_domain_lowercase_check", sql `${table.custom_domain} IS NULL OR ${table.custom_domain} = lower(${table.custom_domain})`),
+    check("websites_fallback_domain_lowercase_check", sql `${table.fallback_domain} = lower(${table.fallback_domain})`),
+]);
+/* ---------- Pages ---------- */
+export const pageStatusEnum = pgEnum("page_status", ["draft", "published", "scheduled", "archived"]);
+export const pages = pgTable("pages", {
+    id: text("id").primaryKey(),
+    website_id: text("website_id").notNull().references(() => websites.id, { onDelete: "restrict" }),
+    title: text("title").notNull(),
+    slug: text("slug").notNull(),
+    description: text("description"),
+    is_homepage: boolean("is_homepage").notNull().default(false),
+    status: pageStatusEnum("status").notNull().default("draft"),
+    published_snapshot_id: text("published_snapshot_id"),
+    section_order: jsonb("section_order").notNull().default([]),
+    available_locales: jsonb("available_locales").notNull().default([]),
+    parent_id: text("parent_id"),
+    version: integer("version").notNull().default(1),
+    created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+    created_by: text("created_by"),
+    updated_by: text("updated_by"),
+    archived_at: timestamp("archived_at", { withTimezone: true }),
+}, (table) => [
+    uniqueIndex("pages_website_active_slug_unique").on(table.website_id, table.slug).where(sql `${table.status} <> 'archived'`),
+    index("pages_website_id_idx").on(table.website_id),
+    check("pages_version_check", sql `${table.version} >= 1`),
+]);
 /* ---------- Plans ---------- */
 export const planTierEnum = pgEnum("plan_tier", ["starter", "pro", "business", "enterprise"]);
 export const featureCategoryEnum = pgEnum("feature_category", ["limit", "capability", "addon"]);
