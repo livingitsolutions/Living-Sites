@@ -13,6 +13,7 @@
  * No implementations in this milestone — architecture only.
  */
 export * from "./organization";
+export * from "./membership";
 export * from "./website";
 export * from "./content";
 export * from "./builder";

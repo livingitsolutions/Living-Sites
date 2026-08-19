@@ -6,6 +6,7 @@
  * test-support (tests).
  */
 export * from "./organization";
+export * from "./membership";
 export * from "./users";
 export * from "./user";
 export * from "./website";

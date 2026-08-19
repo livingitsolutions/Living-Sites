@@ -29,6 +29,8 @@ import {
   LinkageReconciler,
   DrizzleOrphanIdentityDisabler,
   DrizzleIdentityLinkageStore,
+  DrizzleMembershipRepository,
+  DrizzleSuperAdminStore,
   MissingNetlifyDatabaseError,
 } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
@@ -39,6 +41,7 @@ import type {
   FeatureReader,
   UserReader,
   UserCreator,
+  MembershipRepository,
   EventPublisher,
   OrganizationCreationPersistence,
   OutboxProcessor,
@@ -49,10 +52,22 @@ import type {
 import {
   createOrganization,
   registerUser,
+  addOrganizationMember,
+  changeOrganizationMemberRole,
+  removeOrganizationMember,
+  getOrganizationMembers,
+  AuthorizationService,
   parseRegistrationMode,
   DEFAULT_PRODUCTION_REGISTRATION_MODE,
 } from "@livingsites/application";
-import type { CreateOrganizationDeps, RegisterUserDeps } from "@livingsites/application";
+import type {
+  CreateOrganizationDeps,
+  RegisterUserDeps,
+  AddOrganizationMemberDeps,
+  ChangeOrganizationMemberRoleDeps,
+  RemoveOrganizationMemberDeps,
+  GetOrganizationMembersDeps,
+} from "@livingsites/application";
 
 export interface ProductionCompositionConfig {
   readonly connectionString?: string;
@@ -68,6 +83,7 @@ export interface ProductionCompositionConfig {
   readonly emailAdapter?: EmailVerificationPort;
   readonly linkageBatchSize?: number;
   readonly linkageGracePeriodMs?: number;
+  readonly superAdminEmail?: string;
 }
 
 export interface ProductionComposition {
@@ -80,6 +96,9 @@ export interface ProductionComposition {
   readonly featureReader: FeatureReader;
   readonly userReader: UserReader;
   readonly userCreator: UserCreator;
+  readonly membershipRepository: MembershipRepository;
+  readonly superAdminStore: DrizzleSuperAdminStore;
+  readonly authorizationService: AuthorizationService;
   readonly authenticationPort: AuthenticationPort;
   readonly authInstance: BetterAuthInstance;
   readonly emailVerificationPort: EmailVerificationPort | null;
@@ -90,6 +109,14 @@ export interface ProductionComposition {
   readonly createOrganizationDeps: CreateOrganizationDeps;
   readonly registerUser: typeof registerUser;
   readonly registerUserDeps: RegisterUserDeps;
+  readonly addOrganizationMember: typeof addOrganizationMember;
+  readonly addOrganizationMemberDeps: AddOrganizationMemberDeps;
+  readonly changeOrganizationMemberRole: typeof changeOrganizationMemberRole;
+  readonly changeOrganizationMemberRoleDeps: ChangeOrganizationMemberRoleDeps;
+  readonly removeOrganizationMember: typeof removeOrganizationMember;
+  readonly removeOrganizationMemberDeps: RemoveOrganizationMemberDeps;
+  readonly getOrganizationMembers: typeof getOrganizationMembers;
+  readonly getOrganizationMembersDeps: GetOrganizationMembersDeps;
   readonly registrationMode: RegistrationMode;
   readonly healthCheck: () => Promise<{ healthy: boolean; details: Record<string, boolean> }>;
   readonly close: () => Promise<void>;
@@ -225,6 +252,12 @@ export function composeProduction(
   const planReader = new DrizzlePlanReader({ db, logger });
   const featureReader = new DrizzleFeatureReader({ db, logger });
   const userRepository = new DrizzleUserRepository({ db, logger });
+  const membershipRepository = new DrizzleMembershipRepository({ db, logger });
+  const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
+  const authorizationService = new AuthorizationService({
+    membershipReader: membershipRepository,
+    superAdminChecker: superAdminStore,
+  });
   const eventPublisher = new OutboxEventPublisher({ db, logger });
   const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
   const outboxProcessor = new DrizzleOutboxProcessor({
@@ -265,6 +298,41 @@ export function composeProduction(
     registrationMode,
   };
 
+  const addOrganizationMemberDeps: AddOrganizationMemberDeps = {
+    membershipRepository,
+    userReader: userRepository,
+    authorizationService,
+    eventPublisher,
+    clock,
+    idGenerator,
+  };
+
+  const changeOrganizationMemberRoleDeps: ChangeOrganizationMemberRoleDeps = {
+    membershipRepository,
+    authorizationService,
+    eventPublisher,
+    clock,
+  };
+
+  const removeOrganizationMemberDeps: RemoveOrganizationMemberDeps = {
+    membershipRepository,
+    authorizationService,
+    eventPublisher,
+    clock,
+  };
+
+  const getOrganizationMembersDeps: GetOrganizationMembersDeps = {
+    membershipRepository,
+    authorizationService,
+  };
+
+  // If superAdminEmail is configured, run bootstrap asynchronously
+  if (config.superAdminEmail) {
+    superAdminStore.bootstrap({ email: config.superAdminEmail }).catch((err) => {
+      logger.error("Failed to bootstrap super admin during startup", { error: String(err) });
+    });
+  }
+
   const healthCheck = async () => {
     const details: Record<string, boolean> = {};
     let healthy = true;
@@ -277,6 +345,7 @@ export function composeProduction(
     }
     details.authentication = true;
     details.userRepository = true;
+    details.membershipRepository = true;
     details.planReader = true;
     details.featureReader = true;
     details.eventPublisher = true;
@@ -298,6 +367,9 @@ export function composeProduction(
     featureReader,
     userReader: userRepository,
     userCreator: userRepository,
+    membershipRepository,
+    superAdminStore,
+    authorizationService,
     authenticationPort: authAdapter,
     authInstance,
     emailVerificationPort: config.emailAdapter ?? null,
@@ -308,6 +380,14 @@ export function composeProduction(
     createOrganizationDeps,
     registerUser,
     registerUserDeps,
+    addOrganizationMember,
+    addOrganizationMemberDeps,
+    changeOrganizationMemberRole,
+    changeOrganizationMemberRoleDeps,
+    removeOrganizationMember,
+    removeOrganizationMemberDeps,
+    getOrganizationMembers,
+    getOrganizationMembersDeps,
     registrationMode,
     healthCheck,
     close,
@@ -342,6 +422,7 @@ export function composeProductionFromEnvironment(): ProductionComposition {
     emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
     linkageBatchSize: optionalPositiveInteger("LINKAGE_RECONCILIATION_BATCH_SIZE"),
     linkageGracePeriodMs: optionalPositiveInteger("LINKAGE_RECONCILIATION_GRACE_PERIOD_MS"),
+    superAdminEmail: process.env.PLATFORM_SUPER_ADMIN_EMAIL ?? process.env.SUPER_ADMIN_EMAIL,
     logLevel: "info",
   });
 }

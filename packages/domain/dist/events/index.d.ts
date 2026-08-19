@@ -5,7 +5,7 @@
  * only. No event bus, no dispatcher, no runtime machinery — those are
  * infrastructure concerns for a future milestone.
  */
-import type { OrganizationId, WebsiteId, PageId, MediaId, FormId, SubmissionId, ExportJobId, UserId, ISODateString, VersionString } from "../shared";
+import type { OrganizationId, WebsiteId, PageId, MediaId, FormId, SubmissionId, ExportJobId, UserId, MembershipId, ISODateString, VersionString } from "../shared";
 /**
  * Explicit scope for a domain event. Replaces the previous nullable
  * `organizationId` field with a clear, exhaustive type.
@@ -144,6 +144,37 @@ export interface EmailVerifiedEvent extends DomainEvent {
     readonly userId: UserId;
     readonly email: string;
 }
+export interface OrganizationMemberAddedEvent extends DomainEvent {
+    readonly type: "organization.member_added";
+    readonly eventScope: {
+        readonly scope: "organization";
+        readonly organizationId: OrganizationId;
+    };
+    readonly membershipId: MembershipId;
+    readonly userId: UserId;
+    readonly role: string;
+    readonly websiteScopeId?: string | null;
+}
+export interface OrganizationMemberRoleChangedEvent extends DomainEvent {
+    readonly type: "organization.member_role_changed";
+    readonly eventScope: {
+        readonly scope: "organization";
+        readonly organizationId: OrganizationId;
+    };
+    readonly membershipId: MembershipId;
+    readonly userId: UserId;
+    readonly previousRole: string;
+    readonly newRole: string;
+}
+export interface OrganizationMemberRemovedEvent extends DomainEvent {
+    readonly type: "organization.member_removed";
+    readonly eventScope: {
+        readonly scope: "organization";
+        readonly organizationId: OrganizationId;
+    };
+    readonly membershipId: MembershipId;
+    readonly userId: UserId;
+}
 /** Union of all known domain events for exhaustive handling. */
-export type KnownDomainEvent = OrganizationCreatedEvent | WebsiteCreatedEvent | WebsitePublishedEvent | PagePublishedEvent | PageArchivedEvent | MediaUploadedEvent | FormSubmittedEvent | FeatureEnabledEvent | PluginInstalledEvent | ExportCompletedEvent | UserRegisteredEvent | EmailVerifiedEvent;
+export type KnownDomainEvent = OrganizationCreatedEvent | WebsiteCreatedEvent | WebsitePublishedEvent | PagePublishedEvent | PageArchivedEvent | MediaUploadedEvent | FormSubmittedEvent | FeatureEnabledEvent | PluginInstalledEvent | ExportCompletedEvent | UserRegisteredEvent | EmailVerifiedEvent | OrganizationMemberAddedEvent | OrganizationMemberRoleChangedEvent | OrganizationMemberRemovedEvent;
 //# sourceMappingURL=index.d.ts.map

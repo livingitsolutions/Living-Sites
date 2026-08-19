@@ -19,3 +19,7 @@ export { BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapte
 export type { BetterAuthAdapterConfig, BetterAuthInstance } from "./adapters/better-auth";
 export { LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore } from "./repositories/identity";
 export type { LinkageReconcilerConfig, ReconciliationResult, OrphanIdentityDisabler, PendingIdentityLinkage } from "./repositories/identity";
+export { DrizzleMembershipRepository } from "./repositories/membership";
+export type { DrizzleMembershipRepositoryConfig } from "./repositories/membership";
+export { DrizzleSuperAdminStore } from "./repositories/identity/drizzle-super-admin-store";
+export type { BootstrapSuperAdminInput, BootstrapSuperAdminOutput, BootstrapSuperAdminError } from "./repositories/identity/drizzle-super-admin-store";

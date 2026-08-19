@@ -5,8 +5,8 @@
  * explicitly named development and is NOT for production use.
  */
 import { FakeClock, DeterministicIdGenerator, NoopLogger } from "@livingsites/platform";
-import { InMemoryOrganizationRepository, InMemoryPlanRepository, InMemoryUserRepository, FakeAuthenticationAdapter, CapturingVerificationEmailAdapter, NoopEventPublisher, } from "@livingsites/test-support";
-import { createOrganization, registerUser } from "@livingsites/application";
+import { InMemoryOrganizationRepository, InMemoryPlanRepository, InMemoryUserRepository, InMemoryMembershipRepository, FakeAuthenticationAdapter, CapturingVerificationEmailAdapter, NoopEventPublisher, } from "@livingsites/test-support";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, AuthorizationService, } from "@livingsites/application";
 export function composeDevelopment(config = {}) {
     const clock = new FakeClock(config.initialClockMs ?? 0);
     const idGenerator = new DeterministicIdGenerator();
@@ -15,6 +15,10 @@ export function composeDevelopment(config = {}) {
     const organizationRepository = new InMemoryOrganizationRepository();
     const planRepository = new InMemoryPlanRepository();
     const userRepository = new InMemoryUserRepository();
+    const membershipRepository = new InMemoryMembershipRepository();
+    const authorizationService = new AuthorizationService({
+        membershipReader: membershipRepository,
+    });
     const authenticationPort = new FakeAuthenticationAdapter();
     const emailVerificationPort = config.emailVerificationPort ?? new CapturingVerificationEmailAdapter();
     const createOrganizationDeps = {
@@ -33,6 +37,30 @@ export function composeDevelopment(config = {}) {
         idGenerator,
         registrationMode: config.registrationMode ?? "open",
     };
+    const addOrganizationMemberDeps = {
+        membershipRepository,
+        userReader: userRepository,
+        authorizationService,
+        eventPublisher,
+        clock,
+        idGenerator,
+    };
+    const changeOrganizationMemberRoleDeps = {
+        membershipRepository,
+        authorizationService,
+        eventPublisher,
+        clock,
+    };
+    const removeOrganizationMemberDeps = {
+        membershipRepository,
+        authorizationService,
+        eventPublisher,
+        clock,
+    };
+    const getOrganizationMembersDeps = {
+        membershipRepository,
+        authorizationService,
+    };
     return {
         clock,
         idGenerator,
@@ -41,12 +69,22 @@ export function composeDevelopment(config = {}) {
         organizationRepository,
         planRepository,
         userRepository,
+        membershipRepository,
+        authorizationService,
         authenticationPort,
         emailVerificationPort,
         createOrganization,
         createOrganizationDeps,
         registerUser,
         registerUserDeps,
+        addOrganizationMember,
+        addOrganizationMemberDeps,
+        changeOrganizationMemberRole,
+        changeOrganizationMemberRoleDeps,
+        removeOrganizationMember,
+        removeOrganizationMemberDeps,
+        getOrganizationMembers,
+        getOrganizationMembersDeps,
     };
 }
 //# sourceMappingURL=development.js.map

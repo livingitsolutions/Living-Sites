@@ -5,7 +5,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/*.d.ts", "scripts/**", "netlify/functions/**", ".next/**", "app/**"],
+    ignores: ["**/dist/**", "**/node_modules/**", "**/*.d.ts", "scripts/**", "netlify/functions/**", ".next/**", ".netlify/**", "app/**"],
   },
   // Domain: must not import any other @livingsites package, @netlify/database, or better-auth
   {

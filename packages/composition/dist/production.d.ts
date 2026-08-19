@@ -1,9 +1,9 @@
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
-import { LinkageReconciler } from "@livingsites/infrastructure";
+import { LinkageReconciler, DrizzleSuperAdminStore } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
-import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, RegistrationMode } from "@livingsites/application";
-import { createOrganization, registerUser } from "@livingsites/application";
-import type { CreateOrganizationDeps, RegisterUserDeps } from "@livingsites/application";
+import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, MembershipRepository, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, RegistrationMode } from "@livingsites/application";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, AuthorizationService } from "@livingsites/application";
+import type { CreateOrganizationDeps, RegisterUserDeps, AddOrganizationMemberDeps, ChangeOrganizationMemberRoleDeps, RemoveOrganizationMemberDeps, GetOrganizationMembersDeps } from "@livingsites/application";
 export interface ProductionCompositionConfig {
     readonly connectionString?: string;
     readonly logLevel?: "trace" | "debug" | "info" | "warn" | "error" | "silent";
@@ -18,6 +18,7 @@ export interface ProductionCompositionConfig {
     readonly emailAdapter?: EmailVerificationPort;
     readonly linkageBatchSize?: number;
     readonly linkageGracePeriodMs?: number;
+    readonly superAdminEmail?: string;
 }
 export interface ProductionComposition {
     readonly clock: Clock;
@@ -29,6 +30,9 @@ export interface ProductionComposition {
     readonly featureReader: FeatureReader;
     readonly userReader: UserReader;
     readonly userCreator: UserCreator;
+    readonly membershipRepository: MembershipRepository;
+    readonly superAdminStore: DrizzleSuperAdminStore;
+    readonly authorizationService: AuthorizationService;
     readonly authenticationPort: AuthenticationPort;
     readonly authInstance: BetterAuthInstance;
     readonly emailVerificationPort: EmailVerificationPort | null;
@@ -39,6 +43,14 @@ export interface ProductionComposition {
     readonly createOrganizationDeps: CreateOrganizationDeps;
     readonly registerUser: typeof registerUser;
     readonly registerUserDeps: RegisterUserDeps;
+    readonly addOrganizationMember: typeof addOrganizationMember;
+    readonly addOrganizationMemberDeps: AddOrganizationMemberDeps;
+    readonly changeOrganizationMemberRole: typeof changeOrganizationMemberRole;
+    readonly changeOrganizationMemberRoleDeps: ChangeOrganizationMemberRoleDeps;
+    readonly removeOrganizationMember: typeof removeOrganizationMember;
+    readonly removeOrganizationMemberDeps: RemoveOrganizationMemberDeps;
+    readonly getOrganizationMembers: typeof getOrganizationMembers;
+    readonly getOrganizationMembersDeps: GetOrganizationMembersDeps;
     readonly registrationMode: RegistrationMode;
     readonly healthCheck: () => Promise<{
         healthy: boolean;

@@ -10,4 +10,6 @@ export { createNetlifyDatabase, MissingNetlifyDatabaseError } from "./providers/
 export { DrizzleUserRepository } from "./repositories/user";
 export { BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter } from "./adapters/better-auth";
 export { LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore } from "./repositories/identity";
+export { DrizzleMembershipRepository } from "./repositories/membership";
+export { DrizzleSuperAdminStore } from "./repositories/identity/drizzle-super-admin-store";
 //# sourceMappingURL=index.js.map

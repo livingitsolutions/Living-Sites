@@ -121,6 +121,35 @@ export const platformUsers = pgTable("platform_users", {
   deleted_at: timestamp("deleted_at", { withTimezone: true }),
 });
 
+/* ---------- Memberships ---------- */
+
+export const membershipStatusEnum = pgEnum("membership_status", ["active", "archived", "deleted"]);
+
+export const memberships = pgTable("memberships", {
+  id: text("id").primaryKey(),
+  organization_id: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  user_id: text("user_id").notNull().references(() => platformUsers.id, { onDelete: "cascade" }),
+  role: text("role").notNull(),
+  website_scope_id: text("website_scope_id"),
+  status: membershipStatusEnum("status").notNull().default("active"),
+  version: integer("version").notNull().default(1),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+  created_by: text("created_by"),
+  updated_by: text("updated_by"),
+  deleted_at: timestamp("deleted_at", { withTimezone: true }),
+});
+
+/* ---------- Platform Super Admins ---------- */
+
+export const platformSuperAdmins = pgTable("platform_super_admins", {
+  id: text("id").primaryKey(),
+  user_id: text("user_id").notNull().unique().references(() => platformUsers.id, { onDelete: "cascade" }),
+  email: text("email").notNull().unique(),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  created_by: text("created_by"),
+});
+
 /* ---------- Better Auth Tables ---------- */
 
 export const betterAuthUsers = pgTable("ba_user", {
@@ -189,6 +218,12 @@ type EntitlementInsert = typeof planFeatureEntitlements.$inferInsert;
 type OutboxRow = typeof applicationOutbox.$inferSelect;
 type OutboxInsert = typeof applicationOutbox.$inferInsert;
 
+type MembershipRow = typeof memberships.$inferSelect;
+type MembershipInsert = typeof memberships.$inferInsert;
+
+type PlatformSuperAdminRow = typeof platformSuperAdmins.$inferSelect;
+type PlatformSuperAdminInsert = typeof platformSuperAdmins.$inferInsert;
+
 export type {
   OrganizationRow,
   OrganizationInsert,
@@ -200,4 +235,8 @@ export type {
   EntitlementInsert,
   OutboxRow,
   OutboxInsert,
+  MembershipRow,
+  MembershipInsert,
+  PlatformSuperAdminRow,
+  PlatformSuperAdminInsert,
 };
