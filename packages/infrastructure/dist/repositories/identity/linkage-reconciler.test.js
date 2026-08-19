@@ -30,7 +30,7 @@ describe("LinkageReconciler — orphan identity recovery", () => {
         netlifyDB = new NetlifyDB({ logger: () => { } });
         const connectionString = await netlifyDB.start();
         await netlifyDB.applyMigrations("./netlify/database/migrations");
-        sql = postgres(connectionString, { prepare: false });
+        sql = postgres(connectionString);
         db = drizzle({ client: sql, schema });
         userRepo = new DrizzleUserRepository({ db, logger: new NoopLogger() });
         reconciler = new LinkageReconciler({
