@@ -1,8 +1,8 @@
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
 import { LinkageReconciler, DrizzleSuperAdminStore } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
-import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, MembershipRepository, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, RegistrationMode, WebsiteReader, WebsiteCreationPersistence, PageRepository } from "@livingsites/application";
-import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, AuthorizationService } from "@livingsites/application";
+import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, MembershipRepository, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, RegistrationMode, WebsiteReader, WebsiteCreationPersistence, PageRepository, PagePublisher, PageSnapshotReader } from "@livingsites/application";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, publishPage, resolvePublishedPage, resolvePublishedWebsite, AuthorizationService } from "@livingsites/application";
 import type { CreateOrganizationDeps, RegisterUserDeps, AddOrganizationMemberDeps, ChangeOrganizationMemberRoleDeps, RemoveOrganizationMemberDeps, GetOrganizationMembersDeps } from "@livingsites/application";
 export interface ProductionCompositionConfig {
     readonly connectionString?: string;
@@ -18,7 +18,6 @@ export interface ProductionCompositionConfig {
     readonly emailAdapter?: EmailVerificationPort;
     readonly linkageBatchSize?: number;
     readonly linkageGracePeriodMs?: number;
-    readonly superAdminEmail?: string;
 }
 export interface ProductionComposition {
     readonly clock: Clock;
@@ -34,6 +33,8 @@ export interface ProductionComposition {
     readonly websiteRepository: WebsiteReader;
     readonly websiteCreationPersistence: WebsiteCreationPersistence;
     readonly pageRepository: PageRepository;
+    readonly pagePublisher: PagePublisher;
+    readonly pageSnapshotReader: PageSnapshotReader;
     readonly superAdminStore: DrizzleSuperAdminStore;
     readonly authorizationService: AuthorizationService;
     readonly authenticationPort: AuthenticationPort;
@@ -69,6 +70,9 @@ export interface ProductionComposition {
     readonly duplicateSection: typeof duplicateSection;
     readonly reorderSections: typeof reorderSections;
     readonly getPageBuilderState: typeof getPageBuilderState;
+    readonly publishPage: typeof publishPage;
+    readonly resolvePublishedPage: typeof resolvePublishedPage;
+    readonly resolvePublishedWebsite: typeof resolvePublishedWebsite;
     readonly registrationMode: RegistrationMode;
     readonly healthCheck: () => Promise<{
         healthy: boolean;
@@ -78,4 +82,5 @@ export interface ProductionComposition {
 }
 export declare function composeProduction(config: ProductionCompositionConfig): ProductionComposition;
 export declare function composeProductionFromEnvironment(): ProductionComposition;
+export declare function resolveTrustedOrigins(environment: NodeJS.ProcessEnv, betterAuthUrl: string): string[];
 //# sourceMappingURL=production.d.ts.map

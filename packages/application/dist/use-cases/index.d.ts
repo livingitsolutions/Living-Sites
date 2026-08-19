@@ -27,4 +27,6 @@ export * from "./export";
 export * from "./plugins";
 export * from "./identity";
 export * from "./platform";
+export * from "./publishing";
+export * from "./rendering";
 //# sourceMappingURL=index.d.ts.map

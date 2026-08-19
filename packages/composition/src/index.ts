@@ -9,7 +9,11 @@
  * - composeDevelopment: in-memory + fake adapters for local development. Not for production.
  * - composeTest: deterministic test-support adapters with event capture.
  */
-export { composeProduction, composeProductionFromEnvironment } from "./production";
+export {
+  composeProduction,
+  composeProductionFromEnvironment,
+  resolveTrustedOrigins,
+} from "./production";
 export type { ProductionComposition, ProductionCompositionConfig } from "./production";
 export { MissingNetlifyDatabaseError } from "@livingsites/infrastructure";
 export { composeDevelopment } from "./development";

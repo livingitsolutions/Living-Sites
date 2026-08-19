@@ -1,3 +1,4 @@
+import { validateAndNormalizeSectionUrls } from "./url-safety";
 const text = (maxLength) => ({ type: "string", maxLength });
 const object = (required, properties) => ({ type: "object", required, properties, additionalProperties: false });
 const definitions = [
@@ -43,6 +44,9 @@ function validateObject(schema, value, path = "props") {
 }
 export function validateSectionProps(type, props) {
     const errors = validateObject(type.propsSchema, props);
-    return errors.length ? { ok: false, errors } : { ok: true, value: props };
+    if (errors.length)
+        return { ok: false, errors };
+    const urls = validateAndNormalizeSectionUrls(String(type.rendererKey), props);
+    return urls.ok ? { ok: true, value: urls.value ?? props } : { ok: false, errors: [urls.message] };
 }
 //# sourceMappingURL=registry.js.map

@@ -69,7 +69,8 @@ export interface PagePublishedEvent extends DomainEvent {
     };
     readonly pageId: PageId;
     readonly snapshotId: string;
-    readonly version: VersionString;
+    readonly revisionNumber: number;
+    readonly pageVersion: number;
 }
 export interface PageCreatedEvent extends DomainEvent {
     readonly type: "page.created";

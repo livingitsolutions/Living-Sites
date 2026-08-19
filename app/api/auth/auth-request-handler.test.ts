@@ -101,6 +101,18 @@ describe("/api/auth/[...all] requests", () => {
     expect(cookie).toContain("SameSite=Lax");
   });
 
+  it("redirects browser sign-in forms to admin while preserving the session cookie", async () => {
+    await register("browser-login@example.com");
+    const response = await handle(new Request(`${baseURL}/api/auth/sign-in/email`, {
+      method: "POST",
+      headers: { origin: baseURL, "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ email: "browser-login@example.com", password }),
+    }));
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe("/admin");
+    expect(response.headers.get("set-cookie")).toContain("better-auth.session_token");
+  });
+
   it("returns authenticated and unauthenticated session states", async () => {
     const anonymous = await handle(new Request(`${baseURL}/api/auth/get-session`));
     expect(await anonymous.json()).toBeNull();
@@ -132,6 +144,21 @@ describe("/api/auth/[...all] requests", () => {
     expect(signOut.status).toBe(200);
     const session = await handle(new Request(`${baseURL}/api/auth/get-session`, { headers: { cookie } }));
     expect(await session.json()).toBeNull();
+  });
+
+  it("redirects browser sign-out forms to login and clears the session cookie", async () => {
+    const cookie = await authenticatedCookie("browser-logout@example.com");
+    const response = await handle(new Request(`${baseURL}/api/auth/sign-out`, {
+      method: "POST",
+      headers: {
+        origin: baseURL,
+        cookie,
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams(),
+    }));
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe("/login");
   });
 
   it("prevents a disabled orphan identity from authenticating", async () => {

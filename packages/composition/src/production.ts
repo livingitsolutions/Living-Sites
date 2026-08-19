@@ -110,7 +110,6 @@ export interface ProductionCompositionConfig {
   readonly emailAdapter?: EmailVerificationPort;
   readonly linkageBatchSize?: number;
   readonly linkageGracePeriodMs?: number;
-  readonly superAdminEmail?: string;
 }
 
 export interface ProductionComposition {
@@ -270,6 +269,7 @@ export function composeProduction(
     },
     emailAndPassword: {
       enabled: true,
+      disableSignUp: registrationMode !== "open",
       requireEmailVerification: config.emailVerificationEnabled ?? false,
       minPasswordLength: 12,
       maxPasswordLength: 256,
@@ -377,13 +377,6 @@ export function composeProduction(
     authorizationService,
   };
 
-  // If superAdminEmail is configured, run bootstrap asynchronously
-  if (config.superAdminEmail) {
-    superAdminStore.bootstrap({ email: config.superAdminEmail }).catch((err) => {
-      logger.error("Failed to bootstrap super admin during startup", { error: String(err) });
-    });
-  }
-
   const healthCheck = async () => {
     const details: Record<string, boolean> = {};
     let healthy = true;
@@ -483,10 +476,7 @@ function optionalPositiveInteger(key: string): number | undefined {
 
 export function composeProductionFromEnvironment(): ProductionComposition {
   const betterAuthUrl = requiredEnvironmentValue("BETTER_AUTH_URL");
-  const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? betterAuthUrl)
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  const trustedOrigins = resolveTrustedOrigins(process.env, betterAuthUrl);
 
   return composeProduction({
     betterAuthSecret: requiredEnvironmentValue("BETTER_AUTH_SECRET"),
@@ -496,7 +486,32 @@ export function composeProductionFromEnvironment(): ProductionComposition {
     emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
     linkageBatchSize: optionalPositiveInteger("LINKAGE_RECONCILIATION_BATCH_SIZE"),
     linkageGracePeriodMs: optionalPositiveInteger("LINKAGE_RECONCILIATION_GRACE_PERIOD_MS"),
-    superAdminEmail: process.env.PLATFORM_SUPER_ADMIN_EMAIL ?? process.env.SUPER_ADMIN_EMAIL,
     logLevel: "info",
   });
+}
+
+export function resolveTrustedOrigins(
+  environment: NodeJS.ProcessEnv,
+  betterAuthUrl: string,
+): string[] {
+  const candidates = [
+    betterAuthUrl,
+    ...(environment.TRUSTED_ORIGINS ?? "").split(","),
+    environment.URL,
+    environment.DEPLOY_PRIME_URL,
+    environment.DEPLOY_URL,
+  ];
+  const origins = new Set<string>();
+
+  for (const candidate of candidates) {
+    const value = candidate?.trim();
+    if (!value) continue;
+    try {
+      origins.add(new URL(value).origin);
+    } catch {
+      throw new Error(`Trusted origin is not a valid URL: ${value}`);
+    }
+  }
+
+  return [...origins];
 }
