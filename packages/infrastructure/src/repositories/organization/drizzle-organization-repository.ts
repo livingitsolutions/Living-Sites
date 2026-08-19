@@ -41,8 +41,11 @@ import { rowToOrganization, draftToInsertData } from "../../db/organization-mapp
 type CreateRepoError = DuplicateKeyError | PersistenceUnavailableError | InvalidPersistenceStateError;
 
 function isDuplicateKeyError(err: unknown): boolean {
-  if (err && typeof err === "object" && "code" in err) {
-    return (err as { code: string }).code === "23505";
+  if (err && typeof err === "object") {
+    const error = err as { code?: string; cause?: unknown; message?: string };
+    return error.code === "23505"
+      || (error.cause !== undefined && isDuplicateKeyError(error.cause))
+      || /duplicate key|unique constraint/i.test(error.message ?? "");
   }
   return false;
 }

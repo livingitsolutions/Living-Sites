@@ -21,34 +21,14 @@
  * No placeholder wiring. No `null as any`. No second auth instance.
  */
 import "server-only";
-import { composeProduction } from "@livingsites/composition";
+import { composeProductionFromEnvironment } from "@livingsites/composition";
 import type { ProductionComposition } from "@livingsites/composition";
 
 let composition: ProductionComposition | null = null;
 
-function getEnv(key: string): string {
-  const value = process.env[key];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value;
-}
-
 export function getComposition(): ProductionComposition {
   if (!composition) {
-    const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? getEnv("BETTER_AUTH_URL"))
-      .split(",")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    composition = composeProduction({
-      betterAuthSecret: getEnv("BETTER_AUTH_SECRET"),
-      betterAuthUrl: getEnv("BETTER_AUTH_URL"),
-      trustedOrigins,
-      registrationMode: process.env.AUTH_REGISTRATION_MODE ?? "invite_only",
-      emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
-      logLevel: "info",
-    });
+    composition = composeProductionFromEnvironment();
   }
   return composition;
 }

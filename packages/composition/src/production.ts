@@ -12,7 +12,6 @@
  * Does NOT contain in-memory authentication storage.
  */
 import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
 import {
@@ -23,9 +22,13 @@ import {
   DrizzleUserRepository,
   BetterAuthAdapter,
   asBetterAuthInstance,
+  createBetterAuthDatabaseAdapter,
   OutboxEventPublisher,
   DrizzleOrganizationCreationPersistence,
   DrizzleOutboxProcessor,
+  LinkageReconciler,
+  DrizzleOrphanIdentityDisabler,
+  DrizzleIdentityLinkageStore,
   MissingNetlifyDatabaseError,
 } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
@@ -63,6 +66,8 @@ export interface ProductionCompositionConfig {
   readonly registrationMode?: string;
   readonly emailVerificationEnabled?: boolean;
   readonly emailAdapter?: EmailVerificationPort;
+  readonly linkageBatchSize?: number;
+  readonly linkageGracePeriodMs?: number;
 }
 
 export interface ProductionComposition {
@@ -80,6 +85,7 @@ export interface ProductionComposition {
   readonly emailVerificationPort: EmailVerificationPort | null;
   readonly organizationCreationPersistence: OrganizationCreationPersistence;
   readonly outboxProcessor: OutboxProcessor;
+  readonly linkageReconciler: LinkageReconciler;
   readonly createOrganization: typeof createOrganization;
   readonly createOrganizationDeps: CreateOrganizationDeps;
   readonly registerUser: typeof registerUser;
@@ -148,20 +154,43 @@ export function composeProduction(
   }
 
   const db = connection.db;
+  const identityDisabler = new DrizzleOrphanIdentityDisabler(db);
+  const identityLinkageStore = new DrizzleIdentityLinkageStore(db);
 
   const rawAuth = betterAuth({
     secret: config.betterAuthSecret,
     baseURL: config.betterAuthUrl,
     trustedOrigins: [...config.trustedOrigins],
-    database: drizzleAdapter(db, {
-      provider: "pg",
-      schema: {
-        user: "ba_user",
-        session: "ba_session",
-        account: "ba_account",
-        verification: "ba_verification",
+    database: createBetterAuthDatabaseAdapter(db),
+    user: {
+      additionalFields: {
+        disabled: { type: "boolean", required: false, input: false, defaultValue: false },
+        disabledAt: { type: "date", required: false, input: false, fieldName: "disabled_at" },
       },
-    }),
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            const createdAt = new Date(clock.nowIso());
+            await identityLinkageStore.recordPending({
+              id: idGenerator.generatePrefixed("linkage"),
+              authSubjectId: user.id,
+              email: user.email,
+              displayName: user.name,
+              createdAt,
+            });
+          },
+        },
+      },
+      session: {
+        create: {
+          before: async (session) => {
+            return (await identityDisabler.isDisabled(session.userId)) ? false : undefined;
+          },
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: config.emailVerificationEnabled ?? false,
@@ -177,6 +206,7 @@ export function composeProduction(
       },
     },
     advanced: {
+      useSecureCookies: true,
       cookies: {
         sessionToken: {
           attributes: {
@@ -203,6 +233,17 @@ export function composeProduction(
     maxAttempts: config.outboxMaxAttempts,
     baseBackoffMs: config.outboxBaseBackoffMs,
     maxBackoffMs: config.outboxMaxBackoffMs,
+  });
+  const linkageReconciler = new LinkageReconciler({
+    db,
+    logger,
+    userCreator: userRepository,
+    userReader: userRepository,
+    identityDisabler,
+    idGenerator,
+    clock,
+    batchSize: config.linkageBatchSize,
+    gracePeriodMs: config.linkageGracePeriodMs,
   });
 
   const createOrganizationDeps: CreateOrganizationDeps = {
@@ -262,6 +303,7 @@ export function composeProduction(
     emailVerificationPort: config.emailAdapter ?? null,
     organizationCreationPersistence,
     outboxProcessor,
+    linkageReconciler,
     createOrganization,
     createOrganizationDeps,
     registerUser,
@@ -270,4 +312,36 @@ export function composeProduction(
     healthCheck,
     close,
   };
+}
+
+function requiredEnvironmentValue(key: string): string {
+  const value = process.env[key];
+  if (!value) throw new Error(`Missing required environment variable: ${key}`);
+  return value;
+}
+
+function optionalPositiveInteger(key: string): number | undefined {
+  const raw = process.env[key];
+  if (!raw) return undefined;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+export function composeProductionFromEnvironment(): ProductionComposition {
+  const betterAuthUrl = requiredEnvironmentValue("BETTER_AUTH_URL");
+  const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? betterAuthUrl)
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return composeProduction({
+    betterAuthSecret: requiredEnvironmentValue("BETTER_AUTH_SECRET"),
+    betterAuthUrl,
+    trustedOrigins,
+    registrationMode: process.env.AUTH_REGISTRATION_MODE ?? "invite_only",
+    emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
+    linkageBatchSize: optionalPositiveInteger("LINKAGE_RECONCILIATION_BATCH_SIZE"),
+    linkageGracePeriodMs: optionalPositiveInteger("LINKAGE_RECONCILIATION_GRACE_PERIOD_MS"),
+    logLevel: "info",
+  });
 }

@@ -15,7 +15,7 @@
  * @returns Structured result with counts and failure summaries
  */
 import type { Handler } from "@netlify/functions";
-import { composeProduction } from "../../packages/composition/src/production";
+import { composeProductionFromEnvironment } from "../../packages/composition/src/production";
 
 const MAX_BATCH_SIZE = 50;
 const EXECUTION_TIME_BUDGET_MS = 25000;
@@ -29,7 +29,7 @@ export const handler: Handler = async (event, context) => {
 
   let composition;
   try {
-    composition = composeProduction();
+    composition = composeProductionFromEnvironment();
   } catch (err) {
     console.error("[outbox-worker] Failed to initialize composition:", err);
     return {

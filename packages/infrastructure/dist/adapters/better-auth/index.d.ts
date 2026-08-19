@@ -12,6 +12,7 @@ import type { AuthenticationError, AuthenticationPort, RegistrationInput, SignIn
 import type { Result, AuthSubjectId } from "@livingsites/domain";
 import type { Logger } from "@livingsites/platform";
 export { asBetterAuthInstance } from "./cast";
+export { createBetterAuthDatabaseAdapter } from "./database";
 /**
  * Minimal structural type for the Better Auth instance. We only use
  * `.handler`, `.api.signUpEmail`, `.api.signInEmail`, `.api.signOut`,
@@ -24,27 +25,35 @@ export interface BetterAuthInstance {
     readonly api: {
         signUpEmail(input: {
             body: Record<string, unknown>;
+            returnHeaders: true;
         }): Promise<{
-            token: string | null;
-            user: {
-                id: string;
-                email: string;
-                emailVerified: boolean;
-                name: string;
-            };
-        } | null>;
+            headers: Headers;
+            response: {
+                token: string | null;
+                user: {
+                    id: string;
+                    email: string;
+                    emailVerified: boolean;
+                    name: string;
+                };
+            } | null;
+        }>;
         signInEmail(input: {
             body: Record<string, unknown>;
+            returnHeaders: true;
         }): Promise<{
-            token: string;
-            user: {
-                id: string;
-                email: string;
-                emailVerified: boolean;
-                name: string;
-            };
-            redirect: boolean;
-        } | null>;
+            headers: Headers;
+            response: {
+                token: string;
+                user: {
+                    id: string;
+                    email: string;
+                    emailVerified: boolean;
+                    name: string;
+                };
+                redirect: boolean;
+            } | null;
+        }>;
         signOut(input: {
             headers: Headers;
         }): Promise<{

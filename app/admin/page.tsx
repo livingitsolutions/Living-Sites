@@ -1,18 +1,19 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getAuth } from "@/app/lib/auth";
+import { authPageRequest, evaluateAuthPageRequest } from "@/app/lib/auth-page-request";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
+  const decision = await evaluateAuthPageRequest(authPageRequest("/admin", await headers()), auth);
 
-  if (!session) {
-    redirect("/login");
+  if (decision.kind === "redirect") {
+    redirect(decision.location);
   }
 
-  const user = session.user;
+  const user = decision.session!.user;
 
   return (
     <main style={{ maxWidth: "600px", margin: "80px auto", padding: "0 20px", fontFamily: "system-ui, sans-serif" }}>
