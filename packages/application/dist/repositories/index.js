@@ -5,18 +5,18 @@
  * implementations — those live in Infrastructure (production) or
  * test-support (tests).
  */
-export * from "./organization";
-export * from "./membership";
-export * from "./users";
-export * from "./user";
-export * from "./website";
-export * from "./page";
-export * from "./section";
-export * from "./media";
-export * from "./theme";
-export * from "./navigation";
-export * from "./seo";
-export * from "./analytics";
-export * from "./export";
-export * from "./forms";
+export * from "./organization.js";
+export * from "./membership.js";
+export * from "./users.js";
+export * from "./user.js";
+export * from "./website.js";
+export * from "./page.js";
+export * from "./section.js";
+export * from "./media.js";
+export * from "./theme.js";
+export * from "./navigation.js";
+export * from "./seo.js";
+export * from "./analytics.js";
+export * from "./export.js";
+export * from "./forms.js";
 //# sourceMappingURL=index.js.map

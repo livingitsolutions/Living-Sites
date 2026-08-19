@@ -1,7 +1,7 @@
 import type { OrganizationId, Page, PageStatus, Result, UserId, WebsiteId } from "@livingsites/domain";
-import type { AuthorizationService } from "../../authorization/service";
-import type { PageReader } from "../../repositories/page";
-import type { WebsiteReader } from "../../repositories/website";
+import type { AuthorizationService } from "../../authorization/service.js";
+import type { PageReader } from "../../repositories/page.js";
+import type { WebsiteReader } from "../../repositories/website.js";
 export declare function listWebsitePages(input: {
     organizationId: OrganizationId;
     websiteId: WebsiteId;

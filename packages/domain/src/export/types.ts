@@ -13,7 +13,7 @@ import type {
   ISODateString,
   AuditTrail,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** A single export job. */
 export interface ExportJob {

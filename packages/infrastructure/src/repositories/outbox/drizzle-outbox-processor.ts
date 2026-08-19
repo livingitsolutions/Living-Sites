@@ -20,9 +20,9 @@ import type {
   OutboxEventRecord,
   DispatchOutcome,
 } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { applicationOutbox, type OutboxRow } from "../../db/schema";
-import { rowToOutboxEventRecord } from "../../db/outbox-mapper";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { applicationOutbox, type OutboxRow } from "../../db/schema.js";
+import { rowToOutboxEventRecord } from "../../db/outbox-mapper.js";
 
 export interface OutboxProcessorConfig {
   readonly db: DrizzleDB;

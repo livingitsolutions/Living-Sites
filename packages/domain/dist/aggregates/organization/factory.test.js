@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createOrganizationDraft } from "./factory";
-import { DRAFT_VERSION } from "./draft";
+import { createOrganizationDraft } from "./factory.js";
+import { DRAFT_VERSION } from "./draft.js";
 describe("createOrganizationDraft (pure Domain factory)", () => {
     it("creates a draft with version 0 (DRAFT_VERSION)", () => {
         const draft = createOrganizationDraft({

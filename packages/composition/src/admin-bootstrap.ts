@@ -9,7 +9,7 @@ import type {
   UserId,
 } from "@livingsites/domain";
 import type { DrizzleDB } from "@livingsites/infrastructure";
-import type { ProductionComposition } from "./production";
+import type { ProductionComposition } from "./production.js";
 
 export interface AdminBootstrapInput {
   readonly email: string;

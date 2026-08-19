@@ -6,8 +6,8 @@
  * in this slice — they will be added with their own use cases and tests.
  */
 import { eq } from "drizzle-orm";
-import { platformUsers } from "../../db/schema";
-import { rowToUser, userDraftToInsertData } from "../../db/user-mapper";
+import { platformUsers } from "../../db/schema.js";
+import { rowToUser, userDraftToInsertData } from "../../db/user-mapper.js";
 function isDuplicateKeyError(err) {
     if (err && typeof err === "object" && "code" in err) {
         return err.code === "23505";

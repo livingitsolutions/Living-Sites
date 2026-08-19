@@ -1,5 +1,5 @@
 import type { Form, Submission, SubmissionStatus, FormId, SubmissionId, WebsiteId, PaginatedResult, PaginationParams, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult, MutationResult } from "../contracts";
+import type { CreateResult, SaveResult, MutationResult } from "../contracts.js";
 export interface FormListParams extends PaginationParams {
     websiteId?: WebsiteId;
     search?: string;

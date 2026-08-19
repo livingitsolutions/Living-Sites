@@ -7,7 +7,7 @@ import type {
   CreateResult,
   SaveResult,
   MutationResult,
-} from "../contracts";
+} from "../contracts.js";
 
 /**
  * Owns the Navigation aggregate root, including its MenuItem child entities.

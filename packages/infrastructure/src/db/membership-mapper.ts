@@ -18,7 +18,7 @@ import type {
 import type { MembershipDraft } from "@livingsites/domain";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
 import { normalizeOrganizationRole } from "@livingsites/application";
-import type { MembershipRow, MembershipInsert } from "./schema";
+import type { MembershipRow, MembershipInsert } from "./schema.js";
 
 export function rowToMembership(row: MembershipRow): Result<Membership, InvalidPersistenceStateError> {
   if (!row.id || !row.organization_id || !row.user_id || !row.role) {

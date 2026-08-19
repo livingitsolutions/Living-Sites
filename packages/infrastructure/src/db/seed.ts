@@ -9,8 +9,8 @@
  */
 import { eq } from "drizzle-orm";
 import type { Logger } from "@livingsites/platform";
-import { plans, features, planFeatureEntitlements } from "./schema";
-import type { DrizzleDB } from "./drizzle-instance";
+import { plans, features, planFeatureEntitlements } from "./schema.js";
+import type { DrizzleDB } from "./drizzle-instance.js";
 
 export interface SeedResult {
   readonly plansUpserted: number;

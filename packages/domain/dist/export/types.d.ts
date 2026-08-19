@@ -5,7 +5,7 @@
  * into a downloadable, portable format (static HTML, ZIP, etc.). Jobs are
  * asynchronous and progress-tracked.
  */
-import type { ExportJobId, WebsiteId, OrganizationId, PageId, ISODateString, AuditTrail, AggregateVersion } from "../shared";
+import type { ExportJobId, WebsiteId, OrganizationId, PageId, ISODateString, AuditTrail, AggregateVersion } from "../shared/index.js";
 /** A single export job. */
 export interface ExportJob {
     readonly id: ExportJobId;

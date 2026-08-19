@@ -4,7 +4,7 @@
  * Contracts only. No implementation in this milestone.
  */
 import type { FormRepository, SubmissionRepository } from "@livingsites/application";
-import type { DatabaseBackedAdapter } from "../shared";
+import type { DatabaseBackedAdapter } from "../shared.js";
 /**
  * Adapts form-related repositories to a database provider.
  * Composes FormRepository and SubmissionRepository as named sub-adapters to

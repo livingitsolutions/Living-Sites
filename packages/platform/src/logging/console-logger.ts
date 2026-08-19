@@ -1,7 +1,7 @@
 /**
  * ConsoleLogger — structured logger that writes to the console.
  */
-import type { Logger, LogEntry, LogLevel } from "../index";
+import type { Logger, LogEntry, LogLevel } from "../index.js";
 
 const LEVEL_ORDER: readonly LogLevel[] = [
   "trace",

@@ -5,7 +5,7 @@
  * only. No event bus, no dispatcher, no runtime machinery — those are
  * infrastructure concerns for a future milestone.
  */
-import type { OrganizationId, WebsiteId, PageId, MediaId, FormId, SubmissionId, ExportJobId, UserId, MembershipId, ISODateString, VersionString } from "../shared";
+import type { OrganizationId, WebsiteId, PageId, MediaId, FormId, SubmissionId, ExportJobId, UserId, MembershipId, ISODateString, VersionString } from "../shared/index.js";
 /**
  * Explicit scope for a domain event. Replaces the previous nullable
  * `organizationId` field with a clear, exhaustive type.

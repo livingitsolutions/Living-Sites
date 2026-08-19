@@ -8,7 +8,7 @@
  * The adapter is portable to any PostgreSQL-compatible connection string,
  * including future Netlify DB deployments.
  */
-import { drizzle } from "./drizzle-instance";
+import { drizzle } from "./drizzle-instance.js";
 export function createDbConnection(config) {
     const db = drizzle(config.url);
     return {

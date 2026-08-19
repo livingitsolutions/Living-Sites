@@ -1,5 +1,5 @@
 import type { SEOProfile, SchemaProfile, RobotsPolicy, WebsiteId, PageId, PaginatedResult, PaginationParams, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult, MutationResult } from "../contracts";
+import type { CreateResult, SaveResult, MutationResult } from "../contracts.js";
 export interface SEOProfileRepository {
     findById(id: string): Promise<SEOProfile | null>;
     findForPage(pageId: PageId): Promise<SEOProfile | null>;

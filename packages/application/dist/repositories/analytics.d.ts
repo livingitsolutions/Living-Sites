@@ -1,5 +1,5 @@
 import type { AnalyticsProfile, AnalyticsSummary, MetricSeries, WebsiteId, ISODateString, PaginatedResult, PaginationParams, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult, MutationResult } from "../contracts";
+import type { CreateResult, SaveResult, MutationResult } from "../contracts.js";
 export interface AnalyticsProfileRepository {
     findById(id: string): Promise<AnalyticsProfile | null>;
     findByWebsite(websiteId: WebsiteId): Promise<AnalyticsProfile | null>;

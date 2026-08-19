@@ -2,10 +2,10 @@ import { randomUUID } from "node:crypto";
 import type { Website, WebsiteCreatedEvent, WebsiteDraft } from "@livingsites/domain";
 import type { CreateResult, WebsiteCreationPersistence } from "@livingsites/application";
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { applicationOutbox, websites } from "../../db/schema";
-import { buildOutboxInsert } from "../../db/outbox-mapper";
-import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { applicationOutbox, websites } from "../../db/schema.js";
+import { buildOutboxInsert } from "../../db/outbox-mapper.js";
+import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper.js";
 
 export class DrizzleWebsiteCreationPersistence implements WebsiteCreationPersistence {
   constructor(private readonly config: { readonly db: DrizzleDB; readonly logger: Logger; readonly beforeOutboxInsert?: () => void }) {}

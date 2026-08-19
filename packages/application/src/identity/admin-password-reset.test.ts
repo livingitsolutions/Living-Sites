@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { generateAdminPasswordResetLink } from "./admin-password-reset";
+import { generateAdminPasswordResetLink } from "./admin-password-reset.js";
 
 describe("generateAdminPasswordResetLink", () => {
   it("returns the captured one-time link for the active platform admin", async () => {

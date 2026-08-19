@@ -1,4 +1,4 @@
-import { OrganizationPermissions } from "../../../authorization/permissions";
+import { OrganizationPermissions } from "../../../authorization/permissions.js";
 export async function getOrganizationMembers(input, deps) {
     const organizationId = typeof input.organizationId === "string" ? input.organizationId.trim() : "";
     const callerUserId = typeof input.callerUserId === "string" ? input.callerUserId.trim() : "";

@@ -2,7 +2,7 @@
  * PlanActivePolicy — validates that a selected plan is available and active.
  */
 import type { Plan } from "@livingsites/domain";
-import type { Policy, PolicyDecision, PolicyContext } from "../shared";
+import type { Policy, PolicyDecision, PolicyContext } from "../shared/index.js";
 export interface PlanActivePolicyInput {
     readonly context: PolicyContext;
     readonly plan: Plan | null;

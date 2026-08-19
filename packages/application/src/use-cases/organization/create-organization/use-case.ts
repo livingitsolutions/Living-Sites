@@ -21,17 +21,17 @@ import type {
   ISODateString,
   Slug,
 } from "@livingsites/domain";
-import type { OrganizationReader, OrganizationCreator, PlanReader } from "../../../repositories/organization";
-import type { EventPublisher } from "../../../services/event-publisher";
-import type { OrganizationCreationPersistence } from "../../../services/outbox";
-import type { AppClock, AppIdGenerator } from "../../../services/organization-factory";
-import { createOrganizationDraftViaPorts } from "../../../services/organization-factory";
-import type { PolicyContext } from "../../../policies/shared";
-import { OrganizationCreationPolicyChain } from "../../../policies/organization";
-import type { CreateOrganizationInput } from "./input";
-import type { CreateOrganizationOutput } from "./output";
-import type { CreateOrganizationError } from "./errors";
-import { validateCreateOrganizationInput } from "./validator";
+import type { OrganizationReader, OrganizationCreator, PlanReader } from "../../../repositories/organization.js";
+import type { EventPublisher } from "../../../services/event-publisher.js";
+import type { OrganizationCreationPersistence } from "../../../services/outbox.js";
+import type { AppClock, AppIdGenerator } from "../../../services/organization-factory.js";
+import { createOrganizationDraftViaPorts } from "../../../services/organization-factory.js";
+import type { PolicyContext } from "../../../policies/shared/index.js";
+import { OrganizationCreationPolicyChain } from "../../../policies/organization/index.js";
+import type { CreateOrganizationInput } from "./input.js";
+import type { CreateOrganizationOutput } from "./output.js";
+import type { CreateOrganizationError } from "./errors.js";
+import { validateCreateOrganizationInput } from "./validator.js";
 
 export interface CreateOrganizationDeps {
   readonly organizationRepository: OrganizationReader & OrganizationCreator;

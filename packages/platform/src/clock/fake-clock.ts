@@ -1,7 +1,7 @@
 /**
  * FakeClock — deterministic Clock for tests.
  */
-import type { Clock } from "../index";
+import type { Clock } from "../index.js";
 
 export class FakeClock implements Clock {
   private currentMs: number;

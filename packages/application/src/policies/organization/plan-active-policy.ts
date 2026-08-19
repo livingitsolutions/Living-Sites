@@ -6,7 +6,7 @@ import type {
   Policy,
   PolicyDecision,
   PolicyContext,
-} from "../shared";
+} from "../shared/index.js";
 
 export interface PlanActivePolicyInput {
   readonly context: PolicyContext;

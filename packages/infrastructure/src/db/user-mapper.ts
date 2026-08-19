@@ -13,7 +13,7 @@ import type {
   AuditTrail,
   AggregateVersion,
 } from "@livingsites/domain";
-import type { platformUsers } from "./schema";
+import type { platformUsers } from "./schema.js";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
 
 type PlatformUserRow = typeof platformUsers.$inferSelect;

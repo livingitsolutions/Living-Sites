@@ -10,7 +10,7 @@
  * - Roles belong to memberships, never directly to User.
  * - No wildcard permissions.
  */
-import { type PermissionKey } from "./permissions";
+import { type PermissionKey } from "./permissions.js";
 export declare const SYSTEM_ROLE_PERMISSIONS: Readonly<Record<string, readonly PermissionKey[]>>;
 /**
  * Normalizes any recognized role string to canonical system role value.

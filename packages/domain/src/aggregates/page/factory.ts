@@ -1,6 +1,6 @@
-import type { Slug } from "../../shared";
-import { PageStatus } from "../../page";
-import { PAGE_DRAFT_VERSION, type CreatePageDraftInput, type PageDraft } from "./draft";
+import type { Slug } from "../../shared/index.js";
+import { PageStatus } from "../../page/index.js";
+import { PAGE_DRAFT_VERSION, type CreatePageDraftInput, type PageDraft } from "./draft.js";
 
 export function normalizePageSlug(value: string): Slug {
   const normalized = value.trim().toLowerCase().replace(/^\/+|\/+$/g, "").replace(/\s+/g, "-");

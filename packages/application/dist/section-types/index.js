@@ -1,3 +1,3 @@
-export * from "./registry";
-export * from "./url-safety";
+export * from "./registry.js";
+export * from "./url-safety.js";
 //# sourceMappingURL=index.js.map

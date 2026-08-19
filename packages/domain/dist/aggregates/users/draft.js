@@ -1,3 +1,3 @@
-import { INITIAL_AGGREGATE_VERSION } from "../../shared";
+import { INITIAL_AGGREGATE_VERSION } from "../../shared/index.js";
 export const DRAFT_VERSION = INITIAL_AGGREGATE_VERSION;
 //# sourceMappingURL=draft.js.map

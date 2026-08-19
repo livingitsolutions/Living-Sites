@@ -1,5 +1,5 @@
 import type { Media, Folder, MediaKind, MediaId, FolderId, WebsiteId, PaginatedResult, PaginationParams, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult, MutationResult } from "../contracts";
+import type { CreateResult, SaveResult, MutationResult } from "../contracts.js";
 export interface MediaListParams extends PaginationParams {
     websiteId?: WebsiteId;
     folderId?: FolderId | null;

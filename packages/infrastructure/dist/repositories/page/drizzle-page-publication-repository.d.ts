@@ -2,7 +2,7 @@ import type { PageId, PagePublishedEvent, PageSnapshot } from "@livingsites/doma
 import type { PagePublicationCandidate, PagePublicationError, PagePublisher, PageSnapshotReader } from "@livingsites/application";
 import type { Result } from "@livingsites/domain";
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface DrizzlePagePublicationRepositoryConfig {
     readonly db: DrizzleDB;
     readonly logger: Logger;

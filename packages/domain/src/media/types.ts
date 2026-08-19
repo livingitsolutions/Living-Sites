@@ -12,7 +12,7 @@ import type {
   AuditTrail,
   LifecycleStatus,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** A single binary asset in a website's media library. */
 export interface Media {

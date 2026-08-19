@@ -13,7 +13,7 @@ import type {
   MachineKey,
   AuditTrail,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** Page- or website-level SEO configuration. */
 export interface SEOProfile {

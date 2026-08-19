@@ -13,9 +13,9 @@ import type {
   ISODateString,
   AuditTrail,
   LifecycleStatus,
-} from "../../shared";
-import type { OrganizationDraft, DraftVersion } from "./draft";
-import { DRAFT_VERSION } from "./draft";
+} from "../../shared/index.js";
+import type { OrganizationDraft, DraftVersion } from "./draft.js";
+import { DRAFT_VERSION } from "./draft.js";
 
 export interface CreateOrganizationDraftInput {
   readonly id: OrganizationId;

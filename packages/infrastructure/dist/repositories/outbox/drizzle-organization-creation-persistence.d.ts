@@ -2,7 +2,7 @@ import type { Logger } from "@livingsites/platform";
 import type { Organization, OrganizationDraft, OrganizationCreatedEvent } from "@livingsites/domain";
 import type { CreateResult } from "@livingsites/application";
 import type { OrganizationCreationPersistence } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface DrizzleOrganizationCreationPersistenceConfig {
     readonly db: DrizzleDB;
     readonly logger: Logger;

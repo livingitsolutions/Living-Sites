@@ -6,9 +6,9 @@ import type {
   AuditTrail,
   LifecycleStatus,
   RoleValue,
-} from "../../index";
-import type { MembershipDraft } from "./membership-draft";
-import { MEMBERSHIP_DRAFT_VERSION } from "./membership-draft";
+} from "../../index.js";
+import type { MembershipDraft } from "./membership-draft.js";
+import { MEMBERSHIP_DRAFT_VERSION } from "./membership-draft.js";
 
 export interface CreateMembershipDraftInput {
   readonly id: MembershipId;

@@ -1,5 +1,5 @@
-import { OrganizationSlugPolicy } from "./slug-policy";
-import { PlanActivePolicy } from "./plan-active-policy";
+import { OrganizationSlugPolicy } from "./slug-policy.js";
+import { PlanActivePolicy } from "./plan-active-policy.js";
 export class OrganizationCreationPolicyChain {
     name = "OrganizationCreationPolicyChain";
     slugPolicy;

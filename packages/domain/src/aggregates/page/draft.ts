@@ -1,7 +1,7 @@
-import type { AggregateVersion, AuditTrail, ISODateString, LocaleCode, PageId, SectionId, Slug, UserId, WebsiteId } from "../../shared";
-import { INITIAL_AGGREGATE_VERSION } from "../../shared";
-import type { PageStatus } from "../../page";
-import type { Section } from "../../section";
+import type { AggregateVersion, AuditTrail, ISODateString, LocaleCode, PageId, SectionId, Slug, UserId, WebsiteId } from "../../shared/index.js";
+import { INITIAL_AGGREGATE_VERSION } from "../../shared/index.js";
+import type { PageStatus } from "../../page/index.js";
+import type { Section } from "../../section/index.js";
 
 export type PageDraftVersion = AggregateVersion & { readonly __pageDraft: true };
 export interface PageDraft {

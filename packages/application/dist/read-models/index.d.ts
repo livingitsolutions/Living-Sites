@@ -8,5 +8,5 @@
  *
  * No implementations in this milestone — contracts only.
  */
-export * from "./types";
+export * from "./types.js";
 //# sourceMappingURL=index.d.ts.map

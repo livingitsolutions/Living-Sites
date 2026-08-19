@@ -1,6 +1,6 @@
 import { createMembershipDraft } from "@livingsites/domain";
-import { OrganizationPermissions } from "../../../authorization/permissions";
-import { validateAddOrganizationMemberInput } from "./validator";
+import { OrganizationPermissions } from "../../../authorization/permissions.js";
+import { validateAddOrganizationMemberInput } from "./validator.js";
 export async function addOrganizationMember(input, deps) {
     const validation = validateAddOrganizationMemberInput(input);
     if (!validation.ok) {

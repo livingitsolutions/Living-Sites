@@ -7,7 +7,7 @@ import type {
 import type {
   CreateResult,
   SaveResult,
-} from "../contracts";
+} from "../contracts.js";
 
 export interface ThemeRepository {
   findById(id: ThemeId): Promise<Theme | null>;

@@ -17,7 +17,7 @@ import type {
   MembershipId,
   ISODateString,
   VersionString,
-} from "../shared";
+} from "../shared/index.js";
 
 /**
  * Explicit scope for a domain event. Replaces the previous nullable

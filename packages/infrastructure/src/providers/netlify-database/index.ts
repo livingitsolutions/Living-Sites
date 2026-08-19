@@ -17,8 +17,8 @@ import { drizzle as drizzlePostgresJs } from "drizzle-orm/postgres-js";
 import { getDatabase, type DatabaseConnection } from "@netlify/database";
 import type { Pool } from "pg";
 import postgres from "postgres";
-import * as schema from "../../db/schema";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import * as schema from "../../db/schema.js";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 
 export type NetlifyDrizzleDB = NodePgDatabase<typeof schema> | DrizzleDB;
 

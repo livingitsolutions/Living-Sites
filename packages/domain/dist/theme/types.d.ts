@@ -6,7 +6,7 @@
  * SectionTypes it can render. System themes are platform-provided; org themes
  * are customizable.
  */
-import type { ThemeId, OrganizationId, Slug, VersionString, AuditTrail, AggregateVersion } from "../shared";
+import type { ThemeId, OrganizationId, Slug, VersionString, AuditTrail, AggregateVersion } from "../shared/index.js";
 /** Visual theme controlling the rendered appearance of a website. */
 export interface Theme {
     readonly id: ThemeId;

@@ -1,14 +1,14 @@
 import type { ISODateString, LocaleCode, OrganizationId, Result, Slug, ThemeId, UserId, WebsiteCreatedEvent, WebsiteId } from "@livingsites/domain";
 import { createWebsiteDraft } from "@livingsites/domain";
-import type { AuthorizationService } from "../../../authorization/service";
-import { WebsitePermissions } from "../../../authorization/permissions";
-import type { OrganizationReader, PlanReader } from "../../../repositories/organization";
-import type { WebsiteCreationPersistence, WebsiteReader } from "../../../repositories/website";
-import { OrganizationActivePolicy, WebsiteCountPolicy, WebsiteSlugPolicy } from "../../../policies/website";
-import type { CreateWebsiteInput } from "./input";
-import type { CreateWebsiteOutput } from "./output";
-import type { CreateWebsiteError } from "./errors";
-import { validateCreateWebsiteInput } from "./validator";
+import type { AuthorizationService } from "../../../authorization/service.js";
+import { WebsitePermissions } from "../../../authorization/permissions.js";
+import type { OrganizationReader, PlanReader } from "../../../repositories/organization.js";
+import type { WebsiteCreationPersistence, WebsiteReader } from "../../../repositories/website.js";
+import { OrganizationActivePolicy, WebsiteCountPolicy, WebsiteSlugPolicy } from "../../../policies/website/index.js";
+import type { CreateWebsiteInput } from "./input.js";
+import type { CreateWebsiteOutput } from "./output.js";
+import type { CreateWebsiteError } from "./errors.js";
+import { validateCreateWebsiteInput } from "./validator.js";
 
 export interface TrustedPlatformUserContext { readonly userId: UserId; }
 export interface CreateWebsiteDeps {

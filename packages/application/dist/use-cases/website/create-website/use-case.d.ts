@@ -1,10 +1,10 @@
 import type { Result, UserId } from "@livingsites/domain";
-import type { AuthorizationService } from "../../../authorization/service";
-import type { OrganizationReader, PlanReader } from "../../../repositories/organization";
-import type { WebsiteCreationPersistence, WebsiteReader } from "../../../repositories/website";
-import type { CreateWebsiteInput } from "./input";
-import type { CreateWebsiteOutput } from "./output";
-import type { CreateWebsiteError } from "./errors";
+import type { AuthorizationService } from "../../../authorization/service.js";
+import type { OrganizationReader, PlanReader } from "../../../repositories/organization.js";
+import type { WebsiteCreationPersistence, WebsiteReader } from "../../../repositories/website.js";
+import type { CreateWebsiteInput } from "./input.js";
+import type { CreateWebsiteOutput } from "./output.js";
+import type { CreateWebsiteError } from "./errors.js";
 export interface TrustedPlatformUserContext {
     readonly userId: UserId;
 }

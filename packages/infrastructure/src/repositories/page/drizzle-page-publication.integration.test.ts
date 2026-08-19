@@ -4,10 +4,10 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import type { ISODateString, OrganizationId, PageId, Section, SectionId, SectionTypeId, UserId, WebsiteId } from "@livingsites/domain";
 import { NoopLogger } from "@livingsites/platform";
-import * as schema from "../../db/schema";
-import { applicationOutbox, organizations, pageSections, pageSnapshots, pages, websites } from "../../db/schema";
-import { DrizzlePageRepository } from "./drizzle-page-repository";
-import { DrizzlePagePublicationRepository } from "./drizzle-page-publication-repository";
+import * as schema from "../../db/schema.js";
+import { applicationOutbox, organizations, pageSections, pageSnapshots, pages, websites } from "../../db/schema.js";
+import { DrizzlePageRepository } from "./drizzle-page-repository.js";
+import { DrizzlePagePublicationRepository } from "./drizzle-page-publication-repository.js";
 
 const now = "2026-08-19T12:00:00.000Z" as ISODateString; const orgId = "org_publish" as OrganizationId; const websiteId = "web_publish" as WebsiteId; const pageId = "page_publish" as PageId; const userId = "usr_publish" as UserId;
 const section = (headline: string): Section => ({ id: "section_publish" as SectionId, pageId, websiteId, sectionTypeId: "section-type:hero" as SectionTypeId, sortOrder: 0, status: "active", props: { headline, subheading: "World", ctaLabel: "Go", ctaUrl: "/contact" }, audit: { createdAt: now, updatedAt: now, createdBy: userId, updatedBy: userId } });

@@ -1,5 +1,5 @@
 import type { User, UserId, AuthSubjectId } from "@livingsites/domain";
-import type { CreateResult } from "../contracts";
+import type { CreateResult } from "../contracts.js";
 export interface UserReader {
     findById(id: UserId): Promise<User | null>;
     findByAuthSubjectId(authSubjectId: AuthSubjectId): Promise<User | null>;

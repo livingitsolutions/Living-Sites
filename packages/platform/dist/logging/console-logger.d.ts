@@ -1,7 +1,7 @@
 /**
  * ConsoleLogger — structured logger that writes to the console.
  */
-import type { Logger, LogLevel } from "../index";
+import type { Logger, LogLevel } from "../index.js";
 export declare class ConsoleLogger implements Logger {
     readonly level: LogLevel;
     private readonly component;

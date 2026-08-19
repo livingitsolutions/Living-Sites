@@ -11,8 +11,8 @@
  * atomicity with the aggregate mutation.
  */
 import { randomUUID } from "node:crypto";
-import { applicationOutbox } from "../../db/schema";
-import { buildOutboxInsert } from "../../db/outbox-mapper";
+import { applicationOutbox } from "../../db/schema.js";
+import { buildOutboxInsert } from "../../db/outbox-mapper.js";
 function isDuplicateKeyError(err) {
     if (err && typeof err === "object" && "code" in err) {
         return err.code === "23505";

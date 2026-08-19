@@ -5,7 +5,7 @@
  * Storage backend (Supabase Storage, S3, etc.) is replaceable; this context
  * only models the domain, never the storage transport.
  */
-import type { MediaId, FolderId, WebsiteId, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared";
+import type { MediaId, FolderId, WebsiteId, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared/index.js";
 /** A single binary asset in a website's media library. */
 export interface Media {
     readonly id: MediaId;

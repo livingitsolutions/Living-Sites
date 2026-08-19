@@ -1,7 +1,7 @@
 import { PageStatus } from "@livingsites/domain";
-import { PagePermissions } from "../../authorization/permissions";
-import { SECTION_TYPES, getSectionType, validateSectionProps } from "../../section-types";
-import { proveWebsiteAccess } from "../page/shared";
+import { PagePermissions } from "../../authorization/permissions.js";
+import { SECTION_TYPES, getSectionType, validateSectionProps } from "../../section-types/index.js";
+import { proveWebsiteAccess } from "../page/shared.js";
 async function loadPage(input, deps, permission) {
     const access = await proveWebsiteAccess({ ...input, userId: deps.authenticatedUser.userId, permission }, deps);
     if (!access.ok)

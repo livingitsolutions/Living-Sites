@@ -1,7 +1,7 @@
 /**
  * Logging module — structured, leveled logging contract and implementations.
  */
-import type { LogLevel } from "../environment";
+import type { LogLevel } from "../environment/index.js";
 export type { LogLevel };
 export interface LogEntry {
     readonly timestamp: string;
@@ -24,6 +24,6 @@ export interface Logger {
 export interface LoggerFactory {
     create(name: string): Logger;
 }
-export { ConsoleLogger } from "./console-logger";
-export { NoopLogger } from "./noop-logger";
+export { ConsoleLogger } from "./console-logger.js";
+export { NoopLogger } from "./noop-logger.js";
 //# sourceMappingURL=index.d.ts.map

@@ -6,8 +6,8 @@
  * imports. The Application layer resolves the ID and timestamp through
  * injected ports and passes them here.
  */
-import type { OrganizationId, PlanId, Slug, ISODateString } from "../../shared";
-import type { OrganizationDraft, DraftVersion } from "./draft";
+import type { OrganizationId, PlanId, Slug, ISODateString } from "../../shared/index.js";
+import type { OrganizationDraft, DraftVersion } from "./draft.js";
 export interface CreateOrganizationDraftInput {
     readonly id: OrganizationId;
     readonly name: string;

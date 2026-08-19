@@ -1,6 +1,6 @@
 import type { OrganizationId, Result, UserId, Website } from "@livingsites/domain";
-import type { AuthorizationService } from "../../../authorization/service";
-import type { WebsiteReader } from "../../../repositories/website";
+import type { AuthorizationService } from "../../../authorization/service.js";
+import type { WebsiteReader } from "../../../repositories/website.js";
 export declare function listOrganizationWebsites(input: {
     readonly organizationId: OrganizationId;
 }, deps: {

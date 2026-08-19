@@ -1,4 +1,4 @@
-import { WebsitePermissions } from "../../../authorization/permissions";
+import { WebsitePermissions } from "../../../authorization/permissions.js";
 export async function listOrganizationWebsites(input, deps) {
     const decision = await deps.authorizationService.can({ userId: deps.authenticatedUser.userId, organizationId: input.organizationId, permission: WebsitePermissions.Read });
     if (!decision.allowed)

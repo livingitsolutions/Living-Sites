@@ -9,13 +9,13 @@
  * - composeDevelopment: in-memory + fake adapters for local development. Not for production.
  * - composeTest: deterministic test-support adapters with event capture.
  */
-export { composeProduction, composeProductionFromEnvironment, resolveTrustedOrigins, } from "./production";
-export type { ProductionComposition, ProductionCompositionConfig } from "./production";
-export { AdminBootstrapError, reconcileProductionAdministrator, } from "./admin-bootstrap";
-export type { AdminBootstrapErrorCode, AdminBootstrapInput, AdminBootstrapOptions, AdminBootstrapStatus, } from "./admin-bootstrap";
+export { composeProduction, composeProductionFromEnvironment, resolveTrustedOrigins, } from "./production.js";
+export type { ProductionComposition, ProductionCompositionConfig } from "./production.js";
+export { AdminBootstrapError, reconcileProductionAdministrator, } from "./admin-bootstrap.js";
+export type { AdminBootstrapErrorCode, AdminBootstrapInput, AdminBootstrapOptions, AdminBootstrapStatus, } from "./admin-bootstrap.js";
 export { MissingNetlifyDatabaseError } from "@livingsites/infrastructure";
-export { composeDevelopment } from "./development";
-export type { DevelopmentComposition, DevelopmentCompositionConfig } from "./development";
-export { composeTest } from "./test";
-export type { TestComposition, TestCompositionConfig } from "./test";
+export { composeDevelopment } from "./development.js";
+export type { DevelopmentComposition, DevelopmentCompositionConfig } from "./development.js";
+export { composeTest } from "./test.js";
+export type { TestComposition, TestCompositionConfig } from "./test.js";
 //# sourceMappingURL=index.d.ts.map

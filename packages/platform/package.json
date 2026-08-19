@@ -6,46 +6,46 @@
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "import": "./dist/index.js"
     },
     "./config": {
-      "types": "./dist/config/index.d.ts",
+      "types": "./src/config/index.ts",
       "import": "./dist/config/index.js"
     },
     "./environment": {
-      "types": "./dist/environment/index.d.ts",
+      "types": "./src/environment/index.ts",
       "import": "./dist/environment/index.js"
     },
     "./startup": {
-      "types": "./dist/startup/index.d.ts",
+      "types": "./src/startup/index.ts",
       "import": "./dist/startup/index.js"
     },
     "./logging": {
-      "types": "./dist/logging/index.d.ts",
+      "types": "./src/logging/index.ts",
       "import": "./dist/logging/index.js"
     },
     "./telemetry": {
-      "types": "./dist/telemetry/index.d.ts",
+      "types": "./src/telemetry/index.ts",
       "import": "./dist/telemetry/index.js"
     },
     "./feature-flags": {
-      "types": "./dist/feature-flags/index.d.ts",
+      "types": "./src/feature-flags/index.ts",
       "import": "./dist/feature-flags/index.js"
     },
     "./clock": {
-      "types": "./dist/clock/index.d.ts",
+      "types": "./src/clock/index.ts",
       "import": "./dist/clock/index.js"
     },
     "./ids": {
-      "types": "./dist/ids/index.d.ts",
+      "types": "./src/ids/index.ts",
       "import": "./dist/ids/index.js"
     },
     "./health": {
-      "types": "./dist/health/index.d.ts",
+      "types": "./src/health/index.ts",
       "import": "./dist/health/index.js"
     }
   },

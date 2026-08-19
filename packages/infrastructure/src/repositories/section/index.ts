@@ -11,7 +11,7 @@ import type {
   SectionTypeRepository,
   SectionTypeRegistry,
 } from "@livingsites/application";
-import type { DatabaseBackedAdapter } from "../shared";
+import type { DatabaseBackedAdapter } from "../shared.js";
 
 /**
  * Adapts SectionTypeRepository and SectionTypeRegistry to a database

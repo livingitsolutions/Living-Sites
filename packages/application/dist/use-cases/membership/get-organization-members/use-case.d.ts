@@ -1,9 +1,9 @@
 import type { Result } from "@livingsites/domain";
-import type { MembershipReader } from "../../../repositories/membership";
-import type { AuthorizationService } from "../../../authorization/service";
-import type { GetOrganizationMembersInput } from "./input";
-import type { GetOrganizationMembersOutput } from "./output";
-import type { GetOrganizationMembersError } from "./errors";
+import type { MembershipReader } from "../../../repositories/membership.js";
+import type { AuthorizationService } from "../../../authorization/service.js";
+import type { GetOrganizationMembersInput } from "./input.js";
+import type { GetOrganizationMembersOutput } from "./output.js";
+import type { GetOrganizationMembersError } from "./errors.js";
 export interface GetOrganizationMembersDeps {
     readonly membershipRepository: MembershipReader;
     readonly authorizationService: AuthorizationService;

@@ -1,5 +1,5 @@
 import type { User } from "@livingsites/domain";
-import type { AuthenticationSession } from "../../../identity/port";
+import type { AuthenticationSession } from "../../../identity/port.js";
 export interface RegisterUserOutput {
     readonly user: User;
     readonly session: AuthenticationSession;

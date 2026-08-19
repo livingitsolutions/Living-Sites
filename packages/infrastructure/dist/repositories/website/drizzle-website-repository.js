@@ -1,7 +1,7 @@
 import { and, eq, or } from "drizzle-orm";
 import { normalizeHostname, WebsiteStatus } from "@livingsites/domain";
-import { websites } from "../../db/schema";
-import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper";
+import { websites } from "../../db/schema.js";
+import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper.js";
 function duplicate(error) {
     return !!error && typeof error === "object" && (error.code === "23505" || /duplicate|unique/i.test(String(error.message)));
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getSectionType, validateSectionProps, validateSafeUrl } from "./index";
+import { getSectionType, validateSectionProps, validateSafeUrl } from "./index.js";
 
 describe("Section URL safety", () => {
   it.each(["javascript:alert(1)", " JAVASCRIPT:alert(1)", "data:text/html,boom", "vbscript:msgbox(1)"])("rejects dangerous URL %s", (url) => {

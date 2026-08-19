@@ -1,2 +1,2 @@
-export { AnalyticsProvider, MetricKey } from "./types";
+export { AnalyticsProvider, MetricKey } from "./types.js";
 //# sourceMappingURL=enums.d.ts.map

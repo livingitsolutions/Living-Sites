@@ -14,13 +14,13 @@
  * (ConcurrencyConflict, AggregateVersion); repository and persistence
  * failures belong to Application contracts.
  */
-export * from "./contracts";
-export * from "./authorization";
-export * from "./identity";
-export * from "./repositories";
-export * from "./services";
-export * from "./use-cases";
-export * from "./policies";
-export * from "./read-models";
-export * from "./section-types";
+export * from "./contracts.js";
+export * from "./authorization/index.js";
+export * from "./identity/index.js";
+export * from "./repositories/index.js";
+export * from "./services/index.js";
+export * from "./use-cases/index.js";
+export * from "./policies/index.js";
+export * from "./read-models/index.js";
+export * from "./section-types/index.js";
 //# sourceMappingURL=index.d.ts.map

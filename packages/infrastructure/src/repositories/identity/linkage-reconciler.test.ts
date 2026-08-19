@@ -12,14 +12,14 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { drizzle } from "drizzle-orm/pglite";
 import { NetlifyDB } from "@netlify/database-dev";
 import { NoopLogger } from "@livingsites/platform";
-import { DrizzleUserRepository } from "../user/drizzle-user-repository";
-import { LinkageReconciler } from "./linkage-reconciler";
-import { identityLinkages } from "../../db/identity-linkage-schema";
-import { betterAuthSessions, betterAuthUsers, platformUsers } from "../../db/schema";
-import * as schema from "../../db/schema";
+import { DrizzleUserRepository } from "../user/drizzle-user-repository.js";
+import { LinkageReconciler } from "./linkage-reconciler.js";
+import { identityLinkages } from "../../db/identity-linkage-schema.js";
+import { betterAuthSessions, betterAuthUsers, platformUsers } from "../../db/schema.js";
+import * as schema from "../../db/schema.js";
 import { SystemClock, CryptoIdGenerator } from "@livingsites/platform";
-import { DrizzleOrphanIdentityDisabler } from "./drizzle-orphan-identity-disabler";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import { DrizzleOrphanIdentityDisabler } from "./drizzle-orphan-identity-disabler.js";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 
 describe("LinkageReconciler — orphan identity recovery", () => {
   let netlifyDB: NetlifyDB;

@@ -1,5 +1,5 @@
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "./drizzle-instance";
+import type { DrizzleDB } from "./drizzle-instance.js";
 export interface SeedResult {
     readonly plansUpserted: number;
     readonly featuresUpserted: number;

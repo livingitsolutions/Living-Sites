@@ -5,5 +5,5 @@
  * concrete adapter class and its config type. Drizzle row types are not
  * exported.
  */
-export { DrizzleOrganizationRepository } from "./drizzle-organization-repository";
+export { DrizzleOrganizationRepository } from "./drizzle-organization-repository.js";
 //# sourceMappingURL=index.js.map

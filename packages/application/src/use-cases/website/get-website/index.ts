@@ -1,7 +1,7 @@
 import type { OrganizationId, Result, UserId, Website, WebsiteId } from "@livingsites/domain";
-import type { AuthorizationService } from "../../../authorization/service";
-import { WebsitePermissions } from "../../../authorization/permissions";
-import type { WebsiteReader } from "../../../repositories/website";
+import type { AuthorizationService } from "../../../authorization/service.js";
+import { WebsitePermissions } from "../../../authorization/permissions.js";
+import type { WebsiteReader } from "../../../repositories/website.js";
 
 export type GetWebsiteError = { readonly code: "unauthorized" | "not_found"; readonly message: string };
 export async function getWebsite(

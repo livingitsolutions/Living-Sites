@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { betterAuthSessions, betterAuthUsers } from "../../db/schema";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { betterAuthSessions, betterAuthUsers } from "../../db/schema.js";
 
 export interface OrphanIdentityDisabler {
   disable(authSubjectId: string, disabledAt: Date): Promise<void>;

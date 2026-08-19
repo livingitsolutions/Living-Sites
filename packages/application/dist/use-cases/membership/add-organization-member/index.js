@@ -1,6 +1,6 @@
-export * from "./input";
-export * from "./output";
-export * from "./errors";
-export * from "./validator";
-export * from "./use-case";
+export * from "./input.js";
+export * from "./output.js";
+export * from "./errors.js";
+export * from "./validator.js";
+export * from "./use-case.js";
 //# sourceMappingURL=index.js.map

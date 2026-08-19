@@ -11,7 +11,7 @@ import type {
   ISODateString,
   AuditTrail,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** Per-website analytics integration configuration. */
 export interface AnalyticsProfile {

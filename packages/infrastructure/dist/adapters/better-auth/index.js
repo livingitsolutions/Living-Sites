@@ -1,5 +1,5 @@
-export { asBetterAuthInstance } from "./cast";
-export { createBetterAuthDatabaseAdapter } from "./database";
+export { asBetterAuthInstance } from "./cast.js";
+export { createBetterAuthDatabaseAdapter } from "./database.js";
 function mapAuthError(err) {
     const e = err;
     const message = typeof e?.message === "string" ? e.message : "Authentication error.";

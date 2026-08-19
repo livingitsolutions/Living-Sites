@@ -15,9 +15,9 @@ import type {
   AuditTrail,
   LifecycleStatus,
   AggregateVersion,
-} from "../../shared";
-import { INITIAL_AGGREGATE_VERSION } from "../../shared";
-import type { FeatureOverride } from "../../organization/types";
+} from "../../shared/index.js";
+import { INITIAL_AGGREGATE_VERSION } from "../../shared/index.js";
+import type { FeatureOverride } from "../../organization/types.js";
 
 export type DraftVersion = AggregateVersion & { readonly __draft: true };
 

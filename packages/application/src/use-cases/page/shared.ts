@@ -1,7 +1,7 @@
 import type { OrganizationId, Result, UserId, Website, WebsiteId } from "@livingsites/domain";
-import type { PermissionKey } from "../../authorization/permissions";
-import type { AuthorizationService } from "../../authorization/service";
-import type { WebsiteReader } from "../../repositories/website";
+import type { PermissionKey } from "../../authorization/permissions.js";
+import type { AuthorizationService } from "../../authorization/service.js";
+import type { WebsiteReader } from "../../repositories/website.js";
 
 export type PageAccessError = { readonly code: "unauthorized" | "website_not_found"; readonly message: string };
 export async function proveWebsiteAccess(input: { organizationId: OrganizationId; websiteId: WebsiteId; userId: UserId; permission: PermissionKey }, deps: { authorizationService: AuthorizationService; websiteReader: WebsiteReader }): Promise<Result<Website, PageAccessError>> {

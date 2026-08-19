@@ -9,7 +9,7 @@
  * postgres-js and netlify-db Drizzle instances.
  */
 import { drizzle as drizzlePg } from "drizzle-orm/postgres-js";
-import * as schema from "./schema";
+import * as schema from "./schema.js";
 export function createDrizzle(url) {
     return drizzlePg(url, { schema });
 }

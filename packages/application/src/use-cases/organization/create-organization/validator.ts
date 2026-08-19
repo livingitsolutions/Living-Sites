@@ -4,8 +4,8 @@
  * Validates before policy evaluation and before any repository writes.
  * Returns typed errors on failure; does not throw.
  */
-import type { CreateOrganizationInput } from "./input";
-import type { InputValidationError } from "./errors";
+import type { CreateOrganizationInput } from "./input.js";
+import type { InputValidationError } from "./errors.js";
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SLUG_MIN_LENGTH = 2;

@@ -1,5 +1,5 @@
-import { WebsiteStatus } from "../../website";
-import { WEBSITE_DRAFT_VERSION } from "./draft";
+import { WebsiteStatus } from "../../website/index.js";
+import { WEBSITE_DRAFT_VERSION } from "./draft.js";
 const HOSTNAME_PATTERN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 export function normalizeHostname(value) {
     const normalized = value.trim().toLowerCase().replace(/\.$/, "");

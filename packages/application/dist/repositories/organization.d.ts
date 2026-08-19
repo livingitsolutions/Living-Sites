@@ -1,5 +1,5 @@
 import type { Organization, OrganizationDraft, Plan, Feature, OrganizationId, PlanId, FeatureId, PaginatedResult, PaginationParams, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult, MutationResult } from "../contracts";
+import type { CreateResult, SaveResult, MutationResult } from "../contracts.js";
 export interface OrganizationListParams extends PaginationParams {
     planId?: PlanId;
     status?: "active" | "archived" | "deleted";

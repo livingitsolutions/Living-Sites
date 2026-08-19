@@ -13,8 +13,8 @@
 import { eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { createUserDraft } from "@livingsites/domain";
-import { platformSuperAdmins } from "../../db/schema";
-import { DrizzleUserRepository } from "../user/drizzle-user-repository";
+import { platformSuperAdmins } from "../../db/schema.js";
+import { DrizzleUserRepository } from "../user/drizzle-user-repository.js";
 function isDuplicateKeyError(error) {
     if (!error || typeof error !== "object")
         return false;

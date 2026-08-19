@@ -5,9 +5,9 @@ import postgres from "postgres";
 import type { ISODateString, OrganizationId, PageArchivedEvent, PageCreatedEvent, PageId, PageRestoredEvent, Section, SectionId, SectionTypeId, Slug, UserId, WebsiteId } from "@livingsites/domain";
 import { createPageDraft } from "@livingsites/domain";
 import { NoopLogger } from "@livingsites/platform";
-import * as schema from "../../db/schema";
-import { applicationOutbox, organizations, pages, websites } from "../../db/schema";
-import { DrizzlePageRepository } from "./drizzle-page-repository";
+import * as schema from "../../db/schema.js";
+import { applicationOutbox, organizations, pages, websites } from "../../db/schema.js";
+import { DrizzlePageRepository } from "./drizzle-page-repository.js";
 
 const orgId = "org_pages" as OrganizationId; const websiteId = "web_pages" as WebsiteId; const now = "2026-08-19T00:00:00.000Z" as ISODateString; const userId = "usr_owner" as UserId;
 const draft = (id: string, slug = "about") => createPageDraft({ id: id as PageId, websiteId, title: "About", slug: slug as Slug, now, createdBy: userId });

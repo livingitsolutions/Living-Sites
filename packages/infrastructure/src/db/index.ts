@@ -21,8 +21,8 @@ export {
   betterAuthSessions,
   betterAuthAccounts,
   betterAuthVerifications,
-} from "./schema";
-export { createDbConnection } from "./connection";
-export type { DatabaseConfig, DbConnection } from "./connection";
-export { seedPlansAndFeatures, PLAN_FREE_ID, PLAN_LIFETIME_ID, FEATURE_IDS } from "./seed";
-export type { SeedResult } from "./seed";
+} from "./schema.js";
+export { createDbConnection } from "./connection.js";
+export type { DatabaseConfig, DbConnection } from "./connection.js";
+export { seedPlansAndFeatures, PLAN_FREE_ID, PLAN_LIFETIME_ID, FEATURE_IDS } from "./seed.js";
+export type { SeedResult } from "./seed.js";

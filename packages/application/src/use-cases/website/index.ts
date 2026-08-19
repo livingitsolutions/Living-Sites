@@ -1,3 +1,3 @@
-export * from "./create-website";
-export * from "./get-website";
-export * from "./list-organization-websites";
+export * from "./create-website/index.js";
+export * from "./get-website/index.js";
+export * from "./list-organization-websites/index.js";

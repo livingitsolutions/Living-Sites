@@ -4,8 +4,8 @@ import {
   AdminBootstrapError,
   composeProductionFromEnvironment,
   reconcileProductionAdministrator,
-} from "../../packages/composition/src";
-import type { AdminBootstrapInput, AdminBootstrapStatus } from "../../packages/composition/src";
+} from "@livingsites/composition";
+import type { AdminBootstrapInput, AdminBootstrapStatus } from "@livingsites/composition";
 
 const DEFAULT_ORGANIZATION_NAME = "Living IT Solutions";
 const DEFAULT_ORGANIZATION_SLUG = "living-it-solutions";

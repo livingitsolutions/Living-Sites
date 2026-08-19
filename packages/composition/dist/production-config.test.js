@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveTrustedOrigins } from "./index";
+import { resolveTrustedOrigins } from "./index.js";
 describe("resolveTrustedOrigins", () => {
     it("trusts only the exact configured and current Netlify deploy origins", () => {
         expect(resolveTrustedOrigins({

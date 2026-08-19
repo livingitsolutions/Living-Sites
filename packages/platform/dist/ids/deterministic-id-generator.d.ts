@@ -1,7 +1,7 @@
 /**
  * DeterministicIdGenerator — deterministic IdGenerator for tests.
  */
-import type { IdGenerator } from "../index";
+import type { IdGenerator } from "../index.js";
 export declare class DeterministicIdGenerator implements IdGenerator {
     private counter;
     generate(): string;

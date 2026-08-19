@@ -7,7 +7,7 @@
  * database state with InvalidPersistenceStateError.
  */
 import type { Plan, Feature, FeatureEntitlement } from "@livingsites/domain";
-import type { PlanRow, FeatureRow, EntitlementRow } from "./schema";
+import type { PlanRow, FeatureRow, EntitlementRow } from "./schema.js";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
 export type PlanMapperError = InvalidPersistenceStateError;
 export declare function rowToPlan(row: PlanRow, entitlements: readonly FeatureEntitlement[]): {

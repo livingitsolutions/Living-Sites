@@ -1,5 +1,5 @@
-import type { CreateWebsiteInput } from "./input";
-import type { CreateWebsiteError } from "./errors";
+import type { CreateWebsiteInput } from "./input.js";
+import type { CreateWebsiteError } from "./errors.js";
 type ValidationError = Extract<CreateWebsiteError, {
     code: "input_validation";
 }>;

@@ -22,9 +22,9 @@ import type {
 import { createUserDraft } from "@livingsites/domain";
 import type { Result } from "@livingsites/domain";
 import type { PlatformSuperAdminChecker } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { platformSuperAdmins, type PlatformSuperAdminRow } from "../../db/schema";
-import { DrizzleUserRepository } from "../user/drizzle-user-repository";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { platformSuperAdmins, type PlatformSuperAdminRow } from "../../db/schema.js";
+import { DrizzleUserRepository } from "../user/drizzle-user-repository.js";
 
 export interface BootstrapSuperAdminInput {
   readonly email: string;

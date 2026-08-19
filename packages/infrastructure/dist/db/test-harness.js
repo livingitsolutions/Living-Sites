@@ -7,7 +7,7 @@
 import { NetlifyDB } from "@netlify/database-dev";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "./schema";
+import * as schema from "./schema.js";
 export async function createTestDatabaseHarness(migrationsDir = "./netlify/database/migrations") {
     const netlifyDB = new NetlifyDB({
         directory: undefined,

@@ -1,4 +1,4 @@
-import type { PolicyDecision } from "../shared";
+import type { PolicyDecision } from "../shared/index.js";
 export declare class OrganizationActivePolicy {
     readonly name = "OrganizationActivePolicy";
     evaluate(status: string): PolicyDecision;

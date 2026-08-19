@@ -16,7 +16,7 @@ import type {
   AuditTrail,
   VersionString,
   AggregateVersion,
-} from "../shared";
+} from "../shared/index.js";
 
 /** A website within an organization. */
 export interface Website {
@@ -44,7 +44,7 @@ export interface Website {
   version: AggregateVersion;
   readonly audit: AuditTrail;
   /** Soft-delete timestamp; populated only for archived websites. */
-  archivedAt: import("../shared").ISODateString | null;
+  archivedAt: import("../shared/index.js").ISODateString | null;
 }
 
 /** Website-scoped configuration that is not content. */

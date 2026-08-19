@@ -6,10 +6,10 @@ import postgres from "postgres";
 import type { ISODateString, OrganizationId, Slug, UserId, WebsiteCreatedEvent, WebsiteId } from "@livingsites/domain";
 import { createWebsiteDraft } from "@livingsites/domain";
 import { NoopLogger } from "@livingsites/platform";
-import * as schema from "../../db/schema";
-import { applicationOutbox, organizations, websites } from "../../db/schema";
-import { DrizzleWebsiteRepository } from "./drizzle-website-repository";
-import { DrizzleWebsiteCreationPersistence } from "../outbox/drizzle-website-creation-persistence";
+import * as schema from "../../db/schema.js";
+import { applicationOutbox, organizations, websites } from "../../db/schema.js";
+import { DrizzleWebsiteRepository } from "./drizzle-website-repository.js";
+import { DrizzleWebsiteCreationPersistence } from "../outbox/drizzle-website-creation-persistence.js";
 
 const orgA = "org_website_a" as OrganizationId;
 const orgB = "org_website_b" as OrganizationId;

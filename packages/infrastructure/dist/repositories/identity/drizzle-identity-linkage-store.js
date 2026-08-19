@@ -1,4 +1,4 @@
-import { identityLinkages } from "../../db/identity-linkage-schema";
+import { identityLinkages } from "../../db/identity-linkage-schema.js";
 export class DrizzleIdentityLinkageStore {
     db;
     constructor(db) {

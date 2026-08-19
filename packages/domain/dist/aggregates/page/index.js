@@ -3,6 +3,6 @@
  *
  * No implementations. See README.md and docs/aggregates.md §7–8.
  */
-export * from "./draft";
-export * from "./factory";
+export * from "./draft.js";
+export * from "./factory.js";
 //# sourceMappingURL=index.js.map

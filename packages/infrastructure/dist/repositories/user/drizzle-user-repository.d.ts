@@ -2,7 +2,7 @@ import type { Logger } from "@livingsites/platform";
 import type { User, UserId, AuthSubjectId, UserDraft } from "@livingsites/domain";
 import type { CreateResult } from "@livingsites/application";
 import type { UserReader, UserCreator } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface DrizzleUserRepositoryConfig {
     readonly db: DrizzleDB;
     readonly logger: Logger;

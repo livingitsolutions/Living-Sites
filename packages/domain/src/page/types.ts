@@ -15,8 +15,8 @@ import type {
   LifecycleStatus,
   AggregateVersion,
   OrganizationId,
-} from "../shared";
-import type { Section } from "../section";
+} from "../shared/index.js";
+import type { Section } from "../section/index.js";
 
 /** A single page within a website. */
 export interface Page {
@@ -67,7 +67,7 @@ export interface PageSnapshot {
   /** Immutable, monotonically increasing revision number per Page. */
   readonly revisionNumber: number;
   /** Optional human-facing release label, e.g. "1.0.0". */
-  readonly releaseVersion?: import("../shared").VersionString;
+  readonly releaseVersion?: import("../shared/index.js").VersionString;
   readonly page: PageSnapshotMetadata;
   readonly createdAt: ISODateString;
   readonly publishedAt: ISODateString;

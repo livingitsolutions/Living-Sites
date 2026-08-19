@@ -1,4 +1,4 @@
-import type { DuplicateKeyError, PersistenceUnavailableError, InvalidPersistenceStateError } from "../../../contracts";
+import type { DuplicateKeyError, PersistenceUnavailableError, InvalidPersistenceStateError } from "../../../contracts.js";
 
 export type AddOrganizationMemberError =
   | { readonly code: "validation_error"; readonly message: string }

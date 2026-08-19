@@ -15,9 +15,9 @@ import { eq } from "drizzle-orm";
 import type { Logger } from "@livingsites/platform";
 import type { Feature, FeatureId, PlanId } from "@livingsites/domain";
 import type { FeatureReader } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { features, planFeatureEntitlements, type FeatureRow } from "../../db/schema";
-import { rowToFeature } from "../../db/plan-feature-mapper";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { features, planFeatureEntitlements, type FeatureRow } from "../../db/schema.js";
+import { rowToFeature } from "../../db/plan-feature-mapper.js";
 
 export interface DrizzleFeatureReaderConfig {
   readonly db: DrizzleDB;

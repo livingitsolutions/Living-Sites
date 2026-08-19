@@ -1,4 +1,4 @@
-import type { PolicyDecision } from "../shared";
+import type { PolicyDecision } from "../shared/index.js";
 
 const RESERVED_WEBSITE_SLUGS = ["admin", "api", "app", "assets", "auth", "login", "register", "www"] as const;
 

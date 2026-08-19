@@ -1,5 +1,5 @@
 import type { SectionType, SectionTypeId, PaginatedResult, PaginationParams, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult } from "../contracts";
+import type { CreateResult, SaveResult } from "../contracts.js";
 export interface SectionTypeListParams extends PaginationParams {
     category?: string;
     isActive?: boolean;

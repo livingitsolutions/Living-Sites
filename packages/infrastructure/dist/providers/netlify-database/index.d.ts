@@ -13,8 +13,8 @@
  * layers never see these types.
  */
 import { type NodePgDatabase } from "drizzle-orm/node-postgres";
-import * as schema from "../../db/schema";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import * as schema from "../../db/schema.js";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export type NetlifyDrizzleDB = NodePgDatabase<typeof schema> | DrizzleDB;
 export interface NetlifyDatabaseProviderConfig {
     /**

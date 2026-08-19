@@ -4,7 +4,7 @@
  * A User is a platform-level identity. A Membership binds a User to a single
  * Organization with a Role. A User may hold memberships in many Organizations.
  */
-import type { UserId, AuthSubjectId, MembershipId, OrganizationId, ISODateString, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared";
+import type { UserId, AuthSubjectId, MembershipId, OrganizationId, ISODateString, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared/index.js";
 /** Platform-level user identity. Not scoped to any single organization. */
 export interface User {
     readonly id: UserId;
@@ -58,7 +58,7 @@ export interface Role {
     /** Optimistic concurrency version. Monotonically incremented on each save. */
     version: AggregateVersion;
 }
-import type { MachineKey } from "../shared";
+import type { MachineKey } from "../shared/index.js";
 type MachineKeyRole = MachineKey;
 export declare enum SystemRole {
     PlatformSuperAdmin = "platform_super_admin",

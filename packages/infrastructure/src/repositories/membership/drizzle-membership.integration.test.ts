@@ -19,12 +19,12 @@ import {
   type UserId,
   type WebsiteId,
 } from "@livingsites/domain";
-import { applicationOutbox, memberships, organizations, platformUsers } from "../../db/schema";
-import * as schema from "../../db/schema";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { DrizzleOrganizationRepository } from "../organization/drizzle-organization-repository";
-import { DrizzleUserRepository } from "../user/drizzle-user-repository";
-import { DrizzleMembershipRepository } from "./drizzle-membership-repository";
+import { applicationOutbox, memberships, organizations, platformUsers } from "../../db/schema.js";
+import * as schema from "../../db/schema.js";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { DrizzleOrganizationRepository } from "../organization/drizzle-organization-repository.js";
+import { DrizzleUserRepository } from "../user/drizzle-user-repository.js";
+import { DrizzleMembershipRepository } from "./drizzle-membership-repository.js";
 
 const now = "2026-08-19T00:00:00Z" as ISODateString;
 

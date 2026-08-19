@@ -8,7 +8,7 @@
  * No customer-specific data.
  */
 import { eq } from "drizzle-orm";
-import { plans, features, planFeatureEntitlements } from "./schema";
+import { plans, features, planFeatureEntitlements } from "./schema.js";
 const PLAN_FREE_ID = "plan_free";
 const PLAN_LIFETIME_ID = "plan_lifetime";
 const FEATURE_IDS = {

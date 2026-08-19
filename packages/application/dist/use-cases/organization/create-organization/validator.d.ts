@@ -4,8 +4,8 @@
  * Validates before policy evaluation and before any repository writes.
  * Returns typed errors on failure; does not throw.
  */
-import type { CreateOrganizationInput } from "./input";
-import type { InputValidationError } from "./errors";
+import type { CreateOrganizationInput } from "./input.js";
+import type { InputValidationError } from "./errors.js";
 export type ValidationResult = {
     ok: true;
     normalized: {

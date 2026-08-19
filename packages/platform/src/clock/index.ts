@@ -12,5 +12,5 @@ export interface Clock {
   nowMs(): number;
 }
 
-export { SystemClock } from "./system-clock";
-export { FakeClock } from "./fake-clock";
+export { SystemClock } from "./system-clock.js";
+export { FakeClock } from "./fake-clock.js";

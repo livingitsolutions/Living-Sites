@@ -1,5 +1,5 @@
 import type { Navigation, WebsiteId, AggregateVersion } from "@livingsites/domain";
-import type { CreateResult, SaveResult, MutationResult } from "../contracts";
+import type { CreateResult, SaveResult, MutationResult } from "../contracts.js";
 /**
  * Owns the Navigation aggregate root, including its MenuItem child entities.
  * MenuItems are loaded, mutated, and persisted atomically through the

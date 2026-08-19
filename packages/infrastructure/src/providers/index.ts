@@ -7,9 +7,9 @@
 export {
   createNetlifyDatabase,
   MissingNetlifyDatabaseError,
-} from "./netlify-database";
+} from "./netlify-database/index.js";
 export type {
   NetlifyDatabaseProvider,
   NetlifyDatabaseProviderConfig,
   NetlifyDrizzleDB,
-} from "./netlify-database";
+} from "./netlify-database/index.js";

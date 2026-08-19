@@ -1,9 +1,9 @@
 /**
  * Organization creation policy chain.
  */
-import type { PolicyResult, PolicyInput } from "../shared";
-import { OrganizationSlugPolicy, type OrganizationSlugPolicyInput } from "./slug-policy";
-import { PlanActivePolicy, type PlanActivePolicyInput } from "./plan-active-policy";
+import type { PolicyResult, PolicyInput } from "../shared/index.js";
+import { OrganizationSlugPolicy, type OrganizationSlugPolicyInput } from "./slug-policy.js";
+import { PlanActivePolicy, type PlanActivePolicyInput } from "./plan-active-policy.js";
 import type { Plan } from "@livingsites/domain";
 export interface OrganizationCreationPolicyInput extends PolicyInput {
     readonly slug: string;

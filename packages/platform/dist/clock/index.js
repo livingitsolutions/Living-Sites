@@ -4,6 +4,6 @@
  * Contracts and platform implementations. Domain and Application receive
  * Clock via injection; they never call Date.now() directly.
  */
-export { SystemClock } from "./system-clock";
-export { FakeClock } from "./fake-clock";
+export { SystemClock } from "./system-clock.js";
+export { FakeClock } from "./fake-clock.js";
 //# sourceMappingURL=index.js.map

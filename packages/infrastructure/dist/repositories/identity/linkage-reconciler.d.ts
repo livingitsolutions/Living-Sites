@@ -1,7 +1,7 @@
 import type { Logger } from "@livingsites/platform";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 import type { UserCreator, UserReader } from "@livingsites/application";
-import type { OrphanIdentityDisabler } from "./drizzle-orphan-identity-disabler";
+import type { OrphanIdentityDisabler } from "./drizzle-orphan-identity-disabler.js";
 export interface LinkageReconcilerConfig {
     readonly db: DrizzleDB;
     readonly logger: Logger;

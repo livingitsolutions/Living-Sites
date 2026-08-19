@@ -5,7 +5,7 @@
  * exactly one Organization. An Organization owns many Websites; a Website
  * cannot exist without an Organization.
  */
-import type { OrganizationId, PlanId, FeatureId, Slug, MachineKey, ISODateString, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared";
+import type { OrganizationId, PlanId, FeatureId, Slug, MachineKey, ISODateString, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared/index.js";
 /** A single commercial tenant on the platform. */
 export interface Organization {
     readonly id: OrganizationId;
@@ -91,10 +91,10 @@ export interface FeatureOverride {
     readonly appliedAt: ISODateString;
 }
 /** Re-export the OrganizationDraft from the aggregates folder. */
-export type { OrganizationDraft, DraftVersion } from "../aggregates/organization/draft";
+export type { OrganizationDraft, DraftVersion } from "../aggregates/organization/draft.js";
 /** Subset of FeatureCategory scoped to this context for re-export convenience. */
-import type { FeatureCategory } from "../shared";
+import type { FeatureCategory } from "../shared/index.js";
 type FeatureCategoryValue = `${FeatureCategory}`;
-import type { PlanTier } from "../shared";
+import type { PlanTier } from "../shared/index.js";
 type PlanTierValue = `${PlanTier}`;
 //# sourceMappingURL=types.d.ts.map

@@ -11,7 +11,7 @@ import type {
   CreateResult,
   SaveResult,
   MutationResult,
-} from "../contracts";
+} from "../contracts.js";
 
 export interface UserListParams extends PaginationParams {
   search?: string;

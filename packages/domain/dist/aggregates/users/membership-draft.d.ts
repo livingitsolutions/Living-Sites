@@ -1,4 +1,4 @@
-import type { MembershipId, OrganizationId, UserId, AuditTrail, LifecycleStatus, AggregateVersion, RoleValue } from "../../index";
+import type { MembershipId, OrganizationId, UserId, AuditTrail, LifecycleStatus, AggregateVersion, RoleValue } from "../../index.js";
 export type MembershipDraftVersion = AggregateVersion & {
     readonly __draft: true;
 };

@@ -1,5 +1,5 @@
 import type { ISODateString, MachineKey, SectionType, SectionTypeId, VersionString } from "@livingsites/domain";
-import { validateAndNormalizeSectionUrls } from "./url-safety";
+import { validateAndNormalizeSectionUrls } from "./url-safety.js";
 
 type FieldSchema = { readonly type: "string"; readonly maxLength?: number } | { readonly type: "array"; readonly maxItems?: number; readonly items: ObjectSchema };
 type ObjectSchema = { readonly type: "object"; readonly required: readonly string[]; readonly properties: Readonly<Record<string, FieldSchema>>; readonly additionalProperties: false };

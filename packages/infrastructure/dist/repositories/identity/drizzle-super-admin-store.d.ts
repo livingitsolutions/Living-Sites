@@ -2,8 +2,8 @@ import type { Logger } from "@livingsites/platform";
 import type { User, UserId } from "@livingsites/domain";
 import type { Result } from "@livingsites/domain";
 import type { PlatformSuperAdminChecker } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
-import { type PlatformSuperAdminRow } from "../../db/schema";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { type PlatformSuperAdminRow } from "../../db/schema.js";
 export interface BootstrapSuperAdminInput {
     readonly email: string;
     readonly displayName?: string;

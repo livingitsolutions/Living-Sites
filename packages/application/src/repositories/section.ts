@@ -8,7 +8,7 @@ import type {
 import type {
   CreateResult,
   SaveResult,
-} from "../contracts";
+} from "../contracts.js";
 
 export interface SectionTypeListParams extends PaginationParams {
   category?: string;

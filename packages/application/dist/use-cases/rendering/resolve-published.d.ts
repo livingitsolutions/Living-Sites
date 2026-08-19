@@ -1,6 +1,6 @@
 import type { Page, PageSnapshot, Result, Website } from "@livingsites/domain";
-import type { PageReader, PageSnapshotReader } from "../../repositories/page";
-import type { WebsiteReader } from "../../repositories/website";
+import type { PageReader, PageSnapshotReader } from "../../repositories/page.js";
+import type { WebsiteReader } from "../../repositories/website.js";
 export type PublicResolutionError = {
     readonly code: "not_found";
     readonly message: string;

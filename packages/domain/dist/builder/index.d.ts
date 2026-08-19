@@ -5,9 +5,9 @@
  * types that the application-layer BuilderService operates on, so the domain
  * owns the vocabulary even though orchestration lives in @livingsites/application.
  */
-import type { PageId, SectionId } from "../shared";
-import type { Page } from "../page/types";
-import type { Section } from "../section/types";
+import type { PageId, SectionId } from "../shared/index.js";
+import type { Page } from "../page/types.js";
+import type { Section } from "../section/types.js";
 /**
  * Aggregate payload for the builder canvas. The application layer's
  * BuilderService.loadCanvas returns this shape; the domain owns its definition

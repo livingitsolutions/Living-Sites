@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { OrganizationActivePolicy } from "./organization-active-policy";
-import { WebsiteCountPolicy } from "./website-count-policy";
-import { WebsiteSlugPolicy } from "./slug-policy";
+import { OrganizationActivePolicy } from "./organization-active-policy.js";
+import { WebsiteCountPolicy } from "./website-count-policy.js";
+import { WebsiteSlugPolicy } from "./slug-policy.js";
 
 describe("Website creation policies", () => {
   it("allows active and denies inactive organizations", () => {

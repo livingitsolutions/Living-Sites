@@ -7,9 +7,9 @@ import type {
   ThemeId,
   VersionString,
   WebsiteId,
-} from "../../shared";
-import { INITIAL_AGGREGATE_VERSION } from "../../shared";
-import type { WebsiteSettings, WebsiteStatus } from "../../website";
+} from "../../shared/index.js";
+import { INITIAL_AGGREGATE_VERSION } from "../../shared/index.js";
+import type { WebsiteSettings, WebsiteStatus } from "../../website/index.js";
 
 export type WebsiteDraftVersion = AggregateVersion & { readonly __websiteDraft: true };
 

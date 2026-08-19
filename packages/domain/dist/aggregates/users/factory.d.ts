@@ -1,5 +1,5 @@
-import type { UserId, AuthSubjectId, ISODateString } from "../../shared";
-import type { UserDraft, DraftVersion } from "./draft";
+import type { UserId, AuthSubjectId, ISODateString } from "../../shared/index.js";
+import type { UserDraft, DraftVersion } from "./draft.js";
 export interface CreateUserDraftInput {
     readonly id: UserId;
     readonly authSubjectId: AuthSubjectId;

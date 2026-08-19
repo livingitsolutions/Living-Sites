@@ -10,7 +10,7 @@
  * - Roles belong to memberships, never directly to User.
  * - No wildcard permissions.
  */
-import { OrganizationPermissions, WebsitePermissions, PagePermissions, MediaPermissions, FormPermissions, SettingsPermissions, ALL_PERMISSIONS, } from "./permissions";
+import { OrganizationPermissions, WebsitePermissions, PagePermissions, MediaPermissions, FormPermissions, SettingsPermissions, ALL_PERMISSIONS, } from "./permissions.js";
 import { SystemRoles } from "@livingsites/domain";
 export const SYSTEM_ROLE_PERMISSIONS = {
     [SystemRoles.PLATFORM_SUPER_ADMIN]: [...ALL_PERMISSIONS],

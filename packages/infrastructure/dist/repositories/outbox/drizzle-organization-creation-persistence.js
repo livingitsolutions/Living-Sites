@@ -12,9 +12,9 @@
  * transactional behavior is required.
  */
 import { randomUUID } from "node:crypto";
-import { organizations, applicationOutbox } from "../../db/schema";
-import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper";
-import { buildOutboxInsert } from "../../db/outbox-mapper";
+import { organizations, applicationOutbox } from "../../db/schema.js";
+import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper.js";
+import { buildOutboxInsert } from "../../db/outbox-mapper.js";
 function isDuplicateKeyError(err) {
     if (err && typeof err === "object") {
         const error = err;

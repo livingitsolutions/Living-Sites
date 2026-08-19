@@ -1,4 +1,4 @@
-import { DRAFT_VERSION } from "./draft";
+import { DRAFT_VERSION } from "./draft.js";
 export function createUserDraft(input) {
     const audit = {
         createdAt: input.now,

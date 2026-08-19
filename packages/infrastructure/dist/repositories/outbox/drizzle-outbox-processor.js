@@ -14,8 +14,8 @@
  * with zero registered subscribers is marked processed and logged.
  */
 import { eq } from "drizzle-orm";
-import { applicationOutbox } from "../../db/schema";
-import { rowToOutboxEventRecord } from "../../db/outbox-mapper";
+import { applicationOutbox } from "../../db/schema.js";
+import { rowToOutboxEventRecord } from "../../db/outbox-mapper.js";
 const DEFAULT_MAX_ATTEMPTS = 5;
 const DEFAULT_BASE_BACKOFF_MS = 1000;
 const DEFAULT_MAX_BACKOFF_MS = 60000;

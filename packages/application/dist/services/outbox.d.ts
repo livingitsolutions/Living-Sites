@@ -11,7 +11,7 @@
  * implementation; the composition root wires it.
  */
 import type { Organization, OrganizationDraft, OrganizationCreatedEvent, OrganizationId } from "@livingsites/domain";
-import type { CreateResult } from "../contracts";
+import type { CreateResult } from "../contracts.js";
 /**
  * Atomic persistence port for Organization creation.
  *

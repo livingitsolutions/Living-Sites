@@ -1,6 +1,6 @@
-import type { ISODateString, LocaleCode, OrganizationId, Slug, ThemeId, UserId, WebsiteId } from "../../shared";
-import { type WebsiteSettings } from "../../website";
-import type { WebsiteDraft } from "./draft";
+import type { ISODateString, LocaleCode, OrganizationId, Slug, ThemeId, UserId, WebsiteId } from "../../shared/index.js";
+import { type WebsiteSettings } from "../../website/index.js";
+import type { WebsiteDraft } from "./draft.js";
 export declare function normalizeHostname(value: string): string;
 export interface CreateWebsiteDraftInput {
     readonly id: WebsiteId;

@@ -1,7 +1,7 @@
 import { createWebsiteDraft } from "@livingsites/domain";
-import { WebsitePermissions } from "../../../authorization/permissions";
-import { OrganizationActivePolicy, WebsiteCountPolicy, WebsiteSlugPolicy } from "../../../policies/website";
-import { validateCreateWebsiteInput } from "./validator";
+import { WebsitePermissions } from "../../../authorization/permissions.js";
+import { OrganizationActivePolicy, WebsiteCountPolicy, WebsiteSlugPolicy } from "../../../policies/website/index.js";
+import { validateCreateWebsiteInput } from "./validator.js";
 export async function createWebsite(input, deps) {
     const validation = validateCreateWebsiteInput(input);
     if (!validation.ok)

@@ -1,7 +1,7 @@
 import type { LocaleCode, Website, WebsiteDraft, WebsiteSettings } from "@livingsites/domain";
 import { WebsiteStatus } from "@livingsites/domain";
 import type { InvalidPersistenceStateError } from "@livingsites/application";
-import type { WebsiteRow } from "./schema";
+import type { WebsiteRow } from "./schema.js";
 type MapperResult = {
     ok: true;
     value: Website;

@@ -1,7 +1,7 @@
 import type { Logger } from "@livingsites/platform";
 import type { AggregateVersion, Membership, MembershipDraft, MembershipId, OrganizationId, OrganizationMemberAddedEvent, OrganizationMemberRemovedEvent, OrganizationMemberRoleChangedEvent, PaginatedResult, RoleValue, UserId, WebsiteId } from "@livingsites/domain";
 import type { CreateResult, MembershipListParams, MembershipMutationPersistence, MembershipRepository, MutationResult, SaveResult } from "@livingsites/application";
-import type { DrizzleDB } from "../../db/drizzle-instance";
+import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface DrizzleMembershipRepositoryConfig {
     readonly db: DrizzleDB;
     readonly logger: Logger;
