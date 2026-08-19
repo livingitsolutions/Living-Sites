@@ -2,5 +2,8 @@
   publish = ".next"
   functions = "netlify/functions"
 
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
 [functions.process-outbox]
   schedule = "*/5 * * * *"
