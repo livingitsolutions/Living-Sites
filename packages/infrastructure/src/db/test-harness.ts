@@ -44,6 +44,7 @@ export async function createTestDatabaseHarness(
 
   async function reset(): Promise<void> {
     if (!db) return;
+    await db.delete(schema.websites);
     await db.delete(schema.platformSuperAdmins);
     await db.delete(schema.memberships);
     await db.delete(schema.applicationOutbox);

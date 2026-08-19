@@ -6,7 +6,7 @@
  * modules. Only adapters and composition-facing factories are exported.
  */
 import { sql } from "drizzle-orm";
-import { check, pgTable, text, integer, numeric, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { check, pgTable, text, integer, numeric, boolean, timestamp, pgEnum, jsonb, uniqueIndex, index } from "drizzle-orm/pg-core";
 
 /* ---------- Organizations ---------- */
 
@@ -27,6 +27,39 @@ export const organizations = pgTable("organizations", {
   updated_by: text("updated_by"),
   deleted_at: timestamp("deleted_at", { withTimezone: true }),
 });
+
+/* ---------- Websites ---------- */
+
+export const websiteStatusEnum = pgEnum("website_status", ["draft", "published", "unpublished", "archived"]);
+
+export const websites = pgTable("websites", {
+  id: text("id").primaryKey(),
+  organization_id: text("organization_id").notNull().references(() => organizations.id, { onDelete: "restrict" }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  custom_domain: text("custom_domain"),
+  fallback_domain: text("fallback_domain").notNull(),
+  status: websiteStatusEnum("status").notNull().default("draft"),
+  theme_id: text("theme_id"),
+  published_release_label: text("published_release_label"),
+  default_locale: text("default_locale").notNull().default("en-US"),
+  enabled_locales: jsonb("enabled_locales").notNull().default(["en-US"]),
+  settings: jsonb("settings").notNull().default({}),
+  version: integer("version").notNull().default(1),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+  created_by: text("created_by"),
+  updated_by: text("updated_by"),
+  archived_at: timestamp("archived_at", { withTimezone: true }),
+}, (table) => [
+  uniqueIndex("websites_organization_slug_unique").on(table.organization_id, table.slug),
+  uniqueIndex("websites_custom_domain_unique").on(table.custom_domain).where(sql`${table.custom_domain} IS NOT NULL`),
+  uniqueIndex("websites_fallback_domain_unique").on(table.fallback_domain),
+  index("websites_organization_id_idx").on(table.organization_id),
+  check("websites_version_check", sql`${table.version} >= 1`),
+  check("websites_custom_domain_lowercase_check", sql`${table.custom_domain} IS NULL OR ${table.custom_domain} = lower(${table.custom_domain})`),
+  check("websites_fallback_domain_lowercase_check", sql`${table.fallback_domain} = lower(${table.fallback_domain})`),
+]);
 
 /* ---------- Plans ---------- */
 
@@ -212,6 +245,9 @@ export const betterAuthVerifications = pgTable("ba_verification", {
 type OrganizationRow = typeof organizations.$inferSelect;
 type OrganizationInsert = typeof organizations.$inferInsert;
 
+type WebsiteRow = typeof websites.$inferSelect;
+type WebsiteInsert = typeof websites.$inferInsert;
+
 type PlanRow = typeof plans.$inferSelect;
 type PlanInsert = typeof plans.$inferInsert;
 
@@ -233,6 +269,8 @@ type PlatformSuperAdminInsert = typeof platformSuperAdmins.$inferInsert;
 export type {
   OrganizationRow,
   OrganizationInsert,
+  WebsiteRow,
+  WebsiteInsert,
   PlanRow,
   PlanInsert,
   FeatureRow,
