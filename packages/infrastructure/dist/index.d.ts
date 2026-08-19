@@ -13,6 +13,7 @@ export { OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOu
 export type { OutboxEventPublisherConfig, OutboxPublishError, DrizzleOrganizationCreationPersistenceConfig, OutboxProcessorConfig } from "./repositories/outbox";
 export { createNetlifyDatabase, MissingNetlifyDatabaseError } from "./providers/netlify-database";
 export type { NetlifyDatabaseProvider, NetlifyDatabaseProviderConfig, NetlifyDrizzleDB } from "./providers/netlify-database";
+export type { DrizzleDB } from "./db/drizzle-instance";
 export { DrizzleUserRepository } from "./repositories/user";
 export type { DrizzleUserRepositoryConfig } from "./repositories/user";
 export { BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter } from "./adapters/better-auth";

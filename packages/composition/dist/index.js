@@ -10,6 +10,7 @@
  * - composeTest: deterministic test-support adapters with event capture.
  */
 export { composeProduction, composeProductionFromEnvironment, resolveTrustedOrigins, } from "./production";
+export { AdminBootstrapError, reconcileProductionAdministrator, } from "./admin-bootstrap";
 export { MissingNetlifyDatabaseError } from "@livingsites/infrastructure";
 export { composeDevelopment } from "./development";
 export { composeTest } from "./test";

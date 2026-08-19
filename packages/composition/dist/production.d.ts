@@ -1,6 +1,7 @@
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
 import { LinkageReconciler, DrizzleSuperAdminStore } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
+import type { DrizzleDB } from "@livingsites/infrastructure";
 import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, MembershipRepository, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, PasswordResetEmailPort, RegistrationMode, WebsiteReader, WebsiteCreationPersistence, PageRepository, PagePublisher, PageSnapshotReader } from "@livingsites/application";
 import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, publishPage, resolvePublishedPage, resolvePublishedWebsite, AuthorizationService } from "@livingsites/application";
 import type { CreateOrganizationDeps, RegisterUserDeps, AddOrganizationMemberDeps, ChangeOrganizationMemberRoleDeps, RemoveOrganizationMemberDeps, GetOrganizationMembersDeps } from "@livingsites/application";
@@ -21,6 +22,7 @@ export interface ProductionCompositionConfig {
     readonly linkageGracePeriodMs?: number;
 }
 export interface ProductionComposition {
+    readonly database: DrizzleDB;
     readonly clock: Clock;
     readonly idGenerator: IdGenerator;
     readonly logger: Logger;

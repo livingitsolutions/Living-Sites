@@ -239,6 +239,7 @@ export function composeProduction(config) {
         await connection.close();
     };
     return {
+        database: db,
         clock,
         idGenerator,
         logger,
