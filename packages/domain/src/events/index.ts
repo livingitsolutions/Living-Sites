@@ -51,7 +51,8 @@ export interface OrganizationCreatedEvent extends DomainEvent {
 
 export interface WebsiteCreatedEvent extends DomainEvent {
   readonly type: "website.created";
-  readonly eventScope: { readonly scope: "website"; readonly organizationId: OrganizationId; readonly websiteId: WebsiteId };
+  readonly eventScope: { readonly scope: "organization"; readonly organizationId: OrganizationId };
+  readonly websiteId: WebsiteId;
   readonly slug: string;
 }
 

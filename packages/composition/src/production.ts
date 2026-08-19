@@ -31,6 +31,8 @@ import {
   DrizzleIdentityLinkageStore,
   DrizzleMembershipRepository,
   DrizzleSuperAdminStore,
+  DrizzleWebsiteRepository,
+  DrizzleWebsiteCreationPersistence,
   MissingNetlifyDatabaseError,
 } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
@@ -48,6 +50,8 @@ import type {
   AuthenticationPort,
   EmailVerificationPort,
   RegistrationMode,
+  WebsiteReader,
+  WebsiteCreationPersistence,
 } from "@livingsites/application";
 import {
   createOrganization,
@@ -56,6 +60,9 @@ import {
   changeOrganizationMemberRole,
   removeOrganizationMember,
   getOrganizationMembers,
+  createWebsite,
+  getWebsite,
+  listOrganizationWebsites,
   AuthorizationService,
   parseRegistrationMode,
   DEFAULT_PRODUCTION_REGISTRATION_MODE,
@@ -97,6 +104,8 @@ export interface ProductionComposition {
   readonly userReader: UserReader;
   readonly userCreator: UserCreator;
   readonly membershipRepository: MembershipRepository;
+  readonly websiteRepository: WebsiteReader;
+  readonly websiteCreationPersistence: WebsiteCreationPersistence;
   readonly superAdminStore: DrizzleSuperAdminStore;
   readonly authorizationService: AuthorizationService;
   readonly authenticationPort: AuthenticationPort;
@@ -117,6 +126,9 @@ export interface ProductionComposition {
   readonly removeOrganizationMemberDeps: RemoveOrganizationMemberDeps;
   readonly getOrganizationMembers: typeof getOrganizationMembers;
   readonly getOrganizationMembersDeps: GetOrganizationMembersDeps;
+  readonly createWebsite: typeof createWebsite;
+  readonly getWebsite: typeof getWebsite;
+  readonly listOrganizationWebsites: typeof listOrganizationWebsites;
   readonly registrationMode: RegistrationMode;
   readonly healthCheck: () => Promise<{ healthy: boolean; details: Record<string, boolean> }>;
   readonly close: () => Promise<void>;
@@ -253,6 +265,8 @@ export function composeProduction(
   const featureReader = new DrizzleFeatureReader({ db, logger });
   const userRepository = new DrizzleUserRepository({ db, logger });
   const membershipRepository = new DrizzleMembershipRepository({ db, logger });
+  const websiteRepository = new DrizzleWebsiteRepository({ db, logger });
+  const websiteCreationPersistence = new DrizzleWebsiteCreationPersistence({ db, logger });
   const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
   const authorizationService = new AuthorizationService({
     membershipReader: membershipRepository,
@@ -365,6 +379,8 @@ export function composeProduction(
     userReader: userRepository,
     userCreator: userRepository,
     membershipRepository,
+    websiteRepository,
+    websiteCreationPersistence,
     superAdminStore,
     authorizationService,
     authenticationPort: authAdapter,
@@ -385,6 +401,9 @@ export function composeProduction(
     removeOrganizationMemberDeps,
     getOrganizationMembers,
     getOrganizationMembersDeps,
+    createWebsite,
+    getWebsite,
+    listOrganizationWebsites,
     registrationMode,
     healthCheck,
     close,
