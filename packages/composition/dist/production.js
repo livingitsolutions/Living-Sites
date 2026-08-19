@@ -12,10 +12,9 @@
  * Does NOT contain in-memory authentication storage.
  */
 import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
-import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
-import { createOrganization, registerUser, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
+import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, DrizzleMembershipRepository, DrizzleSuperAdminStore, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
 function validateConfig(config) {
     if (!config.betterAuthSecret || config.betterAuthSecret.length < 32) {
         throw new Error("BETTER_AUTH_SECRET is missing or too short (minimum 32 characters). " +
@@ -66,19 +65,42 @@ export function composeProduction(config) {
         throw new MissingNetlifyDatabaseError(`Failed to initialize Netlify Database: ${err instanceof Error ? err.message : String(err)}`);
     }
     const db = connection.db;
+    const identityDisabler = new DrizzleOrphanIdentityDisabler(db);
+    const identityLinkageStore = new DrizzleIdentityLinkageStore(db);
     const rawAuth = betterAuth({
         secret: config.betterAuthSecret,
         baseURL: config.betterAuthUrl,
         trustedOrigins: [...config.trustedOrigins],
-        database: drizzleAdapter(db, {
-            provider: "pg",
-            schema: {
-                user: "ba_user",
-                session: "ba_session",
-                account: "ba_account",
-                verification: "ba_verification",
+        database: createBetterAuthDatabaseAdapter(db),
+        user: {
+            additionalFields: {
+                disabled: { type: "boolean", required: false, input: false, defaultValue: false },
+                disabledAt: { type: "date", required: false, input: false, fieldName: "disabled_at" },
             },
-        }),
+        },
+        databaseHooks: {
+            user: {
+                create: {
+                    after: async (user) => {
+                        const createdAt = new Date(clock.nowIso());
+                        await identityLinkageStore.recordPending({
+                            id: idGenerator.generatePrefixed("linkage"),
+                            authSubjectId: user.id,
+                            email: user.email,
+                            displayName: user.name,
+                            createdAt,
+                        });
+                    },
+                },
+            },
+            session: {
+                create: {
+                    before: async (session) => {
+                        return (await identityDisabler.isDisabled(session.userId)) ? false : undefined;
+                    },
+                },
+            },
+        },
         emailAndPassword: {
             enabled: true,
             requireEmailVerification: config.emailVerificationEnabled ?? false,
@@ -94,6 +116,7 @@ export function composeProduction(config) {
             },
         },
         advanced: {
+            useSecureCookies: true,
             cookies: {
                 sessionToken: {
                     attributes: {
@@ -111,6 +134,12 @@ export function composeProduction(config) {
     const planReader = new DrizzlePlanReader({ db, logger });
     const featureReader = new DrizzleFeatureReader({ db, logger });
     const userRepository = new DrizzleUserRepository({ db, logger });
+    const membershipRepository = new DrizzleMembershipRepository({ db, logger });
+    const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
+    const authorizationService = new AuthorizationService({
+        membershipReader: membershipRepository,
+        superAdminChecker: superAdminStore,
+    });
     const eventPublisher = new OutboxEventPublisher({ db, logger });
     const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
     const outboxProcessor = new DrizzleOutboxProcessor({
@@ -119,6 +148,17 @@ export function composeProduction(config) {
         maxAttempts: config.outboxMaxAttempts,
         baseBackoffMs: config.outboxBaseBackoffMs,
         maxBackoffMs: config.outboxMaxBackoffMs,
+    });
+    const linkageReconciler = new LinkageReconciler({
+        db,
+        logger,
+        userCreator: userRepository,
+        userReader: userRepository,
+        identityDisabler,
+        idGenerator,
+        clock,
+        batchSize: config.linkageBatchSize,
+        gracePeriodMs: config.linkageGracePeriodMs,
     });
     const createOrganizationDeps = {
         organizationRepository,
@@ -137,6 +177,33 @@ export function composeProduction(config) {
         idGenerator,
         registrationMode,
     };
+    const addOrganizationMemberDeps = {
+        membershipRepository,
+        userReader: userRepository,
+        authorizationService,
+        clock,
+        idGenerator,
+    };
+    const changeOrganizationMemberRoleDeps = {
+        membershipRepository,
+        authorizationService,
+        clock,
+    };
+    const removeOrganizationMemberDeps = {
+        membershipRepository,
+        authorizationService,
+        clock,
+    };
+    const getOrganizationMembersDeps = {
+        membershipRepository,
+        authorizationService,
+    };
+    // If superAdminEmail is configured, run bootstrap asynchronously
+    if (config.superAdminEmail) {
+        superAdminStore.bootstrap({ email: config.superAdminEmail }).catch((err) => {
+            logger.error("Failed to bootstrap super admin during startup", { error: String(err) });
+        });
+    }
     const healthCheck = async () => {
         const details = {};
         let healthy = true;
@@ -150,6 +217,7 @@ export function composeProduction(config) {
         }
         details.authentication = true;
         details.userRepository = true;
+        details.membershipRepository = true;
         details.planReader = true;
         details.featureReader = true;
         details.eventPublisher = true;
@@ -169,18 +237,61 @@ export function composeProduction(config) {
         featureReader,
         userReader: userRepository,
         userCreator: userRepository,
+        membershipRepository,
+        superAdminStore,
+        authorizationService,
         authenticationPort: authAdapter,
         authInstance,
         emailVerificationPort: config.emailAdapter ?? null,
         organizationCreationPersistence,
         outboxProcessor,
+        linkageReconciler,
         createOrganization,
         createOrganizationDeps,
         registerUser,
         registerUserDeps,
+        addOrganizationMember,
+        addOrganizationMemberDeps,
+        changeOrganizationMemberRole,
+        changeOrganizationMemberRoleDeps,
+        removeOrganizationMember,
+        removeOrganizationMemberDeps,
+        getOrganizationMembers,
+        getOrganizationMembersDeps,
         registrationMode,
         healthCheck,
         close,
     };
+}
+function requiredEnvironmentValue(key) {
+    const value = process.env[key];
+    if (!value)
+        throw new Error(`Missing required environment variable: ${key}`);
+    return value;
+}
+function optionalPositiveInteger(key) {
+    const raw = process.env[key];
+    if (!raw)
+        return undefined;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+export function composeProductionFromEnvironment() {
+    const betterAuthUrl = requiredEnvironmentValue("BETTER_AUTH_URL");
+    const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? betterAuthUrl)
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean);
+    return composeProduction({
+        betterAuthSecret: requiredEnvironmentValue("BETTER_AUTH_SECRET"),
+        betterAuthUrl,
+        trustedOrigins,
+        registrationMode: process.env.AUTH_REGISTRATION_MODE ?? "invite_only",
+        emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
+        linkageBatchSize: optionalPositiveInteger("LINKAGE_RECONCILIATION_BATCH_SIZE"),
+        linkageGracePeriodMs: optionalPositiveInteger("LINKAGE_RECONCILIATION_GRACE_PERIOD_MS"),
+        superAdminEmail: process.env.PLATFORM_SUPER_ADMIN_EMAIL ?? process.env.SUPER_ADMIN_EMAIL,
+        logLevel: "info",
+    });
 }
 //# sourceMappingURL=production.js.map

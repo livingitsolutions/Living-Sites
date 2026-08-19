@@ -12,7 +12,6 @@
  * Does NOT contain in-memory authentication storage.
  */
 import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
 import {
@@ -23,9 +22,17 @@ import {
   DrizzleUserRepository,
   BetterAuthAdapter,
   asBetterAuthInstance,
+  createBetterAuthDatabaseAdapter,
   OutboxEventPublisher,
   DrizzleOrganizationCreationPersistence,
   DrizzleOutboxProcessor,
+  LinkageReconciler,
+  DrizzleOrphanIdentityDisabler,
+  DrizzleIdentityLinkageStore,
+  DrizzleMembershipRepository,
+  DrizzleSuperAdminStore,
+  DrizzleWebsiteRepository,
+  DrizzleWebsiteCreationPersistence,
   MissingNetlifyDatabaseError,
 } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
@@ -36,20 +43,38 @@ import type {
   FeatureReader,
   UserReader,
   UserCreator,
+  MembershipRepository,
   EventPublisher,
   OrganizationCreationPersistence,
   OutboxProcessor,
   AuthenticationPort,
   EmailVerificationPort,
   RegistrationMode,
+  WebsiteReader,
+  WebsiteCreationPersistence,
 } from "@livingsites/application";
 import {
   createOrganization,
   registerUser,
+  addOrganizationMember,
+  changeOrganizationMemberRole,
+  removeOrganizationMember,
+  getOrganizationMembers,
+  createWebsite,
+  getWebsite,
+  listOrganizationWebsites,
+  AuthorizationService,
   parseRegistrationMode,
   DEFAULT_PRODUCTION_REGISTRATION_MODE,
 } from "@livingsites/application";
-import type { CreateOrganizationDeps, RegisterUserDeps } from "@livingsites/application";
+import type {
+  CreateOrganizationDeps,
+  RegisterUserDeps,
+  AddOrganizationMemberDeps,
+  ChangeOrganizationMemberRoleDeps,
+  RemoveOrganizationMemberDeps,
+  GetOrganizationMembersDeps,
+} from "@livingsites/application";
 
 export interface ProductionCompositionConfig {
   readonly connectionString?: string;
@@ -63,6 +88,9 @@ export interface ProductionCompositionConfig {
   readonly registrationMode?: string;
   readonly emailVerificationEnabled?: boolean;
   readonly emailAdapter?: EmailVerificationPort;
+  readonly linkageBatchSize?: number;
+  readonly linkageGracePeriodMs?: number;
+  readonly superAdminEmail?: string;
 }
 
 export interface ProductionComposition {
@@ -75,15 +103,32 @@ export interface ProductionComposition {
   readonly featureReader: FeatureReader;
   readonly userReader: UserReader;
   readonly userCreator: UserCreator;
+  readonly membershipRepository: MembershipRepository;
+  readonly websiteRepository: WebsiteReader;
+  readonly websiteCreationPersistence: WebsiteCreationPersistence;
+  readonly superAdminStore: DrizzleSuperAdminStore;
+  readonly authorizationService: AuthorizationService;
   readonly authenticationPort: AuthenticationPort;
   readonly authInstance: BetterAuthInstance;
   readonly emailVerificationPort: EmailVerificationPort | null;
   readonly organizationCreationPersistence: OrganizationCreationPersistence;
   readonly outboxProcessor: OutboxProcessor;
+  readonly linkageReconciler: LinkageReconciler;
   readonly createOrganization: typeof createOrganization;
   readonly createOrganizationDeps: CreateOrganizationDeps;
   readonly registerUser: typeof registerUser;
   readonly registerUserDeps: RegisterUserDeps;
+  readonly addOrganizationMember: typeof addOrganizationMember;
+  readonly addOrganizationMemberDeps: AddOrganizationMemberDeps;
+  readonly changeOrganizationMemberRole: typeof changeOrganizationMemberRole;
+  readonly changeOrganizationMemberRoleDeps: ChangeOrganizationMemberRoleDeps;
+  readonly removeOrganizationMember: typeof removeOrganizationMember;
+  readonly removeOrganizationMemberDeps: RemoveOrganizationMemberDeps;
+  readonly getOrganizationMembers: typeof getOrganizationMembers;
+  readonly getOrganizationMembersDeps: GetOrganizationMembersDeps;
+  readonly createWebsite: typeof createWebsite;
+  readonly getWebsite: typeof getWebsite;
+  readonly listOrganizationWebsites: typeof listOrganizationWebsites;
   readonly registrationMode: RegistrationMode;
   readonly healthCheck: () => Promise<{ healthy: boolean; details: Record<string, boolean> }>;
   readonly close: () => Promise<void>;
@@ -148,20 +193,43 @@ export function composeProduction(
   }
 
   const db = connection.db;
+  const identityDisabler = new DrizzleOrphanIdentityDisabler(db);
+  const identityLinkageStore = new DrizzleIdentityLinkageStore(db);
 
   const rawAuth = betterAuth({
     secret: config.betterAuthSecret,
     baseURL: config.betterAuthUrl,
     trustedOrigins: [...config.trustedOrigins],
-    database: drizzleAdapter(db, {
-      provider: "pg",
-      schema: {
-        user: "ba_user",
-        session: "ba_session",
-        account: "ba_account",
-        verification: "ba_verification",
+    database: createBetterAuthDatabaseAdapter(db),
+    user: {
+      additionalFields: {
+        disabled: { type: "boolean", required: false, input: false, defaultValue: false },
+        disabledAt: { type: "date", required: false, input: false, fieldName: "disabled_at" },
       },
-    }),
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            const createdAt = new Date(clock.nowIso());
+            await identityLinkageStore.recordPending({
+              id: idGenerator.generatePrefixed("linkage"),
+              authSubjectId: user.id,
+              email: user.email,
+              displayName: user.name,
+              createdAt,
+            });
+          },
+        },
+      },
+      session: {
+        create: {
+          before: async (session) => {
+            return (await identityDisabler.isDisabled(session.userId)) ? false : undefined;
+          },
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: config.emailVerificationEnabled ?? false,
@@ -177,6 +245,7 @@ export function composeProduction(
       },
     },
     advanced: {
+      useSecureCookies: true,
       cookies: {
         sessionToken: {
           attributes: {
@@ -195,6 +264,14 @@ export function composeProduction(
   const planReader = new DrizzlePlanReader({ db, logger });
   const featureReader = new DrizzleFeatureReader({ db, logger });
   const userRepository = new DrizzleUserRepository({ db, logger });
+  const membershipRepository = new DrizzleMembershipRepository({ db, logger });
+  const websiteRepository = new DrizzleWebsiteRepository({ db, logger });
+  const websiteCreationPersistence = new DrizzleWebsiteCreationPersistence({ db, logger });
+  const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
+  const authorizationService = new AuthorizationService({
+    membershipReader: membershipRepository,
+    superAdminChecker: superAdminStore,
+  });
   const eventPublisher = new OutboxEventPublisher({ db, logger });
   const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
   const outboxProcessor = new DrizzleOutboxProcessor({
@@ -203,6 +280,17 @@ export function composeProduction(
     maxAttempts: config.outboxMaxAttempts,
     baseBackoffMs: config.outboxBaseBackoffMs,
     maxBackoffMs: config.outboxMaxBackoffMs,
+  });
+  const linkageReconciler = new LinkageReconciler({
+    db,
+    logger,
+    userCreator: userRepository,
+    userReader: userRepository,
+    identityDisabler,
+    idGenerator,
+    clock,
+    batchSize: config.linkageBatchSize,
+    gracePeriodMs: config.linkageGracePeriodMs,
   });
 
   const createOrganizationDeps: CreateOrganizationDeps = {
@@ -224,6 +312,38 @@ export function composeProduction(
     registrationMode,
   };
 
+  const addOrganizationMemberDeps: AddOrganizationMemberDeps = {
+    membershipRepository,
+    userReader: userRepository,
+    authorizationService,
+    clock,
+    idGenerator,
+  };
+
+  const changeOrganizationMemberRoleDeps: ChangeOrganizationMemberRoleDeps = {
+    membershipRepository,
+    authorizationService,
+    clock,
+  };
+
+  const removeOrganizationMemberDeps: RemoveOrganizationMemberDeps = {
+    membershipRepository,
+    authorizationService,
+    clock,
+  };
+
+  const getOrganizationMembersDeps: GetOrganizationMembersDeps = {
+    membershipRepository,
+    authorizationService,
+  };
+
+  // If superAdminEmail is configured, run bootstrap asynchronously
+  if (config.superAdminEmail) {
+    superAdminStore.bootstrap({ email: config.superAdminEmail }).catch((err) => {
+      logger.error("Failed to bootstrap super admin during startup", { error: String(err) });
+    });
+  }
+
   const healthCheck = async () => {
     const details: Record<string, boolean> = {};
     let healthy = true;
@@ -236,6 +356,7 @@ export function composeProduction(
     }
     details.authentication = true;
     details.userRepository = true;
+    details.membershipRepository = true;
     details.planReader = true;
     details.featureReader = true;
     details.eventPublisher = true;
@@ -257,17 +378,67 @@ export function composeProduction(
     featureReader,
     userReader: userRepository,
     userCreator: userRepository,
+    membershipRepository,
+    websiteRepository,
+    websiteCreationPersistence,
+    superAdminStore,
+    authorizationService,
     authenticationPort: authAdapter,
     authInstance,
     emailVerificationPort: config.emailAdapter ?? null,
     organizationCreationPersistence,
     outboxProcessor,
+    linkageReconciler,
     createOrganization,
     createOrganizationDeps,
     registerUser,
     registerUserDeps,
+    addOrganizationMember,
+    addOrganizationMemberDeps,
+    changeOrganizationMemberRole,
+    changeOrganizationMemberRoleDeps,
+    removeOrganizationMember,
+    removeOrganizationMemberDeps,
+    getOrganizationMembers,
+    getOrganizationMembersDeps,
+    createWebsite,
+    getWebsite,
+    listOrganizationWebsites,
     registrationMode,
     healthCheck,
     close,
   };
+}
+
+function requiredEnvironmentValue(key: string): string {
+  const value = process.env[key];
+  if (!value) throw new Error(`Missing required environment variable: ${key}`);
+  return value;
+}
+
+function optionalPositiveInteger(key: string): number | undefined {
+  const raw = process.env[key];
+  if (!raw) return undefined;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+export function composeProductionFromEnvironment(): ProductionComposition {
+  const betterAuthUrl = requiredEnvironmentValue("BETTER_AUTH_URL");
+  const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? betterAuthUrl)
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return composeProduction({
+    betterAuthSecret: requiredEnvironmentValue("BETTER_AUTH_SECRET"),
+    betterAuthUrl,
+    trustedOrigins,
+    registrationMode: process.env.AUTH_REGISTRATION_MODE ?? "invite_only",
+    emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
+    linkageBatchSize: optionalPositiveInteger("LINKAGE_RECONCILIATION_BATCH_SIZE"),
+    linkageGracePeriodMs: optionalPositiveInteger("LINKAGE_RECONCILIATION_GRACE_PERIOD_MS"),
+    superAdminEmail: process.env.PLATFORM_SUPER_ADMIN_EMAIL ?? process.env.SUPER_ADMIN_EMAIL,
+    logLevel: "info",
+  });
 }

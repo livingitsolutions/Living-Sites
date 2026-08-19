@@ -36,7 +36,7 @@ Auth migrations are in `netlify/database/migrations/0004_create_auth_and_users.s
 - `ba_verification` — Better Auth verification token table
 - `platform_users` — Living Platform User aggregate table
 
-All migrations are additive and forward-only.
+Migration `0006_disable_orphan_auth_identities.sql` adds disabled-identity state and the Better Auth 1.7 account issuer field. All migrations are additive and forward-only.
 
 ## Netlify CLI Commands
 
@@ -46,7 +46,7 @@ npx netlify database migrations apply
 npx netlify dev
 ```
 
-Netlify CLI 26+ is required. Remote branch checks are skipped when the repository is not linked or the environment is not authenticated.
+Netlify CLI 27.1.2 is used. Remote branch checks are skipped when the repository is not linked or the environment is not authenticated.
 
 ## Production Composition
 

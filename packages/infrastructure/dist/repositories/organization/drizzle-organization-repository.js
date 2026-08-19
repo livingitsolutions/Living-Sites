@@ -19,8 +19,11 @@ import { eq } from "drizzle-orm";
 import { organizations } from "../../db/schema";
 import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper";
 function isDuplicateKeyError(err) {
-    if (err && typeof err === "object" && "code" in err) {
-        return err.code === "23505";
+    if (err && typeof err === "object") {
+        const error = err;
+        return error.code === "23505"
+            || (error.cause !== undefined && isDuplicateKeyError(error.cause))
+            || /duplicate key|unique constraint/i.test(error.message ?? "");
     }
     return false;
 }

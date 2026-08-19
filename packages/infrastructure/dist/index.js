@@ -8,6 +8,8 @@ export { DrizzleFeatureReader } from "./repositories/feature";
 export { OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor } from "./repositories/outbox";
 export { createNetlifyDatabase, MissingNetlifyDatabaseError } from "./providers/netlify-database";
 export { DrizzleUserRepository } from "./repositories/user";
-export { BetterAuthAdapter, asBetterAuthInstance } from "./adapters/better-auth";
-export { LinkageReconciler } from "./repositories/identity";
+export { BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter } from "./adapters/better-auth";
+export { LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore } from "./repositories/identity";
+export { DrizzleMembershipRepository } from "./repositories/membership";
+export { DrizzleSuperAdminStore } from "./repositories/identity/drizzle-super-admin-store";
 //# sourceMappingURL=index.js.map

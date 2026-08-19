@@ -5,7 +5,8 @@
  * Infrastructure public barrel — they stay private to the Drizzle adapter
  * modules. Only adapters and composition-facing factories are exported.
  */
-import { pgTable, text, integer, numeric, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { check, pgTable, text, integer, numeric, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
 /* ---------- Organizations ---------- */
 export const orgStatusEnum = pgEnum("org_status", ["active", "archived", "deleted"]);
 export const organizations = pgTable("organizations", {
@@ -104,6 +105,35 @@ export const platformUsers = pgTable("platform_users", {
     updated_by: text("updated_by"),
     deleted_at: timestamp("deleted_at", { withTimezone: true }),
 });
+/* ---------- Memberships ---------- */
+export const membershipStatusEnum = pgEnum("membership_status", ["active", "archived", "deleted"]);
+export const memberships = pgTable("memberships", {
+    id: text("id").primaryKey(),
+    organization_id: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    user_id: text("user_id").notNull().references(() => platformUsers.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    website_scope_id: text("website_scope_id"),
+    status: membershipStatusEnum("status").notNull().default("active"),
+    version: integer("version").notNull().default(1),
+    created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+    created_by: text("created_by"),
+    updated_by: text("updated_by"),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+}, (table) => [
+    check("memberships_role_check", sql `${table.role} IN ('owner', 'admin', 'editor', 'viewer')`),
+]);
+/* ---------- Platform Super Admins ---------- */
+export const platformSuperAdmins = pgTable("platform_super_admins", {
+    id: text("id").primaryKey(),
+    user_id: text("user_id").notNull().unique().references(() => platformUsers.id, { onDelete: "cascade" }),
+    email: text("email").notNull().unique(),
+    singleton_key: integer("singleton_key").notNull().default(1).unique(),
+    created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    created_by: text("created_by"),
+}, (table) => [
+    check("platform_super_admins_singleton_check", sql `${table.singleton_key} = 1`),
+]);
 /* ---------- Better Auth Tables ---------- */
 export const betterAuthUsers = pgTable("ba_user", {
     id: text("id").primaryKey(),
@@ -113,6 +143,8 @@ export const betterAuthUsers = pgTable("ba_user", {
     email_verified: boolean("email_verified").notNull().default(false),
     name: text("name").notNull(),
     image: text("image"),
+    disabled: boolean("disabled").notNull().default(false),
+    disabled_at: timestamp("disabled_at", { withTimezone: true }),
 });
 export const betterAuthSessions = pgTable("ba_session", {
     id: text("id").primaryKey(),
@@ -129,6 +161,7 @@ export const betterAuthAccounts = pgTable("ba_account", {
     created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     provider_id: text("provider_id").notNull(),
+    issuer: text("issuer").notNull(),
     account_id: text("account_id").notNull(),
     user_id: text("user_id").notNull().references(() => betterAuthUsers.id, { onDelete: "cascade" }),
     access_token: text("access_token"),

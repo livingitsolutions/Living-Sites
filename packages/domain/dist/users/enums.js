@@ -1,2 +1,2 @@
-export { SystemRole } from "./types";
+export { SystemRole, SystemRoles } from "./types";
 //# sourceMappingURL=enums.js.map

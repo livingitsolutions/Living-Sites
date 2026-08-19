@@ -14,6 +14,7 @@
 export { InMemoryOrganizationRepository, InMemoryPlanRepository, InMemoryFeatureRepository } from "./repositories/in-memory-organization-repository";
 export type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader } from "./repositories/in-memory-organization-repository";
 export { InMemoryUserRepository } from "./repositories/in-memory-user-repository";
+export { InMemoryMembershipRepository } from "./repositories/in-memory-membership-repository";
 export { FakeAuthenticationAdapter } from "./identity/fake-authentication-adapter";
 export { CapturingVerificationEmailAdapter } from "./identity/capturing-verification-email-adapter";
 export { InMemoryEventPublisher } from "./events/in-memory-event-publisher";
@@ -22,5 +23,7 @@ export { runRepositoryContractTests } from "./repositories/contract-tests";
 export type { RepositoryContractFixtures } from "./repositories/contract-tests";
 export { runUserRepositoryContractTests } from "./repositories/user-contract-tests";
 export type { UserRepositoryContractFixtures } from "./repositories/user-contract-tests";
+export { runMembershipRepositoryContractTests } from "./repositories/membership-contract-tests";
+export type { MembershipRepositoryContractFixtures } from "./repositories/membership-contract-tests";
 export { runPlanReaderContractTests, runFeatureReaderContractTests, runOutboxContractTests } from "./repositories/plan-feature-outbox-contract-tests";
 export type { PlanReaderContractFixtures, FeatureReaderContractFixtures, OutboxContractFixtures } from "./repositories/plan-feature-outbox-contract-tests";

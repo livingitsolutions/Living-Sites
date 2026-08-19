@@ -51,6 +51,12 @@ Implement a **transactional outbox** pattern:
    events, dispatches them to registered in-process handlers, and marks them
    processed or failed with bounded retry.
 
+6. **Membership mutation persistence**: membership creation, role changes, and
+   archival use a focused `MembershipMutationPersistence` port. The Drizzle
+   implementation writes the membership mutation and its membership event to
+   `application_outbox` in the same transaction. A failed outbox insert rolls
+   back the membership mutation.
+
 6. **The CreateOrganization use case** uses `OrganizationCreationPersistence`
    when available (production), and falls back to the separate create +
    publish flow when it is absent (test/development with in-memory adapters).

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Living Platform Admin",
-  description: "Living Platform administration",
+  title: "Living Sites",
+  description: "Living Sites organization administration",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, minHeight: "100vh", background: "#ffffff", color: "#1f2937" }}>
+      <body>
         {children}
       </body>
     </html>

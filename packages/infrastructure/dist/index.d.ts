@@ -15,8 +15,12 @@ export { createNetlifyDatabase, MissingNetlifyDatabaseError } from "./providers/
 export type { NetlifyDatabaseProvider, NetlifyDatabaseProviderConfig, NetlifyDrizzleDB } from "./providers/netlify-database";
 export { DrizzleUserRepository } from "./repositories/user";
 export type { DrizzleUserRepositoryConfig } from "./repositories/user";
-export { BetterAuthAdapter, asBetterAuthInstance } from "./adapters/better-auth";
+export { BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter } from "./adapters/better-auth";
 export type { BetterAuthAdapterConfig, BetterAuthInstance } from "./adapters/better-auth";
-export { LinkageReconciler } from "./repositories/identity";
-export type { LinkageReconcilerConfig, ReconciliationResult } from "./repositories/identity";
+export { LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore } from "./repositories/identity";
+export type { LinkageReconcilerConfig, ReconciliationResult, OrphanIdentityDisabler, PendingIdentityLinkage } from "./repositories/identity";
+export { DrizzleMembershipRepository } from "./repositories/membership";
+export type { DrizzleMembershipRepositoryConfig } from "./repositories/membership";
+export { DrizzleSuperAdminStore } from "./repositories/identity/drizzle-super-admin-store";
+export type { BootstrapSuperAdminInput, BootstrapSuperAdminOutput, BootstrapSuperAdminError } from "./repositories/identity/drizzle-super-admin-store";
 //# sourceMappingURL=index.d.ts.map

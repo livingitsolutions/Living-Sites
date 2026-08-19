@@ -495,9 +495,12 @@
      repository-operation outcomes (persistence failures, duplicate keys,
      transport errors). Domain must not contain repository, database,
      provider, transport, or infrastructure error concepts.
-120. **Repository creation and mutation are separate operations.** Each
-     mutable aggregate-root repository defines `create(candidate)` and
-     `save(aggregate, expectedVersion)` as distinct methods. `create`
+120. **Repository creation and mutation are separate operations.** Mutable
+     aggregate-root repositories normally define `create(candidate)` and
+     `save(aggregate, expectedVersion)` as distinct methods. An aggregate with
+     mutation-specific cross-row invariants may intentionally omit generic
+     `save` and expose only invariant-aware operations. Membership uses
+     `changeRole` and `archive` so the sole-owner lock cannot be bypassed. `create`
      takes a candidate type that omits persistence-generated fields (id,
      audit, version) and returns `CreateResult<T>` (version 1 on success).
      `save` takes an existing aggregate with an ID and `expectedVersion`,

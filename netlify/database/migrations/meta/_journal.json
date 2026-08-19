@@ -3,24 +3,80 @@
   "dialect": "postgresql",
   "entries": [
     {
-      "idx": 0,
+      "idx": 1,
       "version": "7",
       "when": 1700000000000,
       "tag": "0001_create_organizations",
       "breakpoints": true
     },
     {
-      "idx": 1,
+      "idx": 2,
       "version": "7",
       "when": 1700000001000,
       "tag": "0002_create_plans_features_entitlements",
       "breakpoints": true
     },
     {
-      "idx": 2,
+      "idx": 3,
       "version": "7",
       "when": 1700000002000,
       "tag": "0003_create_application_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787129436010,
+      "tag": "0004_create_auth_and_users",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787129436020,
+      "tag": "0005_create_identity_linkages",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787129436030,
+      "tag": "0006_disable_orphan_auth_identities",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787129436040,
+      "tag": "0007_schema_snapshot_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787129436050,
+      "tag": "0008_create_memberships",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787134610463,
+      "tag": "0009_gifted_scorpion",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787136709125,
+      "tag": "0010_happy_mentor",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787137603694,
+      "tag": "0011_create_websites",
       "breakpoints": true
     }
   ]

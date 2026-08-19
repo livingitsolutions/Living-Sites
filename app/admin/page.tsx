@@ -1,49 +1,39 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { getAuth } from "@/app/lib/auth";
+import { AdminShell } from "./components/admin-shell";
+import { AccessDenied, Card, EmptyState, PageHeader } from "./components/primitives";
+import { getAuthenticatedAdminUser, listUserOrganizations } from "./lib/admin-context";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
+  const user = await getAuthenticatedAdminUser("/admin");
+  if (user.kind === "redirect") redirect(user.location);
+  if (user.kind === "unrecognized") return <AccessDenied reason="Your signed-in identity is not linked to a platform user." />;
 
-  if (!session) {
-    redirect("/login");
-  }
-
-  const user = session.user;
+  const organizations = await listUserOrganizations(user.platformUser.id);
 
   return (
-    <main style={{ maxWidth: "600px", margin: "80px auto", padding: "0 20px", fontFamily: "system-ui, sans-serif" }}>
-      <h1 style={{ fontSize: "1.75rem", marginBottom: "1.5rem" }}>Admin</h1>
-      <div style={{ padding: "20px", border: "1px solid #e5e7eb", borderRadius: "8px", background: "#f9fafb" }}>
-        <p style={{ fontSize: "0.875rem", color: "#374151", marginBottom: "8px" }}>
-          <strong>Signed in as:</strong> {user.name}
-        </p>
-        <p style={{ fontSize: "0.875rem", color: "#374151", marginBottom: "8px" }}>
-          <strong>Email:</strong> {user.email}
-        </p>
-        <p style={{ fontSize: "0.75rem", color: user.emailVerified ? "#16a34a" : "#d97706", marginBottom: "16px" }}>
-          {user.emailVerified ? "Email verified" : "Email not verified"}
-        </p>
-        <form action="/api/auth/sign-out" method="POST">
-          <button
-            type="submit"
-            style={{
-              padding: "8px 16px",
-              background: "#dc2626",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-            }}
-          >
-            Sign Out
-          </button>
-        </form>
-      </div>
-    </main>
+    <AdminShell user={user.sessionUser} organizations={organizations}>
+      <PageHeader eyebrow="Workspace" title="Choose an organization" description="Open an organization to manage its websites and settings." />
+      {organizations.length === 0 ? (
+        <EmptyState title="No organizations available" description="Your account does not have an active organization membership." />
+      ) : (
+        <div className="organization-grid" data-testid="organization-list">
+          {organizations.map(({ organization, role }) => (
+            <Card key={organization.id} className="organization-card">
+              <div>
+                <p className="card-kicker">{role}</p>
+                <h2>{organization.name}</h2>
+                <p className="muted-text">{organization.slug}</p>
+              </div>
+              <Link className="button button-secondary" href={`/admin/organizations/${organization.id}`}>
+                Open workspace
+              </Link>
+            </Card>
+          ))}
+        </div>
+      )}
+    </AdminShell>
   );
 }

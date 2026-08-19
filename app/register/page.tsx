@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getAuth } from "@/app/lib/auth";
 import { registerAction } from "@/app/lib/auth-actions";
+import { authPageRequest, evaluateAuthPageRequest } from "@/app/lib/auth-page-request";
 
 export const dynamic = "force-dynamic";
 
@@ -11,15 +12,19 @@ export default async function RegisterPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const auth = getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
+  const decision = await evaluateAuthPageRequest(
+    authPageRequest("/register", await headers()),
+    auth,
+    process.env.AUTH_REGISTRATION_MODE ?? "invite_only",
+  );
 
-  if (session) {
-    redirect("/admin");
+  if (decision.kind === "redirect") {
+    redirect(decision.location);
   }
 
   const params = await searchParams;
   const error = params.error;
-  const registrationMode = process.env.AUTH_REGISTRATION_MODE ?? "invite_only";
+  const registrationMode = decision.registrationMode ?? "invite_only";
 
   if (registrationMode === "disabled") {
     return (

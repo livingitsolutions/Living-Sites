@@ -1,6 +1,6 @@
 /**
  * Netlify Database provider — creates a Drizzle client using the
- * drizzle-orm/netlify-db adapter when running inside Netlify.
+ * drizzle-orm/node-postgres adapter when running inside Netlify.
  *
  * In the Netlify runtime, @netlify/database automatically provides the
  * connection — no manually copied connection string is required.
@@ -9,12 +9,13 @@
  * connection string (e.g. from NETLIFY_DB_URL or @netlify/database-dev).
  *
  * This module is the ONLY place in the codebase that imports
- * @netlify/database or drizzle-orm/netlify-db. Application and Domain
+ * @netlify/database or drizzle-orm/node-postgres. Application and Domain
  * layers never see these types.
  */
-import { type NetlifyDbDatabase } from "drizzle-orm/netlify-db";
+import { type NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "../../db/schema";
-export type NetlifyDrizzleDB = NetlifyDbDatabase<typeof schema>;
+import type { DrizzleDB } from "../../db/drizzle-instance";
+export type NetlifyDrizzleDB = NodePgDatabase<typeof schema> | DrizzleDB;
 export interface NetlifyDatabaseProviderConfig {
     /**
      * Optional explicit connection string. When provided, used directly

@@ -1,0 +1,6 @@
+import type { OrganizationId, UserId } from "@livingsites/domain";
+export interface GetOrganizationMembersInput {
+    readonly organizationId: OrganizationId | string;
+    readonly callerUserId: UserId | string;
+}
+//# sourceMappingURL=input.d.ts.map

@@ -10,32 +10,35 @@
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
+import { NetlifyDB } from "@netlify/database-dev";
 import { NoopLogger } from "@livingsites/platform";
 import { DrizzleUserRepository } from "../user/drizzle-user-repository";
 import { LinkageReconciler } from "./linkage-reconciler";
 import { identityLinkages } from "../../db/identity-linkage-schema";
-import { platformUsers } from "../../db/schema";
+import { betterAuthSessions, betterAuthUsers, platformUsers } from "../../db/schema";
 import * as schema from "../../db/schema";
 import { SystemClock, CryptoIdGenerator } from "@livingsites/platform";
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-const shouldSkip = !TEST_DATABASE_URL;
-const describeOrSkip = shouldSkip ? describe.skip : describe;
-describeOrSkip("LinkageReconciler — orphan identity recovery", () => {
+import { DrizzleOrphanIdentityDisabler } from "./drizzle-orphan-identity-disabler";
+describe("LinkageReconciler — orphan identity recovery", () => {
+    let netlifyDB;
     let sql;
     let db;
     let userRepo;
     let reconciler;
     beforeAll(async () => {
-        sql = postgres(TEST_DATABASE_URL);
+        netlifyDB = new NetlifyDB({ logger: () => { } });
+        const connectionString = await netlifyDB.start();
+        await netlifyDB.applyMigrations("./netlify/database/migrations");
+        sql = postgres(connectionString);
         db = drizzle({ client: sql, schema });
-        await migrate(db, { migrationsFolder: "./netlify/database/migrations" });
         userRepo = new DrizzleUserRepository({ db, logger: new NoopLogger() });
         reconciler = new LinkageReconciler({
             db,
             logger: new NoopLogger(),
             userCreator: userRepo,
+            userReader: userRepo,
+            identityDisabler: new DrizzleOrphanIdentityDisabler(db),
             idGenerator: new CryptoIdGenerator(),
             clock: new SystemClock(),
         });
@@ -43,10 +46,14 @@ describeOrSkip("LinkageReconciler — orphan identity recovery", () => {
     afterAll(async () => {
         if (sql)
             await sql.end();
+        if (netlifyDB)
+            await netlifyDB.stop();
     });
     beforeEach(async () => {
         await db.delete(platformUsers);
         await db.delete(identityLinkages);
+        await db.delete(betterAuthSessions);
+        await db.delete(betterAuthUsers);
     });
     it("creates a pending linkage, then reconciles it to linked", async () => {
         await db.insert(identityLinkages).values({
@@ -87,6 +94,17 @@ describeOrSkip("LinkageReconciler — orphan identity recovery", () => {
         expect(users.length).toBe(1);
     });
     it("marks linkage as failed after max attempts", async () => {
+        await db.insert(betterAuthUsers).values({
+            id: "auth_orphan_003",
+            email: "orphan3@example.com",
+            name: "Orphan Three",
+        });
+        await db.insert(betterAuthSessions).values({
+            id: "session_orphan_003",
+            user_id: "auth_orphan_003",
+            token: "token_orphan_003",
+            expires_at: new Date(Date.now() + 60_000),
+        });
         await db.insert(identityLinkages).values({
             id: "linkage_003",
             auth_subject_id: "auth_orphan_003",
@@ -102,6 +120,9 @@ describeOrSkip("LinkageReconciler — orphan identity recovery", () => {
         expect(result.failed).toBe(1);
         const linkages = await db.select().from(identityLinkages);
         expect(linkages[0].status).toBe("failed");
+        const [identity] = await db.select().from(betterAuthUsers);
+        expect(identity?.disabled).toBe(true);
+        expect(await db.select().from(betterAuthSessions)).toHaveLength(0);
     });
     it("skips linkages not yet due for retry", async () => {
         await db.insert(identityLinkages).values({
@@ -117,10 +138,17 @@ describeOrSkip("LinkageReconciler — orphan identity recovery", () => {
         const result = await reconciler.reconcile();
         expect(result.processed).toBe(0);
     });
-});
-if (shouldSkip) {
-    describe.skip("LinkageReconciler — orphan identity recovery (SKIPPED)", () => {
-        it("skipped — TEST_DATABASE_URL not set", () => { });
+    it("claims each linkage once under concurrent invocation", async () => {
+        await db.insert(identityLinkages).values({
+            id: "linkage_concurrent",
+            auth_subject_id: "auth_concurrent",
+            email: "concurrent@example.com",
+            display_name: "Concurrent",
+            next_attempt_at: new Date(0),
+        });
+        const [first, second] = await Promise.all([reconciler.reconcile(), reconciler.reconcile()]);
+        expect(first.processed + second.processed).toBe(1);
+        expect(await db.select().from(platformUsers)).toHaveLength(1);
     });
-}
+});
 //# sourceMappingURL=linkage-reconciler.test.js.map

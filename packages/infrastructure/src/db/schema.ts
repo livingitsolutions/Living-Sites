@@ -5,7 +5,8 @@
  * Infrastructure public barrel — they stay private to the Drizzle adapter
  * modules. Only adapters and composition-facing factories are exported.
  */
-import { pgTable, text, integer, numeric, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { check, pgTable, text, integer, numeric, boolean, timestamp, pgEnum, jsonb, uniqueIndex, index } from "drizzle-orm/pg-core";
 
 /* ---------- Organizations ---------- */
 
@@ -26,6 +27,39 @@ export const organizations = pgTable("organizations", {
   updated_by: text("updated_by"),
   deleted_at: timestamp("deleted_at", { withTimezone: true }),
 });
+
+/* ---------- Websites ---------- */
+
+export const websiteStatusEnum = pgEnum("website_status", ["draft", "published", "unpublished", "archived"]);
+
+export const websites = pgTable("websites", {
+  id: text("id").primaryKey(),
+  organization_id: text("organization_id").notNull().references(() => organizations.id, { onDelete: "restrict" }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  custom_domain: text("custom_domain"),
+  fallback_domain: text("fallback_domain").notNull(),
+  status: websiteStatusEnum("status").notNull().default("draft"),
+  theme_id: text("theme_id"),
+  published_release_label: text("published_release_label"),
+  default_locale: text("default_locale").notNull().default("en-US"),
+  enabled_locales: jsonb("enabled_locales").notNull().default(["en-US"]),
+  settings: jsonb("settings").notNull().default({}),
+  version: integer("version").notNull().default(1),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+  created_by: text("created_by"),
+  updated_by: text("updated_by"),
+  archived_at: timestamp("archived_at", { withTimezone: true }),
+}, (table) => [
+  uniqueIndex("websites_organization_slug_unique").on(table.organization_id, table.slug),
+  uniqueIndex("websites_custom_domain_unique").on(table.custom_domain).where(sql`${table.custom_domain} IS NOT NULL`),
+  uniqueIndex("websites_fallback_domain_unique").on(table.fallback_domain),
+  index("websites_organization_id_idx").on(table.organization_id),
+  check("websites_version_check", sql`${table.version} >= 1`),
+  check("websites_custom_domain_lowercase_check", sql`${table.custom_domain} IS NULL OR ${table.custom_domain} = lower(${table.custom_domain})`),
+  check("websites_fallback_domain_lowercase_check", sql`${table.fallback_domain} = lower(${table.fallback_domain})`),
+]);
 
 /* ---------- Plans ---------- */
 
@@ -121,6 +155,40 @@ export const platformUsers = pgTable("platform_users", {
   deleted_at: timestamp("deleted_at", { withTimezone: true }),
 });
 
+/* ---------- Memberships ---------- */
+
+export const membershipStatusEnum = pgEnum("membership_status", ["active", "archived", "deleted"]);
+
+export const memberships = pgTable("memberships", {
+  id: text("id").primaryKey(),
+  organization_id: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  user_id: text("user_id").notNull().references(() => platformUsers.id, { onDelete: "cascade" }),
+  role: text("role").notNull(),
+  website_scope_id: text("website_scope_id"),
+  status: membershipStatusEnum("status").notNull().default("active"),
+  version: integer("version").notNull().default(1),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+  created_by: text("created_by"),
+  updated_by: text("updated_by"),
+  deleted_at: timestamp("deleted_at", { withTimezone: true }),
+}, (table) => [
+  check("memberships_role_check", sql`${table.role} IN ('owner', 'admin', 'editor', 'viewer')`),
+]);
+
+/* ---------- Platform Super Admins ---------- */
+
+export const platformSuperAdmins = pgTable("platform_super_admins", {
+  id: text("id").primaryKey(),
+  user_id: text("user_id").notNull().unique().references(() => platformUsers.id, { onDelete: "cascade" }),
+  email: text("email").notNull().unique(),
+  singleton_key: integer("singleton_key").notNull().default(1).unique(),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  created_by: text("created_by"),
+}, (table) => [
+  check("platform_super_admins_singleton_check", sql`${table.singleton_key} = 1`),
+]);
+
 /* ---------- Better Auth Tables ---------- */
 
 export const betterAuthUsers = pgTable("ba_user", {
@@ -131,6 +199,8 @@ export const betterAuthUsers = pgTable("ba_user", {
   email_verified: boolean("email_verified").notNull().default(false),
   name: text("name").notNull(),
   image: text("image"),
+  disabled: boolean("disabled").notNull().default(false),
+  disabled_at: timestamp("disabled_at", { withTimezone: true }),
 });
 
 export const betterAuthSessions = pgTable("ba_session", {
@@ -149,6 +219,7 @@ export const betterAuthAccounts = pgTable("ba_account", {
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   provider_id: text("provider_id").notNull(),
+  issuer: text("issuer").notNull(),
   account_id: text("account_id").notNull(),
   user_id: text("user_id").notNull().references(() => betterAuthUsers.id, { onDelete: "cascade" }),
   access_token: text("access_token"),
@@ -174,6 +245,9 @@ export const betterAuthVerifications = pgTable("ba_verification", {
 type OrganizationRow = typeof organizations.$inferSelect;
 type OrganizationInsert = typeof organizations.$inferInsert;
 
+type WebsiteRow = typeof websites.$inferSelect;
+type WebsiteInsert = typeof websites.$inferInsert;
+
 type PlanRow = typeof plans.$inferSelect;
 type PlanInsert = typeof plans.$inferInsert;
 
@@ -186,9 +260,17 @@ type EntitlementInsert = typeof planFeatureEntitlements.$inferInsert;
 type OutboxRow = typeof applicationOutbox.$inferSelect;
 type OutboxInsert = typeof applicationOutbox.$inferInsert;
 
+type MembershipRow = typeof memberships.$inferSelect;
+type MembershipInsert = typeof memberships.$inferInsert;
+
+type PlatformSuperAdminRow = typeof platformSuperAdmins.$inferSelect;
+type PlatformSuperAdminInsert = typeof platformSuperAdmins.$inferInsert;
+
 export type {
   OrganizationRow,
   OrganizationInsert,
+  WebsiteRow,
+  WebsiteInsert,
   PlanRow,
   PlanInsert,
   FeatureRow,
@@ -197,4 +279,8 @@ export type {
   EntitlementInsert,
   OutboxRow,
   OutboxInsert,
+  MembershipRow,
+  MembershipInsert,
+  PlatformSuperAdminRow,
+  PlatformSuperAdminInsert,
 };

@@ -6,30 +6,30 @@
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "import": "./dist/index.js"
     },
     "./repositories": {
-      "types": "./dist/repositories/index.d.ts",
+      "types": "./src/repositories/index.ts",
       "import": "./dist/repositories/index.js"
     },
     "./services": {
-      "types": "./dist/services/index.d.ts",
+      "types": "./src/services/index.ts",
       "import": "./dist/services/index.js"
     },
     "./use-cases": {
-      "types": "./dist/use-cases/index.d.ts",
+      "types": "./src/use-cases/index.ts",
       "import": "./dist/use-cases/index.js"
     },
     "./policies": {
-      "types": "./dist/policies/index.d.ts",
+      "types": "./src/policies/index.ts",
       "import": "./dist/policies/index.js"
     },
     "./read-models": {
-      "types": "./dist/read-models/index.d.ts",
+      "types": "./src/read-models/index.ts",
       "import": "./dist/read-models/index.js"
     }
   },

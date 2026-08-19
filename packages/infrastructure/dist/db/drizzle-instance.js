@@ -3,7 +3,7 @@
  *
  * Uses the postgres-js driver for generic PostgreSQL connections.
  * For Netlify Database, use the NetlifyDatabaseProvider which uses
- * drizzle-orm/netlify-db.
+ * drizzle-orm/node-postgres.
  *
  * The DrizzleDB type is intentionally generic to accept both
  * postgres-js and netlify-db Drizzle instances.

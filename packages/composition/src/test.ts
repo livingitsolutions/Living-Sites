@@ -10,12 +10,28 @@ import {
   InMemoryOrganizationRepository,
   InMemoryPlanRepository,
   InMemoryUserRepository,
+  InMemoryMembershipRepository,
   FakeAuthenticationAdapter,
   CapturingVerificationEmailAdapter,
   InMemoryEventPublisher,
 } from "@livingsites/test-support";
-import { createOrganization, registerUser } from "@livingsites/application";
-import type { CreateOrganizationDeps, RegisterUserDeps } from "@livingsites/application";
+import {
+  createOrganization,
+  registerUser,
+  addOrganizationMember,
+  changeOrganizationMemberRole,
+  removeOrganizationMember,
+  getOrganizationMembers,
+  AuthorizationService,
+} from "@livingsites/application";
+import type {
+  CreateOrganizationDeps,
+  RegisterUserDeps,
+  AddOrganizationMemberDeps,
+  ChangeOrganizationMemberRoleDeps,
+  RemoveOrganizationMemberDeps,
+  GetOrganizationMembersDeps,
+} from "@livingsites/application";
 
 export interface TestCompositionConfig {
   readonly initialClockMs?: number;
@@ -30,12 +46,22 @@ export interface TestComposition {
   readonly organizationRepository: InMemoryOrganizationRepository;
   readonly planRepository: InMemoryPlanRepository;
   readonly userRepository: InMemoryUserRepository;
+  readonly membershipRepository: InMemoryMembershipRepository;
+  readonly authorizationService: AuthorizationService;
   readonly authenticationPort: FakeAuthenticationAdapter;
   readonly emailVerificationPort: CapturingVerificationEmailAdapter;
   readonly createOrganization: typeof createOrganization;
   readonly createOrganizationDeps: CreateOrganizationDeps;
   readonly registerUser: typeof registerUser;
   readonly registerUserDeps: RegisterUserDeps;
+  readonly addOrganizationMember: typeof addOrganizationMember;
+  readonly addOrganizationMemberDeps: AddOrganizationMemberDeps;
+  readonly changeOrganizationMemberRole: typeof changeOrganizationMemberRole;
+  readonly changeOrganizationMemberRoleDeps: ChangeOrganizationMemberRoleDeps;
+  readonly removeOrganizationMember: typeof removeOrganizationMember;
+  readonly removeOrganizationMemberDeps: RemoveOrganizationMemberDeps;
+  readonly getOrganizationMembers: typeof getOrganizationMembers;
+  readonly getOrganizationMembersDeps: GetOrganizationMembersDeps;
 }
 
 export function composeTest(config: TestCompositionConfig = {}): TestComposition {
@@ -46,6 +72,10 @@ export function composeTest(config: TestCompositionConfig = {}): TestComposition
   const organizationRepository = new InMemoryOrganizationRepository();
   const planRepository = new InMemoryPlanRepository();
   const userRepository = new InMemoryUserRepository();
+  const membershipRepository = new InMemoryMembershipRepository();
+  const authorizationService = new AuthorizationService({
+    membershipReader: membershipRepository,
+  });
   const authenticationPort = new FakeAuthenticationAdapter();
   const emailVerificationPort = new CapturingVerificationEmailAdapter();
 
@@ -67,6 +97,31 @@ export function composeTest(config: TestCompositionConfig = {}): TestComposition
     registrationMode: config.registrationMode ?? "open",
   };
 
+  const addOrganizationMemberDeps: AddOrganizationMemberDeps = {
+    membershipRepository,
+    userReader: userRepository,
+    authorizationService,
+    clock,
+    idGenerator,
+  };
+
+  const changeOrganizationMemberRoleDeps: ChangeOrganizationMemberRoleDeps = {
+    membershipRepository,
+    authorizationService,
+    clock,
+  };
+
+  const removeOrganizationMemberDeps: RemoveOrganizationMemberDeps = {
+    membershipRepository,
+    authorizationService,
+    clock,
+  };
+
+  const getOrganizationMembersDeps: GetOrganizationMembersDeps = {
+    membershipRepository,
+    authorizationService,
+  };
+
   return {
     clock,
     idGenerator,
@@ -75,11 +130,21 @@ export function composeTest(config: TestCompositionConfig = {}): TestComposition
     organizationRepository,
     planRepository,
     userRepository,
+    membershipRepository,
+    authorizationService,
     authenticationPort,
     emailVerificationPort,
     createOrganization,
     createOrganizationDeps,
     registerUser,
     registerUserDeps,
+    addOrganizationMember,
+    addOrganizationMemberDeps,
+    changeOrganizationMemberRole,
+    changeOrganizationMemberRoleDeps,
+    removeOrganizationMember,
+    removeOrganizationMemberDeps,
+    getOrganizationMembers,
+    getOrganizationMembersDeps,
   };
 }

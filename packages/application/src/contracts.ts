@@ -15,6 +15,8 @@ import type {
   ConcurrencyConflict,
 } from "@livingsites/domain";
 
+export type { ConcurrencyConflict };
+
 /**
  * Repository-level error for infrastructure failures (connection lost,
  * constraint violation, timeout, etc.). Distinct from `DomainError` which

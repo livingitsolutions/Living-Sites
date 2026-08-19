@@ -14,6 +14,7 @@ import type {
   SubmissionId,
   ExportJobId,
   UserId,
+  MembershipId,
   ISODateString,
   VersionString,
 } from "../shared";
@@ -50,7 +51,8 @@ export interface OrganizationCreatedEvent extends DomainEvent {
 
 export interface WebsiteCreatedEvent extends DomainEvent {
   readonly type: "website.created";
-  readonly eventScope: { readonly scope: "website"; readonly organizationId: OrganizationId; readonly websiteId: WebsiteId };
+  readonly eventScope: { readonly scope: "organization"; readonly organizationId: OrganizationId };
+  readonly websiteId: WebsiteId;
   readonly slug: string;
 }
 
@@ -125,6 +127,31 @@ export interface EmailVerifiedEvent extends DomainEvent {
   readonly email: string;
 }
 
+export interface OrganizationMemberAddedEvent extends DomainEvent {
+  readonly type: "organization.member_added";
+  readonly eventScope: { readonly scope: "organization"; readonly organizationId: OrganizationId };
+  readonly membershipId: MembershipId;
+  readonly userId: UserId;
+  readonly role: string;
+  readonly websiteScopeId?: string | null;
+}
+
+export interface OrganizationMemberRoleChangedEvent extends DomainEvent {
+  readonly type: "organization.member_role_changed";
+  readonly eventScope: { readonly scope: "organization"; readonly organizationId: OrganizationId };
+  readonly membershipId: MembershipId;
+  readonly userId: UserId;
+  readonly previousRole: string;
+  readonly newRole: string;
+}
+
+export interface OrganizationMemberRemovedEvent extends DomainEvent {
+  readonly type: "organization.member_removed";
+  readonly eventScope: { readonly scope: "organization"; readonly organizationId: OrganizationId };
+  readonly membershipId: MembershipId;
+  readonly userId: UserId;
+}
+
 /** Union of all known domain events for exhaustive handling. */
 export type KnownDomainEvent =
   | OrganizationCreatedEvent
@@ -138,4 +165,7 @@ export type KnownDomainEvent =
   | PluginInstalledEvent
   | ExportCompletedEvent
   | UserRegisteredEvent
-  | EmailVerifiedEvent;
+  | EmailVerifiedEvent
+  | OrganizationMemberAddedEvent
+  | OrganizationMemberRoleChangedEvent
+  | OrganizationMemberRemovedEvent;

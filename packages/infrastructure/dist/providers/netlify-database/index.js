@@ -1,6 +1,6 @@
 /**
  * Netlify Database provider — creates a Drizzle client using the
- * drizzle-orm/netlify-db adapter when running inside Netlify.
+ * drizzle-orm/node-postgres adapter when running inside Netlify.
  *
  * In the Netlify runtime, @netlify/database automatically provides the
  * connection — no manually copied connection string is required.
@@ -9,11 +9,13 @@
  * connection string (e.g. from NETLIFY_DB_URL or @netlify/database-dev).
  *
  * This module is the ONLY place in the codebase that imports
- * @netlify/database or drizzle-orm/netlify-db. Application and Domain
+ * @netlify/database or drizzle-orm/node-postgres. Application and Domain
  * layers never see these types.
  */
-import { drizzle as drizzleNetlify } from "drizzle-orm/netlify-db";
+import { drizzle as drizzlePostgres } from "drizzle-orm/node-postgres";
+import { drizzle as drizzlePostgresJs } from "drizzle-orm/postgres-js";
 import { getDatabase } from "@netlify/database";
+import postgres from "postgres";
 import * as schema from "../../db/schema";
 export class MissingNetlifyDatabaseError extends Error {
     constructor(message) {
@@ -32,22 +34,23 @@ export class MissingNetlifyDatabaseError extends Error {
  * @netlify/database-dev or NETLIFY_DB_URL.
  */
 export function createNetlifyDatabase(config = {}) {
-    let connection;
     if (config.connectionString) {
-        // For local dev/testing: create a server connection from explicit URL.
-        // We use getDatabase with the explicit connectionString.
-        connection = getDatabase({ connectionString: config.connectionString });
+        const client = postgres(config.connectionString);
+        const db = drizzlePostgresJs(client, { schema });
+        return {
+            db,
+            async close() {
+                await client.end();
+            },
+        };
     }
-    else {
-        // In Netlify runtime: automatic resolution.
-        connection = getDatabase();
-    }
+    const connection = getDatabase();
     if (!connection) {
         throw new MissingNetlifyDatabaseError("Netlify Database connection could not be established. " +
             "Ensure @netlify/database is installed and the database is provisioned, " +
             "or provide a connectionString for local development.");
     }
-    const db = drizzleNetlify({ client: connection.pool, schema });
+    const db = drizzlePostgres(connection.pool, { schema });
     return {
         db,
         async close() {

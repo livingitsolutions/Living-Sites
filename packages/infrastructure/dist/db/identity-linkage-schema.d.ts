@@ -3,10 +3,28 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
     name: "identity_linkages";
     schema: undefined;
     columns: {
-        id: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").SetIsPrimaryKey<import("drizzle-orm/pg-core").PgTextBuilder<[string, ...string[]]>>, {
-            name: string;
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
             tableName: "identity_linkages";
             dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        auth_subject_id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "auth_subject_id";
+            tableName: "identity_linkages";
+            dataType: "string";
+            columnType: "PgText";
             data: string;
             driverParam: string;
             notNull: true;
@@ -14,14 +32,16 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        auth_subject_id: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").SetNotNull<import("drizzle-orm/pg-core").PgTextBuilder<[string, ...string[]]>>, {
-            name: string;
+        }, {}, {}>;
+        email: import("drizzle-orm/pg-core").PgColumn<{
+            name: "email";
             tableName: "identity_linkages";
             dataType: "string";
+            columnType: "PgText";
             data: string;
             driverParam: string;
             notNull: true;
@@ -29,14 +49,16 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        email: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").SetNotNull<import("drizzle-orm/pg-core").PgTextBuilder<[string, ...string[]]>>, {
-            name: string;
+        }, {}, {}>;
+        display_name: import("drizzle-orm/pg-core").PgColumn<{
+            name: "display_name";
             tableName: "identity_linkages";
             dataType: "string";
+            columnType: "PgText";
             data: string;
             driverParam: string;
             notNull: true;
@@ -44,29 +66,16 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        display_name: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").SetNotNull<import("drizzle-orm/pg-core").PgTextBuilder<[string, ...string[]]>>, {
-            name: string;
+        }, {}, {}>;
+        status: import("drizzle-orm/pg-core").PgColumn<{
+            name: "status";
             tableName: "identity_linkages";
             dataType: "string";
-            data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            identity: undefined;
-            generated: undefined;
-        }>;
-        status: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").SetHasDefault<import("drizzle-orm/pg-core").SetNotNull<import("drizzle-orm/pg-core").PgEnumColumnBuilder<["pending", "linked", "failed"]>>>, {
-            name: string;
-            tableName: "identity_linkages";
-            dataType: "string enum";
+            columnType: "PgEnumColumn";
             data: "pending" | "failed" | "linked";
             driverParam: string;
             notNull: true;
@@ -75,13 +84,15 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: ["pending", "linked", "failed"];
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        platform_user_id: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").PgTextBuilder<[string, ...string[]]>, {
-            name: string;
+        }, {}, {}>;
+        platform_user_id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "platform_user_id";
             tableName: "identity_linkages";
             dataType: "string";
+            columnType: "PgText";
             data: string;
             driverParam: string;
             notNull: false;
@@ -89,14 +100,16 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        failure_reason: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").PgTextBuilder<[string, ...string[]]>, {
-            name: string;
+        }, {}, {}>;
+        failure_reason: import("drizzle-orm/pg-core").PgColumn<{
+            name: "failure_reason";
             tableName: "identity_linkages";
             dataType: "string";
+            columnType: "PgText";
             data: string;
             driverParam: string;
             notNull: false;
@@ -104,14 +117,16 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        attempts: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").SetHasDefault<import("drizzle-orm/pg-core").SetNotNull<import("drizzle-orm/pg-core").PgIntegerBuilder>>, {
-            name: string;
+        }, {}, {}>;
+        attempts: import("drizzle-orm/pg-core").PgColumn<{
+            name: "attempts";
             tableName: "identity_linkages";
-            dataType: "number int32";
+            dataType: "number";
+            columnType: "PgInteger";
             data: number;
             driverParam: string | number;
             notNull: true;
@@ -120,13 +135,15 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: undefined;
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        max_attempts: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").SetHasDefault<import("drizzle-orm/pg-core").SetNotNull<import("drizzle-orm/pg-core").PgIntegerBuilder>>, {
-            name: string;
+        }, {}, {}>;
+        max_attempts: import("drizzle-orm/pg-core").PgColumn<{
+            name: "max_attempts";
             tableName: "identity_linkages";
-            dataType: "number int32";
+            dataType: "number";
+            columnType: "PgInteger";
             data: number;
             driverParam: string | number;
             notNull: true;
@@ -135,13 +152,15 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: undefined;
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        next_attempt_at: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").PgTimestampBuilder, {
-            name: string;
+        }, {}, {}>;
+        next_attempt_at: import("drizzle-orm/pg-core").PgColumn<{
+            name: "next_attempt_at";
             tableName: "identity_linkages";
-            dataType: "object date";
+            dataType: "date";
+            columnType: "PgTimestamp";
             data: Date;
             driverParam: string;
             notNull: false;
@@ -150,13 +169,15 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: undefined;
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        created_at: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").SetHasDefault<import("drizzle-orm/pg-core").SetNotNull<import("drizzle-orm/pg-core").PgTimestampBuilder>>, {
-            name: string;
+        }, {}, {}>;
+        created_at: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
             tableName: "identity_linkages";
-            dataType: "object date";
+            dataType: "date";
+            columnType: "PgTimestamp";
             data: Date;
             driverParam: string;
             notNull: true;
@@ -165,13 +186,15 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: undefined;
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        updated_at: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").SetHasDefault<import("drizzle-orm/pg-core").SetNotNull<import("drizzle-orm/pg-core").PgTimestampBuilder>>, {
-            name: string;
+        }, {}, {}>;
+        updated_at: import("drizzle-orm/pg-core").PgColumn<{
+            name: "updated_at";
             tableName: "identity_linkages";
-            dataType: "object date";
+            dataType: "date";
+            columnType: "PgTimestamp";
             data: Date;
             driverParam: string;
             notNull: true;
@@ -180,13 +203,15 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: undefined;
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
-        completed_at: import("drizzle-orm/pg-core").PgBuildColumn<"identity_linkages", import("drizzle-orm/pg-core").PgTimestampBuilder, {
-            name: string;
+        }, {}, {}>;
+        completed_at: import("drizzle-orm/pg-core").PgColumn<{
+            name: "completed_at";
             tableName: "identity_linkages";
-            dataType: "object date";
+            dataType: "date";
+            columnType: "PgTimestamp";
             data: Date;
             driverParam: string;
             notNull: false;
@@ -195,9 +220,10 @@ export declare const identityLinkages: import("drizzle-orm/pg-core").PgTableWith
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: undefined;
+            baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }>;
+        }, {}, {}>;
     };
     dialect: "pg";
 }>;

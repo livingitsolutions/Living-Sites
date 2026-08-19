@@ -10,21 +10,25 @@
  * claim-and-process pattern to prevent concurrent workers from processing
  * the same linkage.
  */
-import { eq, and, lte } from "drizzle-orm";
+import { eq, and, lte, inArray, sql } from "drizzle-orm";
 import type { Logger } from "@livingsites/platform";
 import type { DrizzleDB } from "../../db/drizzle-instance";
 import { identityLinkages, type IdentityLinkageRow } from "../../db/identity-linkage-schema";
 import { createUserDraft } from "@livingsites/domain";
 import type { UserId, AuthSubjectId, ISODateString } from "@livingsites/domain";
-import type { UserCreator } from "@livingsites/application";
+import type { UserCreator, UserReader } from "@livingsites/application";
+import type { OrphanIdentityDisabler } from "./drizzle-orphan-identity-disabler";
 
 export interface LinkageReconcilerConfig {
   readonly db: DrizzleDB;
   readonly logger: Logger;
   readonly userCreator: UserCreator;
+  readonly userReader: UserReader;
   readonly idGenerator: { generatePrefixed(prefix: string): string };
   readonly clock: { nowIso(): string };
+  readonly identityDisabler: OrphanIdentityDisabler;
   readonly batchSize?: number;
+  readonly gracePeriodMs?: number;
 }
 
 export interface ReconciliationResult {
@@ -38,17 +42,23 @@ export class LinkageReconciler {
   private readonly db: DrizzleDB;
   private readonly logger: Logger;
   private readonly userCreator: UserCreator;
+  private readonly userReader: UserReader;
   private readonly idGenerator: { generatePrefixed(prefix: string): string };
   private readonly clock: { nowIso(): string };
+  private readonly identityDisabler: OrphanIdentityDisabler;
   private readonly batchSize: number;
+  private readonly gracePeriodMs: number;
 
   constructor(config: LinkageReconcilerConfig) {
     this.db = config.db;
     this.logger = config.logger;
     this.userCreator = config.userCreator;
+    this.userReader = config.userReader;
     this.idGenerator = config.idGenerator;
     this.clock = config.clock;
-    this.batchSize = config.batchSize ?? 50;
+    this.identityDisabler = config.identityDisabler;
+    this.batchSize = Math.max(1, Math.min(config.batchSize ?? 50, 100));
+    this.gracePeriodMs = Math.max(1_000, config.gracePeriodMs ?? 60_000);
   }
 
   async reconcile(): Promise<ReconciliationResult> {
@@ -58,7 +68,7 @@ export class LinkageReconciler {
     let failed = 0;
     let skipped = 0;
 
-    const pending = await this.db
+    const candidates = await this.db
       .select()
       .from(identityLinkages)
       .where(
@@ -68,6 +78,24 @@ export class LinkageReconciler {
         ),
       )
       .limit(this.batchSize);
+
+    if (candidates.length === 0) return { processed, linked, failed, skipped };
+
+    const pending = await this.db
+      .update(identityLinkages)
+      .set({
+        attempts: sql`${identityLinkages.attempts} + 1`,
+        next_attempt_at: new Date(now.getTime() + this.gracePeriodMs),
+        updated_at: now,
+      })
+      .where(
+        and(
+          eq(identityLinkages.status, "pending"),
+          lte(identityLinkages.next_attempt_at, now),
+          inArray(identityLinkages.id, candidates.map((row: IdentityLinkageRow) => row.id)),
+        ),
+      )
+      .returning();
 
     for (const row of pending) {
       processed++;
@@ -85,21 +113,16 @@ export class LinkageReconciler {
   }
 
   private async processLinkage(row: IdentityLinkageRow): Promise<"linked" | "failed" | "skipped"> {
-    const attempts = row.attempts + 1;
+    const attempts = row.attempts;
 
     if (attempts > row.max_attempts) {
-      await this.db
-        .update(identityLinkages)
-        .set({
-          status: "failed",
-          failure_reason: "Max attempts exceeded",
-          attempts,
-          updated_at: new Date(this.clock.nowIso()),
-          completed_at: new Date(this.clock.nowIso()),
-        })
-        .where(eq(identityLinkages.id, row.id));
-      this.logger.warn("Linkage failed: max attempts exceeded", { linkageId: row.id, authSubjectId: row.auth_subject_id });
-      return "failed";
+      return this.failAndDisable(row, attempts, "Max attempts exceeded");
+    }
+
+    const existingUser = await this.userReader.findByAuthSubjectId(row.auth_subject_id as AuthSubjectId);
+    if (existingUser) {
+      await this.markLinked(row, String(existingUser.id), attempts);
+      return "linked";
     }
 
     const draft = createUserDraft({
@@ -113,31 +136,66 @@ export class LinkageReconciler {
     const createResult = await this.userCreator.create(draft);
 
     if (createResult.ok) {
-      await this.db
-        .update(identityLinkages)
-        .set({
-          status: "linked",
-          platform_user_id: String(createResult.value.id),
-          attempts,
-          updated_at: new Date(this.clock.nowIso()),
-          completed_at: new Date(this.clock.nowIso()),
-        })
-        .where(eq(identityLinkages.id, row.id));
+      await this.markLinked(row, String(createResult.value.id), attempts);
       this.logger.info("Linkage resolved", { linkageId: row.id, userId: String(createResult.value.id) });
       return "linked";
     }
 
-    const nextAttemptAt = new Date(Date.now() + Math.pow(2, attempts) * 1000);
+    if (attempts >= row.max_attempts) {
+      return this.failAndDisable(row, attempts, createResult.error.message);
+    }
+
+    const nextAttemptAt = new Date(new Date(this.clock.nowIso()).getTime() + Math.pow(2, attempts) * 1000);
     await this.db
       .update(identityLinkages)
       .set({
-        attempts,
         failure_reason: createResult.error.message,
         next_attempt_at: nextAttemptAt,
         updated_at: new Date(this.clock.nowIso()),
       })
       .where(eq(identityLinkages.id, row.id));
-    this.logger.warn("Linkage retry scheduled", { linkageId: row.id, attempts, nextAttemptAt: nextAttemptAt.toISOString() });
+    this.logger.warn("Linkage retry scheduled", { linkageId: row.id, attempts });
     return "skipped";
+  }
+
+  private async markLinked(row: IdentityLinkageRow, platformUserId: string, attempts: number): Promise<void> {
+    const completedAt = new Date(this.clock.nowIso());
+    await this.db
+      .update(identityLinkages)
+      .set({
+        status: "linked",
+        platform_user_id: platformUserId,
+        attempts,
+        failure_reason: null,
+        updated_at: completedAt,
+        completed_at: completedAt,
+      })
+      .where(eq(identityLinkages.id, row.id));
+  }
+
+  private async failAndDisable(
+    row: IdentityLinkageRow,
+    attempts: number,
+    failureReason: string,
+  ): Promise<"failed" | "skipped"> {
+    const completedAt = new Date(this.clock.nowIso());
+    try {
+      await this.identityDisabler.disable(row.auth_subject_id, completedAt);
+    } catch {
+      this.logger.error("Linkage identity disable failed", { linkageId: row.id, attempts });
+      return "skipped";
+    }
+    await this.db
+      .update(identityLinkages)
+      .set({
+        status: "failed",
+        failure_reason: failureReason,
+        attempts,
+        updated_at: completedAt,
+        completed_at: completedAt,
+      })
+      .where(eq(identityLinkages.id, row.id));
+    this.logger.warn("Linkage failed and identity disabled", { linkageId: row.id, attempts });
+    return "failed";
   }
 }
