@@ -4,33 +4,26 @@ import postgres from "postgres";
 import { generateAdminPasswordResetLink } from "@livingsites/application";
 import type { PasswordResetEmailPort } from "@livingsites/application";
 import { composeProduction } from "../packages/composition/src/production";
-import { execNetlifyCli } from "./netlify-cli";
+import { resolvePasswordResetDatabase } from "./password-reset-database";
 
 function option(name: string): string | undefined {
   const index = process.argv.indexOf(name);
   return index >= 0 ? process.argv[index + 1] : undefined;
 }
 
-function productionDatabaseUrl(): string {
-  const configured = process.env.NETLIFY_DB_URL;
-  if (configured) return configured;
-
-  const branch = option("--branch") ?? "staging";
-  const output = execNetlifyCli(["database", "status", "--branch", branch, "--show-credentials", "--json"]);
-  const status = JSON.parse(output) as { database?: { connectionString?: string } };
-  if (!status.database?.connectionString) throw new Error("Production Netlify Database credentials are unavailable.");
-  return status.database.connectionString;
-}
-
 async function main(): Promise<void> {
-  if (option("--production") !== "living-cms") {
+  const productionSite = option("--production");
+  if (productionSite !== "living-cms") {
     throw new Error("Pass --production living-cms to confirm the production target.");
   }
 
   const email = option("--email");
   if (!email) throw new Error("Pass --email <address>.");
 
-  const connectionString = productionDatabaseUrl();
+  const { connectionString } = resolvePasswordResetDatabase({
+    productionSite,
+    branch: option("--branch"),
+  });
   const betterAuthUrl = option("--url") ?? "https://living-cms.netlify.app";
   let capturedResetUrl: string | undefined;
   const passwordResetEmailAdapter: PasswordResetEmailPort = {
