@@ -11,6 +11,6 @@
       "@livingsites/test-support": ["packages/test-support/src/index.ts"]
     }
   },
-  "include": ["bootstrap-admin.ts", "generate-password-reset-link.ts", "netlify-cli.ts"],
+  "include": ["bootstrap-admin.ts", "generate-password-reset-link.ts", "netlify-cli.ts", "password-reset-database.ts"],
   "exclude": ["../app", "../node_modules"]
 }

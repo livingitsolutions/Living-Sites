@@ -14,7 +14,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["packages/**/*.test.{ts,tsx}", "app/**/*.test.{ts,tsx}", "netlify/**/*.test.{ts,tsx}"],
+    include: [
+      "packages/**/*.test.{ts,tsx}",
+      "app/**/*.test.{ts,tsx}",
+      "netlify/**/*.test.{ts,tsx}",
+      "scripts/**/*.test.ts",
+    ],
     exclude: ["**/dist/**", "**/node_modules/**"],
   },
 });
