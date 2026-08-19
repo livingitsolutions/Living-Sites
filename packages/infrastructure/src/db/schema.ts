@@ -88,6 +88,45 @@ export const pages = pgTable("pages", {
   check("pages_version_check", sql`${table.version} >= 1`),
 ]);
 
+export const pageSections = pgTable("page_sections", {
+  id: text("id").primaryKey(),
+  page_id: text("page_id").notNull().references(() => pages.id, { onDelete: "cascade" }),
+  website_id: text("website_id").notNull().references(() => websites.id, { onDelete: "restrict" }),
+  section_type_id: text("section_type_id").notNull(),
+  sort_order: integer("sort_order").notNull(),
+  props: jsonb("props").notNull().default({}),
+  status: text("status").notNull().default("active"),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+  created_by: text("created_by"),
+  updated_by: text("updated_by"),
+}, (table) => [
+  uniqueIndex("page_sections_page_order_unique").on(table.page_id, table.sort_order),
+  index("page_sections_page_id_idx").on(table.page_id),
+  check("page_sections_order_check", sql`${table.sort_order} >= 0`),
+  check("page_sections_status_check", sql`${table.status} IN ('active', 'archived')`),
+]);
+
+export const pageSnapshots = pgTable("page_snapshots", {
+  id: text("id").primaryKey(),
+  page_id: text("page_id").notNull().references(() => pages.id, { onDelete: "restrict" }),
+  website_id: text("website_id").notNull().references(() => websites.id, { onDelete: "restrict" }),
+  organization_id: text("organization_id").notNull().references(() => organizations.id, { onDelete: "restrict" }),
+  revision_number: integer("revision_number").notNull(),
+  release_version: text("release_version"),
+  page_metadata: jsonb("page_metadata").notNull(),
+  sections: jsonb("sections").notNull(),
+  seo: jsonb("seo"),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+  published_at: timestamp("published_at", { withTimezone: true }).notNull(),
+  published_by: text("published_by").notNull(),
+}, (table) => [
+  uniqueIndex("page_snapshots_page_revision_unique").on(table.page_id, table.revision_number),
+  index("page_snapshots_page_id_idx").on(table.page_id),
+  index("page_snapshots_website_id_idx").on(table.website_id),
+  check("page_snapshots_revision_check", sql`${table.revision_number} >= 1`),
+]);
+
 /* ---------- Plans ---------- */
 
 export const planTierEnum = pgEnum("plan_tier", ["starter", "pro", "business", "enterprise"]);
@@ -276,6 +315,7 @@ type WebsiteRow = typeof websites.$inferSelect;
 type WebsiteInsert = typeof websites.$inferInsert;
 type PageRow = typeof pages.$inferSelect;
 type PageInsert = typeof pages.$inferInsert;
+type PageSectionRow = typeof pageSections.$inferSelect;
 
 type PlanRow = typeof plans.$inferSelect;
 type PlanInsert = typeof plans.$inferInsert;
@@ -302,6 +342,7 @@ export type {
   WebsiteInsert,
   PageRow,
   PageInsert,
+  PageSectionRow,
   PlanRow,
   PlanInsert,
   FeatureRow,

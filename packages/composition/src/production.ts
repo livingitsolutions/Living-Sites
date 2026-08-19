@@ -34,6 +34,7 @@ import {
   DrizzleWebsiteRepository,
   DrizzleWebsiteCreationPersistence,
   DrizzlePageRepository,
+  DrizzlePagePublicationRepository,
   MissingNetlifyDatabaseError,
 } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
@@ -54,6 +55,8 @@ import type {
   WebsiteReader,
   WebsiteCreationPersistence,
   PageRepository,
+  PagePublisher,
+  PageSnapshotReader,
 } from "@livingsites/application";
 import {
   createOrganization,
@@ -71,6 +74,15 @@ import {
   updatePageDetails,
   archivePage,
   restorePage,
+  addSection,
+  updateSection,
+  removeSection,
+  duplicateSection,
+  reorderSections,
+  getPageBuilderState,
+  publishPage,
+  resolvePublishedPage,
+  resolvePublishedWebsite,
   AuthorizationService,
   parseRegistrationMode,
   DEFAULT_PRODUCTION_REGISTRATION_MODE,
@@ -98,7 +110,6 @@ export interface ProductionCompositionConfig {
   readonly emailAdapter?: EmailVerificationPort;
   readonly linkageBatchSize?: number;
   readonly linkageGracePeriodMs?: number;
-  readonly superAdminEmail?: string;
 }
 
 export interface ProductionComposition {
@@ -115,6 +126,8 @@ export interface ProductionComposition {
   readonly websiteRepository: WebsiteReader;
   readonly websiteCreationPersistence: WebsiteCreationPersistence;
   readonly pageRepository: PageRepository;
+  readonly pagePublisher: PagePublisher;
+  readonly pageSnapshotReader: PageSnapshotReader;
   readonly superAdminStore: DrizzleSuperAdminStore;
   readonly authorizationService: AuthorizationService;
   readonly authenticationPort: AuthenticationPort;
@@ -144,6 +157,15 @@ export interface ProductionComposition {
   readonly updatePageDetails: typeof updatePageDetails;
   readonly archivePage: typeof archivePage;
   readonly restorePage: typeof restorePage;
+  readonly addSection: typeof addSection;
+  readonly updateSection: typeof updateSection;
+  readonly removeSection: typeof removeSection;
+  readonly duplicateSection: typeof duplicateSection;
+  readonly reorderSections: typeof reorderSections;
+  readonly getPageBuilderState: typeof getPageBuilderState;
+  readonly publishPage: typeof publishPage;
+  readonly resolvePublishedPage: typeof resolvePublishedPage;
+  readonly resolvePublishedWebsite: typeof resolvePublishedWebsite;
   readonly registrationMode: RegistrationMode;
   readonly healthCheck: () => Promise<{ healthy: boolean; details: Record<string, boolean> }>;
   readonly close: () => Promise<void>;
@@ -247,6 +269,7 @@ export function composeProduction(
     },
     emailAndPassword: {
       enabled: true,
+      disableSignUp: registrationMode !== "open",
       requireEmailVerification: config.emailVerificationEnabled ?? false,
       minPasswordLength: 12,
       maxPasswordLength: 256,
@@ -283,6 +306,7 @@ export function composeProduction(
   const websiteRepository = new DrizzleWebsiteRepository({ db, logger });
   const websiteCreationPersistence = new DrizzleWebsiteCreationPersistence({ db, logger });
   const pageRepository = new DrizzlePageRepository({ db, logger });
+  const pagePublicationRepository = new DrizzlePagePublicationRepository({ db, logger });
   const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
   const authorizationService = new AuthorizationService({
     membershipReader: membershipRepository,
@@ -353,13 +377,6 @@ export function composeProduction(
     authorizationService,
   };
 
-  // If superAdminEmail is configured, run bootstrap asynchronously
-  if (config.superAdminEmail) {
-    superAdminStore.bootstrap({ email: config.superAdminEmail }).catch((err) => {
-      logger.error("Failed to bootstrap super admin during startup", { error: String(err) });
-    });
-  }
-
   const healthCheck = async () => {
     const details: Record<string, boolean> = {};
     let healthy = true;
@@ -398,6 +415,8 @@ export function composeProduction(
     websiteRepository,
     websiteCreationPersistence,
     pageRepository,
+    pagePublisher: pagePublicationRepository,
+    pageSnapshotReader: pagePublicationRepository,
     superAdminStore,
     authorizationService,
     authenticationPort: authAdapter,
@@ -427,6 +446,15 @@ export function composeProduction(
     updatePageDetails,
     archivePage,
     restorePage,
+    addSection,
+    updateSection,
+    removeSection,
+    duplicateSection,
+    reorderSections,
+    getPageBuilderState,
+    publishPage,
+    resolvePublishedPage,
+    resolvePublishedWebsite,
     registrationMode,
     healthCheck,
     close,
@@ -448,10 +476,7 @@ function optionalPositiveInteger(key: string): number | undefined {
 
 export function composeProductionFromEnvironment(): ProductionComposition {
   const betterAuthUrl = requiredEnvironmentValue("BETTER_AUTH_URL");
-  const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? betterAuthUrl)
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  const trustedOrigins = resolveTrustedOrigins(process.env, betterAuthUrl);
 
   return composeProduction({
     betterAuthSecret: requiredEnvironmentValue("BETTER_AUTH_SECRET"),
@@ -461,7 +486,32 @@ export function composeProductionFromEnvironment(): ProductionComposition {
     emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
     linkageBatchSize: optionalPositiveInteger("LINKAGE_RECONCILIATION_BATCH_SIZE"),
     linkageGracePeriodMs: optionalPositiveInteger("LINKAGE_RECONCILIATION_GRACE_PERIOD_MS"),
-    superAdminEmail: process.env.PLATFORM_SUPER_ADMIN_EMAIL ?? process.env.SUPER_ADMIN_EMAIL,
     logLevel: "info",
   });
+}
+
+export function resolveTrustedOrigins(
+  environment: NodeJS.ProcessEnv,
+  betterAuthUrl: string,
+): string[] {
+  const candidates = [
+    betterAuthUrl,
+    ...(environment.TRUSTED_ORIGINS ?? "").split(","),
+    environment.URL,
+    environment.DEPLOY_PRIME_URL,
+    environment.DEPLOY_URL,
+  ];
+  const origins = new Set<string>();
+
+  for (const candidate of candidates) {
+    const value = candidate?.trim();
+    if (!value) continue;
+    try {
+      origins.add(new URL(value).origin);
+    } catch {
+      throw new Error(`Trusted origin is not a valid URL: ${value}`);
+    }
+  }
+
+  return [...origins];
 }

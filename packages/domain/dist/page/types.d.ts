@@ -4,7 +4,8 @@
  * Invariant: a Page always belongs to exactly one Website.
  * A Page is composed of an ordered list of Section instances.
  */
-import type { PageId, WebsiteId, SectionId, Slug, LocaleCode, ISODateString, AuditTrail, LifecycleStatus, AggregateVersion } from "../shared";
+import type { PageId, WebsiteId, SectionId, Slug, LocaleCode, ISODateString, AuditTrail, LifecycleStatus, AggregateVersion, OrganizationId } from "../shared";
+import type { Section } from "../section";
 /** A single page within a website. */
 export interface Page {
     readonly id: PageId;
@@ -21,6 +22,8 @@ export interface Page {
     publishedSnapshotId: string | null;
     /** Ordered section ids rendering top-to-bottom. */
     sectionOrder: readonly SectionId[];
+    /** Child entities persisted through the Page aggregate only. */
+    sections: readonly Section[];
     /** Locales this page has been translated into beyond the default. */
     availableLocales: readonly LocaleCode[];
     /** Parent page id for nested routes; null at root. */
@@ -46,15 +49,26 @@ export interface Page {
 export interface PageSnapshot {
     readonly id: string;
     readonly pageId: PageId;
+    readonly websiteId: WebsiteId;
+    readonly organizationId: OrganizationId;
     /** Immutable, monotonically increasing revision number per Page. */
     readonly revisionNumber: number;
     /** Optional human-facing release label, e.g. "1.0.0". */
     readonly releaseVersion?: import("../shared").VersionString;
+    readonly page: PageSnapshotMetadata;
+    readonly createdAt: ISODateString;
     readonly publishedAt: ISODateString;
-    readonly publishedBy?: string;
+    readonly publishedBy: string;
     /** Serialized section tree at publish time. Opaque to the domain core. */
     readonly sections: readonly SectionSnapshotEntry[];
     readonly seo?: SeoSnapshot;
+}
+export interface PageSnapshotMetadata {
+    readonly title: string;
+    readonly description?: string;
+    readonly slug: string;
+    readonly path: string;
+    readonly isHomepage: boolean;
 }
 export interface SectionSnapshotEntry {
     readonly sectionId: SectionId;

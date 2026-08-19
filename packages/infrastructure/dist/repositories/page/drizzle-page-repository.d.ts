@@ -1,4 +1,4 @@
-import type { Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PageRestoredEvent, PageStatus, WebsiteId } from "@livingsites/domain";
+import type { Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PageRestoredEvent, PageStatus, Section, WebsiteId } from "@livingsites/domain";
 import type { CreateResult, PageRepository, SaveResult } from "@livingsites/application";
 import type { Logger } from "@livingsites/platform";
 import type { DrizzleDB } from "../../db/drizzle-instance";
@@ -21,6 +21,13 @@ export declare class DrizzlePageRepository implements PageRepository {
         title: string;
         slug: string;
         description?: string;
+        expectedVersion: number;
+        updatedAt: string;
+        updatedBy: string;
+    }): Promise<SaveResult<Page>>;
+    saveBuilder(input: {
+        pageId: PageId;
+        sections: readonly Section[];
         expectedVersion: number;
         updatedAt: string;
         updatedBy: string;

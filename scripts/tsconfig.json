@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@livingsites/application": ["packages/application/src/index.ts"],
+      "@livingsites/composition": ["packages/composition/src/index.ts"],
+      "@livingsites/domain": ["packages/domain/src/index.ts"],
+      "@livingsites/infrastructure": ["packages/infrastructure/src/index.ts"],
+      "@livingsites/platform": ["packages/platform/src/index.ts"],
+      "@livingsites/test-support": ["packages/test-support/src/index.ts"]
+    }
+  },
+  "include": ["bootstrap-admin.ts"],
+  "exclude": ["../app", "../node_modules"]
+}
