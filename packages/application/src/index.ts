@@ -22,3 +22,4 @@ export * from "./services";
 export * from "./use-cases";
 export * from "./policies";
 export * from "./read-models";
+export * from "./section-types";

@@ -79,6 +79,24 @@ export const pages = pgTable("pages", {
     index("pages_website_id_idx").on(table.website_id),
     check("pages_version_check", sql `${table.version} >= 1`),
 ]);
+export const pageSections = pgTable("page_sections", {
+    id: text("id").primaryKey(),
+    page_id: text("page_id").notNull().references(() => pages.id, { onDelete: "cascade" }),
+    website_id: text("website_id").notNull().references(() => websites.id, { onDelete: "restrict" }),
+    section_type_id: text("section_type_id").notNull(),
+    sort_order: integer("sort_order").notNull(),
+    props: jsonb("props").notNull().default({}),
+    status: text("status").notNull().default("active"),
+    created_at: timestamp("created_at", { withTimezone: true }).notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).notNull(),
+    created_by: text("created_by"),
+    updated_by: text("updated_by"),
+}, (table) => [
+    uniqueIndex("page_sections_page_order_unique").on(table.page_id, table.sort_order),
+    index("page_sections_page_id_idx").on(table.page_id),
+    check("page_sections_order_check", sql `${table.sort_order} >= 0`),
+    check("page_sections_status_check", sql `${table.status} IN ('active', 'archived')`),
+]);
 /* ---------- Plans ---------- */
 export const planTierEnum = pgEnum("plan_tier", ["starter", "pro", "business", "enterprise"]);
 export const featureCategoryEnum = pgEnum("feature_category", ["limit", "capability", "addon"]);

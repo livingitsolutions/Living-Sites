@@ -2,7 +2,7 @@ import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
 import { LinkageReconciler, DrizzleSuperAdminStore } from "@livingsites/infrastructure";
 import type { BetterAuthInstance } from "@livingsites/infrastructure";
 import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, MembershipRepository, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, RegistrationMode, WebsiteReader, WebsiteCreationPersistence, PageRepository } from "@livingsites/application";
-import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, AuthorizationService } from "@livingsites/application";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, AuthorizationService } from "@livingsites/application";
 import type { CreateOrganizationDeps, RegisterUserDeps, AddOrganizationMemberDeps, ChangeOrganizationMemberRoleDeps, RemoveOrganizationMemberDeps, GetOrganizationMembersDeps } from "@livingsites/application";
 export interface ProductionCompositionConfig {
     readonly connectionString?: string;
@@ -63,6 +63,12 @@ export interface ProductionComposition {
     readonly updatePageDetails: typeof updatePageDetails;
     readonly archivePage: typeof archivePage;
     readonly restorePage: typeof restorePage;
+    readonly addSection: typeof addSection;
+    readonly updateSection: typeof updateSection;
+    readonly removeSection: typeof removeSection;
+    readonly duplicateSection: typeof duplicateSection;
+    readonly reorderSections: typeof reorderSections;
+    readonly getPageBuilderState: typeof getPageBuilderState;
     readonly registrationMode: RegistrationMode;
     readonly healthCheck: () => Promise<{
         healthy: boolean;

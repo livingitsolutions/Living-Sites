@@ -16,6 +16,7 @@ export * from "./organization";
 export * from "./membership";
 export * from "./website";
 export * from "./page";
+export * from "./page-builder";
 export * from "./content";
 export * from "./builder";
 export * from "./media";

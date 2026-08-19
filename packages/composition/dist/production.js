@@ -14,7 +14,7 @@
 import { betterAuth } from "better-auth";
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
 import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, DrizzleMembershipRepository, DrizzleSuperAdminStore, DrizzleWebsiteRepository, DrizzleWebsiteCreationPersistence, DrizzlePageRepository, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
-import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
 function validateConfig(config) {
     if (!config.betterAuthSecret || config.betterAuthSecret.length < 32) {
         throw new Error("BETTER_AUTH_SECRET is missing or too short (minimum 32 characters). " +
@@ -273,6 +273,12 @@ export function composeProduction(config) {
         updatePageDetails,
         archivePage,
         restorePage,
+        addSection,
+        updateSection,
+        removeSection,
+        duplicateSection,
+        reorderSections,
+        getPageBuilderState,
         registrationMode,
         healthCheck,
         close,
