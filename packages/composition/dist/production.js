@@ -13,8 +13,8 @@
  */
 import { betterAuth } from "better-auth";
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
-import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
-import { createOrganization, registerUser, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
+import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, DrizzleMembershipRepository, DrizzleSuperAdminStore, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
 function validateConfig(config) {
     if (!config.betterAuthSecret || config.betterAuthSecret.length < 32) {
         throw new Error("BETTER_AUTH_SECRET is missing or too short (minimum 32 characters). " +
@@ -134,6 +134,12 @@ export function composeProduction(config) {
     const planReader = new DrizzlePlanReader({ db, logger });
     const featureReader = new DrizzleFeatureReader({ db, logger });
     const userRepository = new DrizzleUserRepository({ db, logger });
+    const membershipRepository = new DrizzleMembershipRepository({ db, logger });
+    const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
+    const authorizationService = new AuthorizationService({
+        membershipReader: membershipRepository,
+        superAdminChecker: superAdminStore,
+    });
     const eventPublisher = new OutboxEventPublisher({ db, logger });
     const organizationCreationPersistence = new DrizzleOrganizationCreationPersistence({ db, logger });
     const outboxProcessor = new DrizzleOutboxProcessor({
@@ -171,6 +177,36 @@ export function composeProduction(config) {
         idGenerator,
         registrationMode,
     };
+    const addOrganizationMemberDeps = {
+        membershipRepository,
+        userReader: userRepository,
+        authorizationService,
+        eventPublisher,
+        clock,
+        idGenerator,
+    };
+    const changeOrganizationMemberRoleDeps = {
+        membershipRepository,
+        authorizationService,
+        eventPublisher,
+        clock,
+    };
+    const removeOrganizationMemberDeps = {
+        membershipRepository,
+        authorizationService,
+        eventPublisher,
+        clock,
+    };
+    const getOrganizationMembersDeps = {
+        membershipRepository,
+        authorizationService,
+    };
+    // If superAdminEmail is configured, run bootstrap asynchronously
+    if (config.superAdminEmail) {
+        superAdminStore.bootstrap({ email: config.superAdminEmail }).catch((err) => {
+            logger.error("Failed to bootstrap super admin during startup", { error: String(err) });
+        });
+    }
     const healthCheck = async () => {
         const details = {};
         let healthy = true;
@@ -184,6 +220,7 @@ export function composeProduction(config) {
         }
         details.authentication = true;
         details.userRepository = true;
+        details.membershipRepository = true;
         details.planReader = true;
         details.featureReader = true;
         details.eventPublisher = true;
@@ -203,6 +240,9 @@ export function composeProduction(config) {
         featureReader,
         userReader: userRepository,
         userCreator: userRepository,
+        membershipRepository,
+        superAdminStore,
+        authorizationService,
         authenticationPort: authAdapter,
         authInstance,
         emailVerificationPort: config.emailAdapter ?? null,
@@ -213,6 +253,14 @@ export function composeProduction(config) {
         createOrganizationDeps,
         registerUser,
         registerUserDeps,
+        addOrganizationMember,
+        addOrganizationMemberDeps,
+        changeOrganizationMemberRole,
+        changeOrganizationMemberRoleDeps,
+        removeOrganizationMember,
+        removeOrganizationMemberDeps,
+        getOrganizationMembers,
+        getOrganizationMembersDeps,
         registrationMode,
         healthCheck,
         close,
@@ -245,6 +293,7 @@ export function composeProductionFromEnvironment() {
         emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
         linkageBatchSize: optionalPositiveInteger("LINKAGE_RECONCILIATION_BATCH_SIZE"),
         linkageGracePeriodMs: optionalPositiveInteger("LINKAGE_RECONCILIATION_GRACE_PERIOD_MS"),
+        superAdminEmail: process.env.PLATFORM_SUPER_ADMIN_EMAIL ?? process.env.SUPER_ADMIN_EMAIL,
         logLevel: "info",
     });
 }

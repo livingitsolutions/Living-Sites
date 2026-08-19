@@ -73,12 +73,23 @@ export interface Role {
 
 import type { MachineKey } from "../shared";
 type MachineKeyRole = MachineKey;
-type RoleValue = `${SystemRole}`;
 
 export enum SystemRole {
+  PlatformSuperAdmin = "platform_super_admin",
   Owner = "owner",
   Admin = "admin",
   Editor = "editor",
   Author = "author",
   Viewer = "viewer",
 }
+
+export const SystemRoles = {
+  PLATFORM_SUPER_ADMIN: "platform_super_admin",
+  ORGANIZATION_OWNER: "owner",
+  ORGANIZATION_ADMIN: "admin",
+  EDITOR: "editor",
+  VIEWER: "viewer",
+} as const;
+
+export type SystemRoleKey = keyof typeof SystemRoles;
+export type RoleValue = `${SystemRole}` | (typeof SystemRoles)[keyof typeof SystemRoles] | "organization_owner" | "organization_admin";

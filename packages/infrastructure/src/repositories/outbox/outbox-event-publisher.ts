@@ -180,6 +180,40 @@ export class OutboxEventPublisher implements EventPublisher {
         displayName: e.displayName,
       };
     }
+    if (event.type === "organization.member_added") {
+      const e = event as import("@livingsites/domain").OrganizationMemberAddedEvent;
+      return {
+        type: e.type,
+        occurredAt: e.occurredAt,
+        organizationId: String(e.eventScope.organizationId),
+        membershipId: String(e.membershipId),
+        userId: String(e.userId),
+        role: e.role,
+        websiteScopeId: e.websiteScopeId ? String(e.websiteScopeId) : null,
+      };
+    }
+    if (event.type === "organization.member_role_changed") {
+      const e = event as import("@livingsites/domain").OrganizationMemberRoleChangedEvent;
+      return {
+        type: e.type,
+        occurredAt: e.occurredAt,
+        organizationId: String(e.eventScope.organizationId),
+        membershipId: String(e.membershipId),
+        userId: String(e.userId),
+        previousRole: e.previousRole,
+        newRole: e.newRole,
+      };
+    }
+    if (event.type === "organization.member_removed") {
+      const e = event as import("@livingsites/domain").OrganizationMemberRemovedEvent;
+      return {
+        type: e.type,
+        occurredAt: e.occurredAt,
+        organizationId: String(e.eventScope.organizationId),
+        membershipId: String(e.membershipId),
+        userId: String(e.userId),
+      };
+    }
     return {
       type: event.type,
       occurredAt: event.occurredAt,

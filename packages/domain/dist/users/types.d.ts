@@ -60,13 +60,22 @@ export interface Role {
 }
 import type { MachineKey } from "../shared";
 type MachineKeyRole = MachineKey;
-type RoleValue = `${SystemRole}`;
 export declare enum SystemRole {
+    PlatformSuperAdmin = "platform_super_admin",
     Owner = "owner",
     Admin = "admin",
     Editor = "editor",
     Author = "author",
     Viewer = "viewer"
 }
+export declare const SystemRoles: {
+    readonly PLATFORM_SUPER_ADMIN: "platform_super_admin";
+    readonly ORGANIZATION_OWNER: "owner";
+    readonly ORGANIZATION_ADMIN: "admin";
+    readonly EDITOR: "editor";
+    readonly VIEWER: "viewer";
+};
+export type SystemRoleKey = keyof typeof SystemRoles;
+export type RoleValue = `${SystemRole}` | (typeof SystemRoles)[keyof typeof SystemRoles] | "organization_owner" | "organization_admin";
 export {};
 //# sourceMappingURL=types.d.ts.map

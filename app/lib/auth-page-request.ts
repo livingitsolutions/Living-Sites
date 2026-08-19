@@ -14,7 +14,7 @@ export async function evaluateAuthPageRequest(
   const session = await auth.api.getSession({ headers: request.headers });
   const pathname = new URL(request.url).pathname;
 
-  if (pathname === "/admin") {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     return session
       ? { kind: "render", session }
       : { kind: "redirect", location: "/login" };
@@ -30,7 +30,7 @@ export async function evaluateAuthPageRequest(
   throw new Error(`Unsupported auth page path: ${pathname}`);
 }
 
-export function authPageRequest(pathname: "/login" | "/register" | "/admin", requestHeaders: Headers): Request {
+export function authPageRequest(pathname: string, requestHeaders: Headers): Request {
   const baseURL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
   return new Request(new URL(pathname, baseURL), { headers: requestHeaders });
 }

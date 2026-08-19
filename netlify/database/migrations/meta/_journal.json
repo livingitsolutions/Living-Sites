@@ -50,6 +50,20 @@
       "when": 1787129436040,
       "tag": "0007_schema_snapshot_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787129436050,
+      "tag": "0008_create_memberships",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787134610463,
+      "tag": "0009_gifted_scorpion",
+      "breakpoints": true
     }
   ]
 }
