@@ -9,10 +9,11 @@ export interface DrizzleOrganizationCreationPersistenceConfig {
     readonly schemaVersion?: string;
 }
 export declare class DrizzleOrganizationCreationPersistence implements OrganizationCreationPersistence {
-    private readonly db;
+    private readonly rootDb;
     private readonly logger;
     private readonly schemaVersion;
     constructor(config: DrizzleOrganizationCreationPersistenceConfig);
+    private get db();
     createWithEvent(draft: OrganizationDraft, event: OrganizationCreatedEvent): Promise<CreateResult<Organization>>;
     private mapCreateError;
 }

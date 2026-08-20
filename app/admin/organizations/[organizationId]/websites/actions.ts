@@ -21,6 +21,7 @@ export async function createWebsiteAction(organizationId: string, _previousState
     planReader: composition.planReader,
     websiteReader: composition.websiteRepository,
     websiteCreationPersistence: composition.websiteCreationPersistence,
+    fallbackDomainProvider: composition.fallbackDomainProvider,
     clock: composition.clock,
     idGenerator: composition.idGenerator,
   }));

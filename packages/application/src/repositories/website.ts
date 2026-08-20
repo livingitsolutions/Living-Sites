@@ -8,6 +8,10 @@ export interface WebsiteReader {
   findByDomain(domain: string): Promise<Website | null>;
 }
 
+export interface FallbackDomainProvider {
+  hostnameFor(websiteId: WebsiteId): string;
+}
+
 export interface WebsiteCreator { create(candidate: WebsiteDraft): Promise<CreateResult<Website>>; }
 
 export interface WebsiteMutator {

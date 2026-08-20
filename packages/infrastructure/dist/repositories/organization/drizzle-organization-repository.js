@@ -16,6 +16,7 @@
  * - returns no raw database exception
  */
 import { eq } from "drizzle-orm";
+import { tenantDatabase } from "../../db/tenant-context.js";
 import { organizations } from "../../db/schema.js";
 import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper.js";
 function isDuplicateKeyError(err) {
@@ -40,12 +41,13 @@ function isConnectionError(err) {
     return false;
 }
 export class DrizzleOrganizationRepository {
-    db;
+    rootDb;
     logger;
     constructor(config) {
-        this.db = config.db;
+        this.rootDb = config.db;
         this.logger = config.logger;
     }
+    get db() { return tenantDatabase(this.rootDb); }
     async findById(id) {
         try {
             const rows = await this.db.select().from(organizations).where(eq(organizations.id, String(id)));

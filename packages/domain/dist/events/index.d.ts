@@ -60,6 +60,15 @@ export interface WebsitePublishedEvent extends DomainEvent {
     };
     readonly publishedVersion: VersionString;
 }
+export interface WebsiteUnpublishedEvent extends DomainEvent {
+    readonly type: "website.unpublished";
+    readonly eventScope: {
+        readonly scope: "website";
+        readonly organizationId: OrganizationId;
+        readonly websiteId: WebsiteId;
+    };
+    readonly websiteVersion: number;
+}
 export interface PagePublishedEvent extends DomainEvent {
     readonly type: "page.published";
     readonly eventScope: {
@@ -70,6 +79,20 @@ export interface PagePublishedEvent extends DomainEvent {
     readonly pageId: PageId;
     readonly snapshotId: string;
     readonly revisionNumber: number;
+    readonly pageVersion: number;
+}
+export interface PagePublicationRolledBackEvent extends DomainEvent {
+    readonly type: "page.publication_rolled_back";
+    readonly eventScope: {
+        readonly scope: "website";
+        readonly organizationId: OrganizationId;
+        readonly websiteId: WebsiteId;
+    };
+    readonly pageId: PageId;
+    readonly targetSnapshotId: string;
+    readonly targetRevisionNumber: number;
+    readonly newSnapshotId: string;
+    readonly newRevisionNumber: number;
     readonly pageVersion: number;
 }
 export interface PageCreatedEvent extends DomainEvent {
@@ -99,6 +122,17 @@ export interface PageRestoredEvent extends DomainEvent {
         readonly websiteId: WebsiteId;
     };
     readonly pageId: PageId;
+}
+export interface WebsiteHomepageChangedEvent extends DomainEvent {
+    readonly type: "website.homepage_changed";
+    readonly eventScope: {
+        readonly scope: "website";
+        readonly organizationId: OrganizationId;
+        readonly websiteId: WebsiteId;
+    };
+    readonly pageId: PageId;
+    readonly previousHomepagePageId: PageId | null;
+    readonly pageVersion: number;
 }
 export interface MediaUploadedEvent extends DomainEvent {
     readonly type: "media.uploaded";
@@ -196,5 +230,5 @@ export interface OrganizationMemberRemovedEvent extends DomainEvent {
     readonly userId: UserId;
 }
 /** Union of all known domain events for exhaustive handling. */
-export type KnownDomainEvent = OrganizationCreatedEvent | WebsiteCreatedEvent | WebsitePublishedEvent | PageCreatedEvent | PagePublishedEvent | PageArchivedEvent | PageRestoredEvent | MediaUploadedEvent | FormSubmittedEvent | FeatureEnabledEvent | PluginInstalledEvent | ExportCompletedEvent | UserRegisteredEvent | EmailVerifiedEvent | OrganizationMemberAddedEvent | OrganizationMemberRoleChangedEvent | OrganizationMemberRemovedEvent;
+export type KnownDomainEvent = OrganizationCreatedEvent | WebsiteCreatedEvent | WebsitePublishedEvent | WebsiteUnpublishedEvent | PageCreatedEvent | PagePublishedEvent | PagePublicationRolledBackEvent | PageArchivedEvent | PageRestoredEvent | WebsiteHomepageChangedEvent | MediaUploadedEvent | FormSubmittedEvent | FeatureEnabledEvent | PluginInstalledEvent | ExportCompletedEvent | UserRegisteredEvent | EmailVerifiedEvent | OrganizationMemberAddedEvent | OrganizationMemberRoleChangedEvent | OrganizationMemberRemovedEvent;
 //# sourceMappingURL=index.d.ts.map

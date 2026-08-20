@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { tenantDatabase } from "../../db/tenant-context.js";
 import { applicationOutbox, websites } from "../../db/schema.js";
 import { buildOutboxInsert } from "../../db/outbox-mapper.js";
 import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper.js";
@@ -7,9 +8,10 @@ export class DrizzleWebsiteCreationPersistence {
     constructor(config) {
         this.config = config;
     }
+    get db() { return tenantDatabase(this.config.db); }
     async createWithEvent(candidate, event) {
         try {
-            const website = await this.config.db.transaction(async (tx) => {
+            const website = await this.db.transaction(async (tx) => {
                 const [row] = await tx.insert(websites).values(websiteDraftToInsert(candidate)).returning();
                 if (!row)
                     throw new Error("Website insert returned no row.");

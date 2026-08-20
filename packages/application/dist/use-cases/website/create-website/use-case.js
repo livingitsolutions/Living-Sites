@@ -47,6 +47,7 @@ export async function createWebsite(input, deps) {
             createdBy: deps.authenticatedUser.userId,
             themeId: validation.value.themeId,
             customDomain: null,
+            fallbackDomain: deps.fallbackDomainProvider.hostnameFor(websiteId),
             defaultLocale: validation.value.defaultLocale,
             enabledLocales: validation.value.enabledLocales,
             settings: validation.value.settings,

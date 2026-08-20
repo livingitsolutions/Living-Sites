@@ -10,6 +10,8 @@ import { applicationOutbox, organizations, pageSections, pageSnapshots, pages, w
 import { DrizzlePageRepository } from "./drizzle-page-repository.js";
 import { DrizzlePagePublicationRepository } from "./drizzle-page-publication-repository.js";
 import { DrizzleWebsiteRepository } from "../website/drizzle-website-repository.js";
+import { DrizzleWebsitePublicationRepository } from "../website/drizzle-website-publication-repository.js";
+import { createTenantContextRunner } from "../../db/tenant-context.js";
 
 const now = "2026-08-19T12:00:00.000Z" as ISODateString; const orgId = "org_publish" as OrganizationId; const websiteId = "web_publish" as WebsiteId; const pageId = "page_publish" as PageId; const userId = "usr_publish" as UserId;
 const section = (headline: string): Section => ({ id: "section_publish" as SectionId, pageId, websiteId, sectionTypeId: "section-type:hero" as SectionTypeId, sortOrder: 0, status: "active", props: { headline, subheading: "World", ctaLabel: "Go", ctaUrl: "/contact" }, audit: { createdAt: now, updatedAt: now, createdBy: userId, updatedBy: userId } });
@@ -75,5 +77,20 @@ describe("DrizzlePagePublicationRepository — Netlify Database", () => {
     expect([publishResult, rollbackResult].filter((entry) => entry.ok)).toHaveLength(1);
     const revisions = await repository.listForPage(pageId);
     expect(new Set(revisions.map((entry) => entry.revisionNumber)).size).toBe(revisions.length);
+  });
+  it("completes homepage, Page publish, Website publish, and unauthenticated public root resolution", async () => {
+    await db.update(pages).set({ is_homepage: false });
+    const pageRepository = new DrizzlePageRepository({ db, logger: new NoopLogger() });
+    const publications = new DrizzlePagePublicationRepository({ db, logger: new NoopLogger() });
+    const websiteRepository = new DrizzleWebsiteRepository({ db, logger: new NoopLogger() });
+    const websitePublications = new DrizzleWebsitePublicationRepository({ db, logger: new NoopLogger() });
+    const homepage = await pageRepository.setWebsiteHomepage({ websiteId, pageId, expectedPageVersion: 1, changedAt: now, changedBy: userId, event: { type: "website.homepage_changed", occurredAt: now, eventScope: { scope: "website", organizationId: orgId, websiteId }, pageId } });
+    expect(homepage.ok && homepage.value.isHomepage).toBe(true);
+    const publishedPage = await publications.publish({ candidate: candidate("snapshot_e2e", "Published root"), expectedPageVersion: 2, event: event("snapshot_e2e") });
+    expect(publishedPage.ok).toBe(true);
+    const publishedWebsite = await websitePublications.publishWithEvent({ websiteId, expectedVersion: 1, publishedVersion: "1.0.0" as never, changedAt: now, changedBy: userId, event: { type: "website.published", occurredAt: now, eventScope: { scope: "website", organizationId: orgId, websiteId }, publishedVersion: "1.0.0" as never } });
+    expect(publishedWebsite.ok).toBe(true);
+    const result = await createTenantContextRunner(db).run({ mode: "public" }, () => resolvePublishedPage({ hostname: "publish.example.com", path: "/" }, { websiteReader: websiteRepository, pageReader: pageRepository, pageSnapshotReader: publications }));
+    expect(result.ok && result.value.snapshot.id).toBe("snapshot_e2e");
   });
 });

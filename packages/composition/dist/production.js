@@ -14,8 +14,8 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { SystemClock, CryptoIdGenerator, ConsoleLogger } from "@livingsites/platform";
-import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, DrizzleMembershipRepository, DrizzleSuperAdminStore, DrizzleWebsiteRepository, DrizzleWebsiteCreationPersistence, DrizzlePageRepository, DrizzlePagePublicationRepository, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
-import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, publishPage, resolvePublishedPage, resolvePublishedWebsite, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
+import { createNetlifyDatabase, DrizzleOrganizationRepository, DrizzlePlanReader, DrizzleFeatureReader, DrizzleUserRepository, BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter, OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOutboxProcessor, LinkageReconciler, DrizzleOrphanIdentityDisabler, DrizzleIdentityLinkageStore, DrizzleMembershipRepository, DrizzleSuperAdminStore, DrizzleWebsiteRepository, DrizzleWebsiteCreationPersistence, DrizzleWebsitePublicationRepository, DrizzlePageRepository, DrizzlePagePublicationRepository, ConfiguredFallbackDomainProvider, DEFAULT_FALLBACK_DOMAIN_SUFFIX, createTenantContextRunner, MissingNetlifyDatabaseError, } from "@livingsites/infrastructure";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, publishWebsite, unpublishWebsite, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, setWebsiteHomepage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, publishPage, listPagePublicationHistory, inspectPagePublication, rollbackPagePublication, resolvePublishedPage, resolvePublishedWebsite, AuthorizationService, parseRegistrationMode, DEFAULT_PRODUCTION_REGISTRATION_MODE, } from "@livingsites/application";
 function validateConfig(config) {
     if (!config.betterAuthSecret || config.betterAuthSecret.length < 32) {
         throw new Error("BETTER_AUTH_SECRET is missing or too short (minimum 32 characters). " +
@@ -66,6 +66,7 @@ export function composeProduction(config) {
         throw new MissingNetlifyDatabaseError(`Failed to initialize Netlify Database: ${err instanceof Error ? err.message : String(err)}`);
     }
     const db = connection.db;
+    const tenantContextRunner = createTenantContextRunner(db);
     const identityDisabler = new DrizzleOrphanIdentityDisabler(db);
     const identityLinkageStore = new DrizzleIdentityLinkageStore(db);
     const rawAuth = betterAuth({
@@ -150,8 +151,10 @@ export function composeProduction(config) {
     const membershipRepository = new DrizzleMembershipRepository({ db, logger });
     const websiteRepository = new DrizzleWebsiteRepository({ db, logger });
     const websiteCreationPersistence = new DrizzleWebsiteCreationPersistence({ db, logger });
+    const websitePublicationPersistence = new DrizzleWebsitePublicationRepository({ db, logger });
     const pageRepository = new DrizzlePageRepository({ db, logger });
     const pagePublicationRepository = new DrizzlePagePublicationRepository({ db, logger });
+    const fallbackDomainProvider = new ConfiguredFallbackDomainProvider(config.fallbackDomainSuffix ?? DEFAULT_FALLBACK_DOMAIN_SUFFIX);
     const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
     const authorizationService = new AuthorizationService({
         membershipReader: membershipRepository,
@@ -252,8 +255,11 @@ export function composeProduction(config) {
         membershipRepository,
         websiteRepository,
         websiteCreationPersistence,
+        websitePublicationPersistence,
+        fallbackDomainProvider,
         pageRepository,
         pagePublisher: pagePublicationRepository,
+        pageRollbackPersistence: pagePublicationRepository,
         pageSnapshotReader: pagePublicationRepository,
         superAdminStore,
         authorizationService,
@@ -279,12 +285,15 @@ export function composeProduction(config) {
         createWebsite,
         getWebsite,
         listOrganizationWebsites,
+        publishWebsite,
+        unpublishWebsite,
         createPage,
         getPage,
         listWebsitePages,
         updatePageDetails,
         archivePage,
         restorePage,
+        setWebsiteHomepage,
         addSection,
         updateSection,
         removeSection,
@@ -292,8 +301,13 @@ export function composeProduction(config) {
         reorderSections,
         getPageBuilderState,
         publishPage,
+        listPagePublicationHistory,
+        inspectPagePublication,
+        rollbackPagePublication,
         resolvePublishedPage,
         resolvePublishedWebsite,
+        tenantContextRunner,
+        runWithTenantContext: (context, operation) => tenantContextRunner.run(context, operation),
         registrationMode,
         healthCheck,
         close,
@@ -323,6 +337,7 @@ export function composeProductionFromEnvironment() {
         emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
         linkageBatchSize: optionalPositiveInteger("LINKAGE_RECONCILIATION_BATCH_SIZE"),
         linkageGracePeriodMs: optionalPositiveInteger("LINKAGE_RECONCILIATION_GRACE_PERIOD_MS"),
+        fallbackDomainSuffix: process.env.FALLBACK_DOMAIN_SUFFIX ?? DEFAULT_FALLBACK_DOMAIN_SUFFIX,
         logLevel: "info",
     });
 }

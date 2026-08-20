@@ -11,6 +11,7 @@
  * atomicity with the aggregate mutation.
  */
 import { randomUUID } from "node:crypto";
+import { createTenantContextRunner, currentTenantContext, tenantDatabase } from "../../db/tenant-context.js";
 import { applicationOutbox } from "../../db/schema.js";
 import { buildOutboxInsert } from "../../db/outbox-mapper.js";
 function isDuplicateKeyError(err) {
@@ -56,18 +57,24 @@ function scopeToAggregateId(event) {
     return String(s.organizationId);
 }
 export class OutboxEventPublisher {
-    db;
+    rootDb;
     logger;
     schemaVersion;
     constructor(config) {
-        this.db = config.db;
+        this.rootDb = config.db;
         this.logger = config.logger;
         this.schemaVersion = config.schemaVersion ?? "1.0.0";
+    }
+    get db() { return tenantDatabase(this.rootDb); }
+    async withDatabase(operation) {
+        if (currentTenantContext())
+            return operation();
+        return createTenantContextRunner(this.rootDb).run({ mode: "internal" }, operation);
     }
     async publish(event) {
         const insert = this.buildInsert(event);
         try {
-            await this.db.insert(applicationOutbox).values(insert);
+            await this.withDatabase(() => this.db.insert(applicationOutbox).values(insert));
         }
         catch (err) {
             if (isDuplicateKeyError(err)) {
@@ -87,7 +94,7 @@ export class OutboxEventPublisher {
             return;
         const inserts = events.map((e) => this.buildInsert(e));
         try {
-            await this.db.insert(applicationOutbox).values(inserts);
+            await this.withDatabase(() => this.db.insert(applicationOutbox).values(inserts));
         }
         catch (err) {
             if (isDuplicateKeyError(err)) {

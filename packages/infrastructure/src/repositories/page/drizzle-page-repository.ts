@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, ne } from "drizzle-orm";
-import type { Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PageRestoredEvent, PageStatus, Section, WebsiteId } from "@livingsites/domain";
+import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
+import type { Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PageRestoredEvent, PageStatus, Section, WebsiteHomepageChangedEvent, WebsiteId } from "@livingsites/domain";
 import { PageStatus as Status } from "@livingsites/domain";
-import type { CreateResult, PageRepository, SaveResult } from "@livingsites/application";
+import type { CreateResult, HomepagePersistenceError, PageRepository, SaveResult } from "@livingsites/application";
+import type { Result } from "@livingsites/domain";
 import type { Logger } from "@livingsites/platform";
 import type { DrizzleDB } from "../../db/drizzle-instance.js";
 import { tenantDatabase } from "../../db/tenant-context.js";
@@ -79,11 +80,52 @@ export class DrizzlePageRepository implements PageRepository {
   }
 
   async archiveWithEvent(input: { pageId: PageId; expectedVersion: number; archivedAt: string; archivedBy: string }, event: PageArchivedEvent): Promise<SaveResult<Page>> {
-    return this.atomicMutation(input.pageId, input.expectedVersion, { status: Status.Archived, archived_at: new Date(input.archivedAt), updated_at: new Date(input.archivedAt), updated_by: input.archivedBy }, event);
+    return this.atomicMutation(input.pageId, input.expectedVersion, { status: Status.Archived, is_homepage: false, archived_at: new Date(input.archivedAt), updated_at: new Date(input.archivedAt), updated_by: input.archivedBy }, event);
   }
 
   async restoreWithEvent(input: { pageId: PageId; expectedVersion: number; restoredAt: string; restoredBy: string }, event: PageRestoredEvent): Promise<SaveResult<Page>> {
     return this.atomicMutation(input.pageId, input.expectedVersion, { status: Status.Draft, archived_at: null, updated_at: new Date(input.restoredAt), updated_by: input.restoredBy }, event);
+  }
+
+  async setWebsiteHomepage(input: {
+    websiteId: WebsiteId;
+    pageId: PageId;
+    expectedPageVersion: number;
+    changedAt: string;
+    changedBy: string;
+    event: Omit<WebsiteHomepageChangedEvent, "previousHomepagePageId" | "pageVersion">;
+  }): Promise<Result<Page, HomepagePersistenceError>> {
+    try {
+      return await this.db.transaction(async (tx: DrizzleDB) => {
+        await tx.execute(sql`select id from ${pages} where ${pages.website_id} = ${String(input.websiteId)} for update`);
+        const [target] = await tx.select().from(pages).where(and(eq(pages.id, String(input.pageId)), eq(pages.website_id, String(input.websiteId)))).limit(1);
+        if (!target) return { ok: false, error: { code: "not_found", message: "Page was not found in this Website." } } as const;
+        if (target.status === Status.Archived || target.archived_at) return { ok: false, error: { code: "archived_target", message: "An archived Page cannot be the Website homepage." } } as const;
+        if (target.version !== input.expectedPageVersion) return { ok: false, error: { code: "concurrency_conflict", message: "Page changed since it was loaded." } } as const;
+        if (target.is_homepage) return { ok: false, error: { code: "already_homepage", message: "This Page is already the Website homepage." } } as const;
+
+        const previousHomepages = await tx.select({ id: pages.id }).from(pages).where(and(eq(pages.website_id, String(input.websiteId)), eq(pages.is_homepage, true), ne(pages.status, Status.Archived)));
+        const changedAt = new Date(input.changedAt);
+        if (previousHomepages.length) {
+          await tx.update(pages).set({ is_homepage: false, version: sql`${pages.version} + 1`, updated_at: changedAt, updated_by: input.changedBy }).where(inArray(pages.id, previousHomepages.map((page: { id: string }) => page.id)));
+        }
+
+        const [updatedTarget] = await tx.update(pages).set({ is_homepage: true, version: input.expectedPageVersion + 1, updated_at: changedAt, updated_by: input.changedBy }).where(and(eq(pages.id, String(input.pageId)), eq(pages.website_id, String(input.websiteId)), eq(pages.version, input.expectedPageVersion))).returning();
+        if (!updatedTarget) return { ok: false, error: { code: "concurrency_conflict", message: "Page changed since it was loaded." } } as const;
+
+        const event: WebsiteHomepageChangedEvent = { ...input.event, previousHomepagePageId: previousHomepages[0]?.id as PageId | undefined ?? null, pageVersion: updatedTarget.version };
+        this.config.beforeOutboxInsert?.();
+        await tx.insert(applicationOutbox).values({
+          id: randomUUID(), event_type: event.type, aggregate_type: "website", aggregate_id: String(input.websiteId), organization_id: String(event.eventScope.organizationId), website_id: String(input.websiteId), payload: event, occurred_at: changedAt, idempotency_key: `${event.type}:${String(input.websiteId)}:${String(input.pageId)}:${updatedTarget.version}`, schema_version: "1.0.0",
+        });
+        const mapped = rowToPage(updatedTarget);
+        if (!mapped.ok) throw new Error(mapped.error.message);
+        return { ok: true, value: mapped.value } as const;
+      });
+    } catch (error) {
+      this.config.logger.error("Atomic Website homepage change failed", { websiteId: String(input.websiteId), pageId: String(input.pageId), error: String(error) });
+      return { ok: false, error: { code: "persistence_error", message: "Homepage change and event were rolled back." } };
+    }
   }
 
   private outbox(event: PageCreatedEvent | PageArchivedEvent | PageRestoredEvent) {

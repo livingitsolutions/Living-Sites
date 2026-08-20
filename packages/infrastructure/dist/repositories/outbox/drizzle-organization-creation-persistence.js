@@ -12,6 +12,7 @@
  * transactional behavior is required.
  */
 import { randomUUID } from "node:crypto";
+import { tenantDatabase } from "../../db/tenant-context.js";
 import { organizations, applicationOutbox } from "../../db/schema.js";
 import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper.js";
 import { buildOutboxInsert } from "../../db/outbox-mapper.js";
@@ -37,14 +38,15 @@ function isConnectionError(err) {
     return false;
 }
 export class DrizzleOrganizationCreationPersistence {
-    db;
+    rootDb;
     logger;
     schemaVersion;
     constructor(config) {
-        this.db = config.db;
+        this.rootDb = config.db;
         this.logger = config.logger;
         this.schemaVersion = config.schemaVersion ?? "1.0.0";
     }
+    get db() { return tenantDatabase(this.rootDb); }
     async createWithEvent(draft, event) {
         try {
             const result = await this.db.transaction(async (tx) => {

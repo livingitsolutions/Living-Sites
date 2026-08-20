@@ -1,4 +1,4 @@
-import type { AggregateVersion, OrganizationId, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PagePublicationRolledBackEvent, PagePublishedEvent, PageRestoredEvent, PageSnapshot, PageStatus, Section, SectionSnapshotEntry, UserId, VersionString, WebsiteId } from "@livingsites/domain";
+import type { AggregateVersion, OrganizationId, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PagePublicationRolledBackEvent, PagePublishedEvent, PageRestoredEvent, PageSnapshot, PageStatus, Section, SectionSnapshotEntry, UserId, VersionString, WebsiteHomepageChangedEvent, WebsiteId } from "@livingsites/domain";
 import type { CreateResult, SaveResult } from "../contracts.js";
 import type { Result } from "@livingsites/domain";
 
@@ -14,7 +14,21 @@ export interface PageMutationPersistence {
   archiveWithEvent(input: { readonly pageId: PageId; readonly expectedVersion: AggregateVersion; readonly archivedAt: string; readonly archivedBy: string }, event: PageArchivedEvent): Promise<SaveResult<Page>>;
   restoreWithEvent(input: { readonly pageId: PageId; readonly expectedVersion: AggregateVersion; readonly restoredAt: string; readonly restoredBy: string }, event: PageRestoredEvent): Promise<SaveResult<Page>>;
 }
-export interface PageRepository extends PageReader, PageCreationPersistence, PageMutationPersistence {}
+export type HomepagePersistenceError =
+  | { readonly code: "not_found" | "archived_target" | "already_homepage" | "concurrency_conflict" | "persistence_error"; readonly message: string };
+
+export interface PageHomepagePersistence {
+  setWebsiteHomepage(input: {
+    readonly websiteId: WebsiteId;
+    readonly pageId: PageId;
+    readonly expectedPageVersion: AggregateVersion;
+    readonly changedAt: string;
+    readonly changedBy: UserId;
+    readonly event: Omit<WebsiteHomepageChangedEvent, "previousHomepagePageId" | "pageVersion">;
+  }): Promise<Result<Page, HomepagePersistenceError>>;
+}
+
+export interface PageRepository extends PageReader, PageCreationPersistence, PageMutationPersistence, PageHomepagePersistence {}
 
 export interface PageSnapshotReader {
   findById(id: string): Promise<PageSnapshot | null>;

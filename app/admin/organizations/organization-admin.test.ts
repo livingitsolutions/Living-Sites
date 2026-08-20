@@ -249,6 +249,7 @@ describe("Organization-scoped Admin Route Protection", () => {
       planReader: composition.planReader,
       websiteReader: composition.websiteRepository,
       websiteCreationPersistence: composition.websiteCreationPersistence,
+      fallbackDomainProvider: composition.fallbackDomainProvider,
       clock: composition.clock,
       idGenerator: composition.idGenerator,
     };

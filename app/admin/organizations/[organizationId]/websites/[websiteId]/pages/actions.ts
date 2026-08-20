@@ -6,7 +6,7 @@ import { getOrganizationAdminContext, runWithOrganizationTenant } from "../../..
 import type { PageActionState } from "./page-state";
 
 const pathFor = (organizationId: string, websiteId: string) => `/admin/organizations/${organizationId}/websites/${websiteId}/pages`;
-const depsFor = (composition: ReturnType<typeof getComposition>, userId: never) => ({ authenticatedUser: { userId }, authorizationService: composition.authorizationService, websiteReader: composition.websiteRepository, pageReader: composition.pageRepository, pageCreationPersistence: composition.pageRepository, pageMutationPersistence: composition.pageRepository, clock: composition.clock, idGenerator: composition.idGenerator });
+const depsFor = (composition: ReturnType<typeof getComposition>, userId: never) => ({ authenticatedUser: { userId }, authorizationService: composition.authorizationService, websiteReader: composition.websiteRepository, pageReader: composition.pageRepository, pageCreationPersistence: composition.pageRepository, pageMutationPersistence: composition.pageRepository, pageHomepagePersistence: composition.pageRepository, clock: composition.clock, idGenerator: composition.idGenerator });
 
 export async function createPageAction(organizationId: string, websiteId: string, _state: PageActionState, formData: FormData): Promise<PageActionState> {
   const context = await getOrganizationAdminContext(organizationId); if (context.kind !== "authorized") return { status: "error", message: "You are not authorized to create Pages." };
@@ -30,4 +30,14 @@ export async function archivePageAction(organizationId: string, websiteId: strin
 export async function restorePageAction(organizationId: string, websiteId: string, formData: FormData): Promise<void> {
   const context = await getOrganizationAdminContext(organizationId); if (context.kind !== "authorized") return;
   const composition = getComposition(); await runWithOrganizationTenant(context, () => composition.restorePage({ organizationId: context.organization.id, websiteId: websiteId as never, pageId: String(formData.get("pageId")) as never, expectedVersion: Number(formData.get("version")) }, depsFor(composition, context.platformUser.id as never)), websiteId); revalidatePath(pathFor(organizationId, websiteId));
+}
+
+export async function setHomepageAction(organizationId: string, websiteId: string, _state: PageActionState, formData: FormData): Promise<PageActionState> {
+  const context = await getOrganizationAdminContext(organizationId);
+  if (context.kind !== "authorized") return { status: "error", message: "You are not authorized to update the Website homepage." };
+  const composition = getComposition();
+  const result = await runWithOrganizationTenant(context, () => composition.setWebsiteHomepage({ organizationId: context.organization.id, websiteId: websiteId as never, pageId: String(formData.get("pageId")) as never, expectedVersion: Number(formData.get("version")) }, depsFor(composition, context.platformUser.id as never)), websiteId);
+  if (!result.ok) return { status: "error", message: result.error.message };
+  revalidatePath(pathFor(organizationId, websiteId));
+  return { status: "success", message: `${result.value.title} is now the Website homepage.` };
 }

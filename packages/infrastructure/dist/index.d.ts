@@ -13,7 +13,10 @@ export { OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOu
 export type { OutboxEventPublisherConfig, OutboxPublishError, DrizzleOrganizationCreationPersistenceConfig, OutboxProcessorConfig } from "./repositories/outbox/index.js";
 export { createNetlifyDatabase, MissingNetlifyDatabaseError } from "./providers/netlify-database/index.js";
 export type { NetlifyDatabaseProvider, NetlifyDatabaseProviderConfig, NetlifyDrizzleDB } from "./providers/netlify-database/index.js";
+export { ConfiguredFallbackDomainProvider, DEFAULT_FALLBACK_DOMAIN_SUFFIX } from "./providers/fallback-domain/index.js";
 export type { DrizzleDB } from "./db/drizzle-instance.js";
+export { createTenantContextRunner, currentTenantContext, TenantContextDeniedError } from "./db/tenant-context.js";
+export type { TenantContext, TenantContextRunner } from "./db/tenant-context.js";
 export { DrizzleUserRepository } from "./repositories/user/index.js";
 export type { DrizzleUserRepositoryConfig } from "./repositories/user/index.js";
 export { BetterAuthAdapter, asBetterAuthInstance, createBetterAuthDatabaseAdapter } from "./adapters/better-auth/index.js";
@@ -25,6 +28,7 @@ export type { DrizzleMembershipRepositoryConfig } from "./repositories/membershi
 export { DrizzleSuperAdminStore } from "./repositories/identity/drizzle-super-admin-store.js";
 export type { BootstrapSuperAdminInput, BootstrapSuperAdminOutput, BootstrapSuperAdminError } from "./repositories/identity/drizzle-super-admin-store.js";
 export { DrizzleWebsiteRepository } from "./repositories/website/index.js";
+export { DrizzleWebsitePublicationRepository } from "./repositories/website/index.js";
 export { DrizzleWebsiteCreationPersistence } from "./repositories/outbox/index.js";
 export { DrizzlePageRepository } from "./repositories/page/index.js";
 export type { DrizzlePageRepositoryConfig } from "./repositories/page/index.js";

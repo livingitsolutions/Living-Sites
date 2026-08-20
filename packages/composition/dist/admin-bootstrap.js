@@ -36,6 +36,9 @@ function errorMessage(error) {
     return String(error);
 }
 export async function reconcileProductionAdministrator(input, composition, options = {}) {
+    return composition.runWithTenantContext({ mode: "internal" }, () => reconcileProductionAdministratorInternal(input, composition, options));
+}
+async function reconcileProductionAdministratorInternal(input, composition, options) {
     const email = input.email.trim().toLowerCase();
     if (!validEmail(email))
         throw new AdminBootstrapError("invalid_input", "A valid admin email is required.");

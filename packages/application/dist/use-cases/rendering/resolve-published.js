@@ -2,7 +2,7 @@ import { PageStatus, WebsiteStatus } from "@livingsites/domain";
 export async function resolvePublishedWebsite(input, deps) {
     const hostname = input.hostname.trim().toLowerCase().replace(/:\d+$/, "");
     const website = await deps.websiteReader.findByDomain(hostname);
-    if (!website || website.status === WebsiteStatus.Archived || website.archivedAt)
+    if (!website || website.status !== WebsiteStatus.Published || website.archivedAt)
         return { ok: false, error: { code: "not_found", message: "Published Website was not found." } };
     return { ok: true, value: { website } };
 }

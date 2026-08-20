@@ -14,30 +14,35 @@
  * with zero registered subscribers is marked processed and logged.
  */
 import { eq } from "drizzle-orm";
+import { createTenantContextRunner, tenantDatabase } from "../../db/tenant-context.js";
 import { applicationOutbox } from "../../db/schema.js";
 import { rowToOutboxEventRecord } from "../../db/outbox-mapper.js";
 const DEFAULT_MAX_ATTEMPTS = 5;
 const DEFAULT_BASE_BACKOFF_MS = 1000;
 const DEFAULT_MAX_BACKOFF_MS = 60000;
 export class DrizzleOutboxProcessor {
-    db;
+    rootDb;
     logger;
     maxAttempts;
     baseBackoffMs;
     maxBackoffMs;
     handlers = new Map();
     constructor(config) {
-        this.db = config.db;
+        this.rootDb = config.db;
         this.logger = config.logger;
         this.maxAttempts = config.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
         this.baseBackoffMs = config.baseBackoffMs ?? DEFAULT_BASE_BACKOFF_MS;
         this.maxBackoffMs = config.maxBackoffMs ?? DEFAULT_MAX_BACKOFF_MS;
     }
+    get db() { return tenantDatabase(this.rootDb); }
     registerHandler(eventType, handler) {
         const existing = this.handlers.get(eventType) ?? [];
         this.handlers.set(eventType, [...existing, handler]);
     }
     async processBatch(batchSize = 10) {
+        return createTenantContextRunner(this.rootDb).run({ mode: "internal" }, () => this.processInternalBatch(batchSize));
+    }
+    async processInternalBatch(batchSize) {
         const claimed = await this.claimPending(batchSize);
         if (claimed.length === 0)
             return 0;

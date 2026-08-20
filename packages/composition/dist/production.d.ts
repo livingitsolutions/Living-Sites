@@ -1,9 +1,9 @@
 import type { Clock, IdGenerator, Logger } from "@livingsites/platform";
 import { LinkageReconciler, DrizzleSuperAdminStore } from "@livingsites/infrastructure";
-import type { BetterAuthInstance } from "@livingsites/infrastructure";
+import type { BetterAuthInstance, TenantContext, TenantContextRunner } from "@livingsites/infrastructure";
 import type { DrizzleDB } from "@livingsites/infrastructure";
-import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, MembershipRepository, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, PasswordResetEmailPort, RegistrationMode, WebsiteReader, WebsiteCreationPersistence, PageRepository, PagePublisher, PageSnapshotReader } from "@livingsites/application";
-import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, publishPage, resolvePublishedPage, resolvePublishedWebsite, AuthorizationService } from "@livingsites/application";
+import type { OrganizationReader, OrganizationCreator, PlanReader, FeatureReader, UserReader, UserCreator, MembershipRepository, EventPublisher, OrganizationCreationPersistence, OutboxProcessor, AuthenticationPort, EmailVerificationPort, PasswordResetEmailPort, RegistrationMode, WebsiteReader, WebsiteCreationPersistence, WebsitePublicationPersistence, PageRepository, PagePublisher, PageRollbackPersistence, PageSnapshotReader, FallbackDomainProvider } from "@livingsites/application";
+import { createOrganization, registerUser, addOrganizationMember, changeOrganizationMemberRole, removeOrganizationMember, getOrganizationMembers, createWebsite, getWebsite, listOrganizationWebsites, publishWebsite, unpublishWebsite, createPage, getPage, listWebsitePages, updatePageDetails, archivePage, restorePage, setWebsiteHomepage, addSection, updateSection, removeSection, duplicateSection, reorderSections, getPageBuilderState, publishPage, listPagePublicationHistory, inspectPagePublication, rollbackPagePublication, resolvePublishedPage, resolvePublishedWebsite, AuthorizationService } from "@livingsites/application";
 import type { CreateOrganizationDeps, RegisterUserDeps, AddOrganizationMemberDeps, ChangeOrganizationMemberRoleDeps, RemoveOrganizationMemberDeps, GetOrganizationMembersDeps } from "@livingsites/application";
 export interface ProductionCompositionConfig {
     readonly connectionString?: string;
@@ -20,6 +20,7 @@ export interface ProductionCompositionConfig {
     readonly passwordResetEmailAdapter?: PasswordResetEmailPort;
     readonly linkageBatchSize?: number;
     readonly linkageGracePeriodMs?: number;
+    readonly fallbackDomainSuffix?: string;
 }
 export interface ProductionComposition {
     readonly database: DrizzleDB;
@@ -35,8 +36,11 @@ export interface ProductionComposition {
     readonly membershipRepository: MembershipRepository;
     readonly websiteRepository: WebsiteReader;
     readonly websiteCreationPersistence: WebsiteCreationPersistence;
+    readonly websitePublicationPersistence: WebsitePublicationPersistence;
+    readonly fallbackDomainProvider: FallbackDomainProvider;
     readonly pageRepository: PageRepository;
     readonly pagePublisher: PagePublisher;
+    readonly pageRollbackPersistence: PageRollbackPersistence;
     readonly pageSnapshotReader: PageSnapshotReader;
     readonly superAdminStore: DrizzleSuperAdminStore;
     readonly authorizationService: AuthorizationService;
@@ -62,12 +66,15 @@ export interface ProductionComposition {
     readonly createWebsite: typeof createWebsite;
     readonly getWebsite: typeof getWebsite;
     readonly listOrganizationWebsites: typeof listOrganizationWebsites;
+    readonly publishWebsite: typeof publishWebsite;
+    readonly unpublishWebsite: typeof unpublishWebsite;
     readonly createPage: typeof createPage;
     readonly getPage: typeof getPage;
     readonly listWebsitePages: typeof listWebsitePages;
     readonly updatePageDetails: typeof updatePageDetails;
     readonly archivePage: typeof archivePage;
     readonly restorePage: typeof restorePage;
+    readonly setWebsiteHomepage: typeof setWebsiteHomepage;
     readonly addSection: typeof addSection;
     readonly updateSection: typeof updateSection;
     readonly removeSection: typeof removeSection;
@@ -75,8 +82,13 @@ export interface ProductionComposition {
     readonly reorderSections: typeof reorderSections;
     readonly getPageBuilderState: typeof getPageBuilderState;
     readonly publishPage: typeof publishPage;
+    readonly listPagePublicationHistory: typeof listPagePublicationHistory;
+    readonly inspectPagePublication: typeof inspectPagePublication;
+    readonly rollbackPagePublication: typeof rollbackPagePublication;
     readonly resolvePublishedPage: typeof resolvePublishedPage;
     readonly resolvePublishedWebsite: typeof resolvePublishedWebsite;
+    readonly tenantContextRunner: TenantContextRunner;
+    readonly runWithTenantContext: <T>(context: TenantContext, operation: () => Promise<T>) => Promise<T>;
     readonly registrationMode: RegistrationMode;
     readonly healthCheck: () => Promise<{
         healthy: boolean;

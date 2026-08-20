@@ -37,6 +37,8 @@ import {
   DrizzleWebsitePublicationRepository,
   DrizzlePageRepository,
   DrizzlePagePublicationRepository,
+  ConfiguredFallbackDomainProvider,
+  DEFAULT_FALLBACK_DOMAIN_SUFFIX,
   createTenantContextRunner,
   MissingNetlifyDatabaseError,
 } from "@livingsites/infrastructure";
@@ -64,6 +66,7 @@ import type {
   PagePublisher,
   PageRollbackPersistence,
   PageSnapshotReader,
+  FallbackDomainProvider,
 } from "@livingsites/application";
 import {
   createOrganization,
@@ -83,6 +86,7 @@ import {
   updatePageDetails,
   archivePage,
   restorePage,
+  setWebsiteHomepage,
   addSection,
   updateSection,
   removeSection,
@@ -123,6 +127,7 @@ export interface ProductionCompositionConfig {
   readonly passwordResetEmailAdapter?: PasswordResetEmailPort;
   readonly linkageBatchSize?: number;
   readonly linkageGracePeriodMs?: number;
+  readonly fallbackDomainSuffix?: string;
 }
 
 export interface ProductionComposition {
@@ -140,6 +145,7 @@ export interface ProductionComposition {
   readonly websiteRepository: WebsiteReader;
   readonly websiteCreationPersistence: WebsiteCreationPersistence;
   readonly websitePublicationPersistence: WebsitePublicationPersistence;
+  readonly fallbackDomainProvider: FallbackDomainProvider;
   readonly pageRepository: PageRepository;
   readonly pagePublisher: PagePublisher;
   readonly pageRollbackPersistence: PageRollbackPersistence;
@@ -176,6 +182,7 @@ export interface ProductionComposition {
   readonly updatePageDetails: typeof updatePageDetails;
   readonly archivePage: typeof archivePage;
   readonly restorePage: typeof restorePage;
+  readonly setWebsiteHomepage: typeof setWebsiteHomepage;
   readonly addSection: typeof addSection;
   readonly updateSection: typeof updateSection;
   readonly removeSection: typeof removeSection;
@@ -343,6 +350,7 @@ export function composeProduction(
   const websitePublicationPersistence = new DrizzleWebsitePublicationRepository({ db, logger });
   const pageRepository = new DrizzlePageRepository({ db, logger });
   const pagePublicationRepository = new DrizzlePagePublicationRepository({ db, logger });
+  const fallbackDomainProvider = new ConfiguredFallbackDomainProvider(config.fallbackDomainSuffix ?? DEFAULT_FALLBACK_DOMAIN_SUFFIX);
   const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
   const authorizationService = new AuthorizationService({
     membershipReader: membershipRepository,
@@ -452,6 +460,7 @@ export function composeProduction(
     websiteRepository,
     websiteCreationPersistence,
     websitePublicationPersistence,
+    fallbackDomainProvider,
     pageRepository,
     pagePublisher: pagePublicationRepository,
     pageRollbackPersistence: pagePublicationRepository,
@@ -488,6 +497,7 @@ export function composeProduction(
     updatePageDetails,
     archivePage,
     restorePage,
+    setWebsiteHomepage,
     addSection,
     updateSection,
     removeSection,
@@ -533,6 +543,7 @@ export function composeProductionFromEnvironment(): ProductionComposition {
     emailVerificationEnabled: process.env.EMAIL_VERIFICATION_ENABLED === "true",
     linkageBatchSize: optionalPositiveInteger("LINKAGE_RECONCILIATION_BATCH_SIZE"),
     linkageGracePeriodMs: optionalPositiveInteger("LINKAGE_RECONCILIATION_GRACE_PERIOD_MS"),
+    fallbackDomainSuffix: process.env.FALLBACK_DOMAIN_SUFFIX ?? DEFAULT_FALLBACK_DOMAIN_SUFFIX,
     logLevel: "info",
   });
 }

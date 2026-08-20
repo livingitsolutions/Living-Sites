@@ -8,6 +8,7 @@ import { createTestDatabaseHarness, type TestDatabaseHarness } from "../db/test-
 import { createTenantContextRunner, tenantDatabase, TenantContextDeniedError } from "../db/tenant-context.js";
 import * as schema from "../db/schema.js";
 import { DrizzlePagePublicationRepository } from "./page/drizzle-page-publication-repository.js";
+import { DrizzlePageRepository } from "./page/drizzle-page-repository.js";
 
 const now = new Date("2026-08-19T00:00:00.000Z");
 const orgA = "org_rls_a" as OrganizationId;
@@ -116,6 +117,30 @@ describe("PostgreSQL tenant isolation", () => {
       expect(await db.update(schema.websites).set({ name: "Updated A" }).where(eq(schema.websites.id, websiteA)).returning()).toHaveLength(1);
       expect(await db.update(schema.pages).set({ title: "Blocked B" }).where(eq(schema.pages.id, "page_b")).returning()).toHaveLength(0);
     });
+  });
+
+  it("matches production-style app_security privileges and keeps public reads fail-closed", async () => {
+    const [privileges] = await isolatedClient`select has_schema_privilege(current_user, 'app_security', 'USAGE') as schema_usage, has_function_privilege(current_user, 'app_security.is_public()', 'EXECUTE') as public_execute, has_function_privilege(current_user, 'app_security.setting(text)', 'EXECUTE') as setting_execute`;
+    expect(privileges).toMatchObject({ schema_usage: true, public_execute: true, setting_execute: true });
+    await createTenantContextRunner(harness.db).run({ mode: "internal" }, async () => {
+      const db = tenantDatabase(harness.db);
+      await db.update(schema.websites).set({ status: "published" }).where(eq(schema.websites.id, websiteA));
+      await db.update(schema.pages).set({ is_homepage: true }).where(eq(schema.pages.id, "page_a"));
+    });
+    await createTenantContextRunner(isolatedDb).run({ mode: "public" }, async () => {
+      const db = tenantDatabase(isolatedDb);
+      expect((await db.select().from(schema.websites)).map((row) => row.id)).toEqual([websiteA]);
+      expect((await db.select().from(schema.pages)).map((row) => row.id)).toEqual(["page_a"]);
+      expect((await db.select().from(schema.pageSnapshots)).map((row) => row.id)).toEqual(["snapshot_a"]);
+      expect(await db.update(schema.pages).set({ title: "blocked" }).where(eq(schema.pages.id, "page_a")).returning()).toHaveLength(0);
+    });
+  });
+
+  it("denies cross-tenant homepage switching through the production repository path", async () => {
+    const repository = new DrizzlePageRepository({ db: isolatedDb, logger: new NoopLogger() });
+    const runner = createTenantContextRunner(isolatedDb);
+    const result = await runner.run({ mode: "tenant", userId: userA, organizationId: orgA, websiteId: websiteA }, () => repository.setWebsiteHomepage({ websiteId: websiteB, pageId: "page_b" as PageId, expectedPageVersion: 1, changedAt: now.toISOString(), changedBy: userA, event: { type: "website.homepage_changed", occurredAt: now.toISOString() as never, eventScope: { scope: "website", organizationId: orgB, websiteId: websiteB }, pageId: "page_b" as PageId } }));
+    expect(result).toMatchObject({ ok: false, error: { code: "not_found" } });
   });
 
   it("isolates Page history, inspection, and rollback through tenant context", async () => {

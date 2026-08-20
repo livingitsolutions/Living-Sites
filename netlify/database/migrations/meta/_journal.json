@@ -106,6 +106,20 @@
       "when": 1787162400000,
       "tag": "0015_tenant_isolation_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1787191200000,
+      "tag": "0016_enforce_single_active_homepage",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787192206126,
+      "tag": "0017_daily_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }
