@@ -1,4 +1,4 @@
-import type { AggregateVersion, OrganizationId, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PagePublishedEvent, PageRestoredEvent, PageSnapshot, PageStatus, Section, SectionSnapshotEntry, UserId, VersionString, WebsiteId } from "@livingsites/domain";
+import type { AggregateVersion, OrganizationId, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PagePublicationRolledBackEvent, PagePublishedEvent, PageRestoredEvent, PageSnapshot, PageStatus, Section, SectionSnapshotEntry, UserId, VersionString, WebsiteId } from "@livingsites/domain";
 import type { CreateResult, SaveResult } from "../contracts.js";
 import type { Result } from "@livingsites/domain";
 
@@ -20,6 +20,7 @@ export interface PageSnapshotReader {
   findById(id: string): Promise<PageSnapshot | null>;
   findLatestForPage(pageId: PageId): Promise<PageSnapshot | null>;
   findByRevision(pageId: PageId, revisionNumber: number): Promise<PageSnapshot | null>;
+  listForPage(pageId: PageId): Promise<readonly PageSnapshot[]>;
 }
 
 export interface PagePublicationCandidate {
@@ -44,5 +45,19 @@ export interface PagePublisher {
     readonly candidate: PagePublicationCandidate;
     readonly expectedPageVersion: AggregateVersion;
     readonly event: Omit<PagePublishedEvent, "revisionNumber" | "pageVersion">;
+  }): Promise<Result<PageSnapshot, PagePublicationError>>;
+}
+
+export interface PageRollbackPersistence {
+  rollback(input: {
+    readonly pageId: PageId;
+    readonly websiteId: WebsiteId;
+    readonly organizationId: OrganizationId;
+    readonly targetRevisionNumber: number;
+    readonly newSnapshotId: string;
+    readonly expectedPageVersion: AggregateVersion;
+    readonly rolledBackAt: string;
+    readonly rolledBackBy: UserId;
+    readonly event: Omit<PagePublicationRolledBackEvent, "targetSnapshotId" | "newRevisionNumber" | "pageVersion">;
   }): Promise<Result<PageSnapshot, PagePublicationError>>;
 }

@@ -4,21 +4,24 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import type { ISODateString, OrganizationId, PageId, Section, SectionId, SectionTypeId, UserId, WebsiteId } from "@livingsites/domain";
 import { NoopLogger } from "@livingsites/platform";
+import { resolvePublishedPage } from "@livingsites/application";
 import * as schema from "../../db/schema.js";
 import { applicationOutbox, organizations, pageSections, pageSnapshots, pages, websites } from "../../db/schema.js";
 import { DrizzlePageRepository } from "./drizzle-page-repository.js";
 import { DrizzlePagePublicationRepository } from "./drizzle-page-publication-repository.js";
+import { DrizzleWebsiteRepository } from "../website/drizzle-website-repository.js";
 
 const now = "2026-08-19T12:00:00.000Z" as ISODateString; const orgId = "org_publish" as OrganizationId; const websiteId = "web_publish" as WebsiteId; const pageId = "page_publish" as PageId; const userId = "usr_publish" as UserId;
 const section = (headline: string): Section => ({ id: "section_publish" as SectionId, pageId, websiteId, sectionTypeId: "section-type:hero" as SectionTypeId, sortOrder: 0, status: "active", props: { headline, subheading: "World", ctaLabel: "Go", ctaUrl: "/contact" }, audit: { createdAt: now, updatedAt: now, createdBy: userId, updatedBy: userId } });
 const candidate = (id: string, headline: string) => ({ id, pageId, websiteId, organizationId: orgId, page: { title: "Home", slug: "home", path: "/", isHomepage: true }, sections: [{ sectionId: section(headline).id, sectionTypeId: "section-type:hero", props: section(headline).props, sortOrder: 0 }], publishedAt: now, publishedBy: userId }) as const;
 const event = (snapshotId: string) => ({ type: "page.published", occurredAt: now, eventScope: { scope: "website", organizationId: orgId, websiteId }, pageId, snapshotId }) as const;
+const rollbackEvent = (newSnapshotId: string, targetRevisionNumber: number) => ({ type: "page.publication_rolled_back", occurredAt: now, eventScope: { scope: "website", organizationId: orgId, websiteId }, pageId, targetRevisionNumber, newSnapshotId }) as const;
 
 describe("DrizzlePagePublicationRepository — Netlify Database", () => {
   let netlifyDB: NetlifyDB; let sqlClient: ReturnType<typeof postgres>; let db: ReturnType<typeof drizzle<typeof schema>>;
   beforeAll(async () => { netlifyDB = new NetlifyDB({ logger: () => {} }); const connectionString = await netlifyDB.start(); await netlifyDB.applyMigrations("./netlify/database/migrations"); sqlClient = postgres(connectionString, { max: 1 }); await sqlClient`select set_config('app.context_mode', 'internal', false)`; await sqlClient`select set_config('app.tenant_authorized', 'true', false)`; db = drizzle({ client: sqlClient, schema }); });
   afterAll(async () => { await sqlClient.end(); await netlifyDB.stop(); });
-  beforeEach(async () => { await db.delete(applicationOutbox); await db.delete(pageSnapshots); await db.delete(pageSections); await db.delete(pages); await db.delete(websites); await db.delete(organizations); await db.insert(organizations).values({ id: orgId, name: "Publish Org", slug: "publish-org", billing_email: "publish@example.com", status: "active", feature_overrides: "[]", version: 1, created_at: new Date(now), updated_at: new Date(now) }); await db.insert(websites).values({ id: websiteId, organization_id: orgId, name: "Publish Site", slug: "publish-site", fallback_domain: "publish.example.com", status: "draft", default_locale: "en-US", enabled_locales: ["en-US"], settings: {}, version: 1, created_at: new Date(now), updated_at: new Date(now) }); await db.insert(pages).values({ id: pageId, website_id: websiteId, title: "Home", slug: "home", is_homepage: true, status: "draft", section_order: ["section_publish"], available_locales: [], version: 1, created_at: new Date(now), updated_at: new Date(now) }); await db.insert(pageSections).values({ id: "section_publish", page_id: pageId, website_id: websiteId, section_type_id: "section-type:hero", sort_order: 0, props: section("First").props, status: "active", created_at: new Date(now), updated_at: new Date(now) }); });
+  beforeEach(async () => { await db.delete(applicationOutbox); await db.delete(pageSnapshots); await db.delete(pageSections); await db.delete(pages); await db.delete(websites); await db.delete(organizations); await db.insert(organizations).values({ id: orgId, name: "Publish Org", slug: "publish-org", billing_email: "publish@example.com", status: "active", feature_overrides: "[]", version: 1, created_at: new Date(now), updated_at: new Date(now) }); await db.insert(websites).values({ id: websiteId, organization_id: orgId, name: "Publish Site", slug: "publish-site", fallback_domain: "publish.example.com", status: "draft", default_locale: "en-US", enabled_locales: ["en-US"], settings: { passwordProtection: null, searchEngineIndexing: true, socialDefaults: {}, headerScripts: [], footerScripts: [] }, version: 1, created_at: new Date(now), updated_at: new Date(now) }); await db.insert(pages).values({ id: pageId, website_id: websiteId, title: "Home", slug: "home", is_homepage: true, status: "draft", section_order: ["section_publish"], available_locales: [], version: 1, created_at: new Date(now), updated_at: new Date(now) }); await db.insert(pageSections).values({ id: "section_publish", page_id: pageId, website_id: websiteId, section_type_id: "section-type:hero", sort_order: 0, props: section("First").props, status: "active", created_at: new Date(now), updated_at: new Date(now) }); });
 
   it("commits snapshot, Page state, and outbox together", async () => { const repository = new DrizzlePagePublicationRepository({ db, logger: new NoopLogger() }); const result = await repository.publish({ candidate: candidate("snapshot_1", "First"), expectedPageVersion: 1, event: event("snapshot_1") }); expect(result.ok && result.value.revisionNumber).toBe(1); expect((await db.select().from(pages))[0]).toMatchObject({ status: "published", published_snapshot_id: "snapshot_1", version: 2 }); expect(await db.select().from(applicationOutbox)).toHaveLength(1); });
   it("keeps old revisions immutable while draft edits create revision + 1", async () => { const publications = new DrizzlePagePublicationRepository({ db, logger: new NoopLogger() }); const drafts = new DrizzlePageRepository({ db, logger: new NoopLogger() }); await publications.publish({ candidate: candidate("snapshot_1", "First"), expectedPageVersion: 1, event: event("snapshot_1") }); const saved = await drafts.saveBuilder({ pageId, sections: [section("Changed draft")], expectedVersion: 2, updatedAt: now, updatedBy: userId }); expect(saved.ok && saved.value.status).toBe("draft"); expect((await publications.findByRevision(pageId, 1))?.sections[0]?.props.headline).toBe("First"); const second = await publications.publish({ candidate: candidate("snapshot_2", "Changed draft"), expectedPageVersion: 3, event: event("snapshot_2") }); expect(second.ok && second.value.revisionNumber).toBe(2); expect((await publications.findByRevision(pageId, 1))?.sections[0]?.props.headline).toBe("First"); expect((await publications.findLatestForPage(pageId))?.id).toBe("snapshot_2"); });
@@ -29,5 +32,48 @@ describe("DrizzlePagePublicationRepository — Netlify Database", () => {
     const results = await Promise.allSettled([db.insert(pageSnapshots).values(values("snapshot_a")), db.insert(pageSnapshots).values(values("snapshot_b"))]);
     expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
     expect(await db.select().from(pageSnapshots)).toHaveLength(1);
+  });
+  it("creates N+1 from historical content without changing the target revision", async () => {
+    const repository = new DrizzlePagePublicationRepository({ db, logger: new NoopLogger() });
+    await repository.publish({ candidate: candidate("snapshot_1", "First"), expectedPageVersion: 1, event: event("snapshot_1") });
+    await db.update(pages).set({ status: "draft", version: 3 });
+    await repository.publish({ candidate: candidate("snapshot_2", "Second"), expectedPageVersion: 3, event: event("snapshot_2") });
+    const targetBefore = await repository.findByRevision(pageId, 1);
+    const result = await repository.rollback({ pageId, websiteId, organizationId: orgId, targetRevisionNumber: 1, newSnapshotId: "snapshot_3", expectedPageVersion: 4, rolledBackAt: now, rolledBackBy: userId, event: rollbackEvent("snapshot_3", 1) });
+    expect(result.ok && result.value).toMatchObject({ id: "snapshot_3", revisionNumber: 3 });
+    expect(result.ok && result.value.sections[0]?.props.headline).toBe("First");
+    expect(await repository.findByRevision(pageId, 1)).toEqual(targetBefore);
+    expect((await db.select().from(pages))[0]).toMatchObject({ status: "published", published_snapshot_id: "snapshot_3", version: 5 });
+    expect((await db.select().from(websites))[0]?.status).toBe("draft");
+    expect((await db.select().from(applicationOutbox)).at(-1)?.event_type).toBe("page.publication_rolled_back");
+    const publicDeps = { websiteReader: new DrizzleWebsiteRepository({ db, logger: new NoopLogger() }), pageReader: new DrizzlePageRepository({ db, logger: new NoopLogger() }), pageSnapshotReader: repository };
+    expect((await resolvePublishedPage({ hostname: "publish.example.com", path: "/" }, publicDeps)).ok).toBe(false);
+    await db.update(websites).set({ status: "published" });
+    const publicResult = await resolvePublishedPage({ hostname: "publish.example.com", path: "/" }, publicDeps);
+    expect(publicResult.ok && publicResult.value.snapshot.id).toBe("snapshot_3");
+  });
+  it.each(["snapshot", "event"] as const)("rolls back the entire rollback when %s insertion fails", async (failure) => {
+    const initial = new DrizzlePagePublicationRepository({ db, logger: new NoopLogger() });
+    await initial.publish({ candidate: candidate("snapshot_1", "First"), expectedPageVersion: 1, event: event("snapshot_1") });
+    const repository = new DrizzlePagePublicationRepository({ db, logger: new NoopLogger(), ...(failure === "snapshot" ? { beforeSnapshotInsert: () => { throw new Error("snapshot failure"); } } : { beforeOutboxInsert: () => { throw new Error("event failure"); } }) });
+    const result = await repository.rollback({ pageId, websiteId, organizationId: orgId, targetRevisionNumber: 1, newSnapshotId: "snapshot_2", expectedPageVersion: 2, rolledBackAt: now, rolledBackBy: userId, event: rollbackEvent("snapshot_2", 1) });
+    expect(result.ok).toBe(false);
+    expect(await db.select().from(pageSnapshots)).toHaveLength(1);
+    expect((await db.select().from(pages))[0]).toMatchObject({ published_snapshot_id: "snapshot_1", version: 2 });
+    expect(await db.select().from(applicationOutbox)).toHaveLength(1);
+  });
+  it("rejects stale rollback versions and rollback-versus-publish conflicts", async () => {
+    const repository = new DrizzlePagePublicationRepository({ db, logger: new NoopLogger() });
+    await repository.publish({ candidate: candidate("snapshot_1", "First"), expectedPageVersion: 1, event: event("snapshot_1") });
+    const stale = await repository.rollback({ pageId, websiteId, organizationId: orgId, targetRevisionNumber: 1, newSnapshotId: "snapshot_stale", expectedPageVersion: 1, rolledBackAt: now, rolledBackBy: userId, event: rollbackEvent("snapshot_stale", 1) });
+    expect(stale.ok).toBe(false);
+    await db.update(pages).set({ status: "draft", version: 3 });
+    const [publishResult, rollbackResult] = await Promise.all([
+      repository.publish({ candidate: candidate("snapshot_publish", "Publish wins"), expectedPageVersion: 3, event: event("snapshot_publish") }),
+      repository.rollback({ pageId, websiteId, organizationId: orgId, targetRevisionNumber: 1, newSnapshotId: "snapshot_rollback", expectedPageVersion: 3, rolledBackAt: now, rolledBackBy: userId, event: rollbackEvent("snapshot_rollback", 1) }),
+    ]);
+    expect([publishResult, rollbackResult].filter((entry) => entry.ok)).toHaveLength(1);
+    const revisions = await repository.listForPage(pageId);
+    expect(new Set(revisions.map((entry) => entry.revisionNumber)).size).toBe(revisions.length);
   });
 });

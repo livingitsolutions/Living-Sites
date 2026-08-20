@@ -485,14 +485,16 @@ archived, and how rollback works. It is an expansion of the existing
 
 ### 5.2 Rollback
 
-Rollback restores a prior `PageSnapshot` as the new current draft (or directly
-as a new published version). The old snapshot is never mutated — rollback
-creates a new snapshot from the old one's content, preserving history.
+Rollback copies a prior `PageSnapshot` into a new published revision at
+`latest + 1`. The old snapshot is never mutated and the Page is never pointed
+directly back to it.
 
 - Rollback target: any `Archived Version` or the current `Published Version`.
-- Rollback is itself a publish operation: it emits a `PagePublished` event
-  with a new version number.
+- Rollback is an authoritative publication operation and emits
+  `PagePublicationRolledBack` with target and new revision metadata.
 - Rollback never deletes intermediate versions.
+- Rolling back a Page does not publish an unpublished Website. Public hostname
+  resolution remains unavailable until `PublishWebsite` succeeds explicitly.
 
 ### 5.3 Scheduled Publishing
 

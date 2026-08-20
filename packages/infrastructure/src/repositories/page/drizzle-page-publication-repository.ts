@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
-import type { ISODateString, OrganizationId, PageId, PagePublishedEvent, PageSnapshot, VersionString, WebsiteId } from "@livingsites/domain";
-import type { PagePublicationCandidate, PagePublicationError, PagePublisher, PageSnapshotReader } from "@livingsites/application";
+import type { ISODateString, OrganizationId, PageId, PagePublicationRolledBackEvent, PagePublishedEvent, PageSnapshot, UserId, VersionString, WebsiteId } from "@livingsites/domain";
+import type { PagePublicationCandidate, PagePublicationError, PagePublisher, PageRollbackPersistence, PageSnapshotReader } from "@livingsites/application";
 import type { Result } from "@livingsites/domain";
 import type { Logger } from "@livingsites/platform";
 import type { DrizzleDB } from "../../db/drizzle-instance.js";
@@ -24,7 +24,7 @@ function rowToSnapshot(row: typeof pageSnapshots.$inferSelect): PageSnapshot {
   };
 }
 
-export class DrizzlePagePublicationRepository implements PageSnapshotReader, PagePublisher {
+export class DrizzlePagePublicationRepository implements PageSnapshotReader, PagePublisher, PageRollbackPersistence {
   constructor(private readonly config: DrizzlePagePublicationRepositoryConfig) {}
 
   private get db(): DrizzleDB { return tenantDatabase(this.config.db); }
@@ -42,6 +42,11 @@ export class DrizzlePagePublicationRepository implements PageSnapshotReader, Pag
   async findByRevision(pageId: PageId, revisionNumber: number): Promise<PageSnapshot | null> {
     const [row] = await this.db.select().from(pageSnapshots).where(and(eq(pageSnapshots.page_id, String(pageId)), eq(pageSnapshots.revision_number, revisionNumber))).limit(1);
     return row ? rowToSnapshot(row) : null;
+  }
+
+  async listForPage(pageId: PageId): Promise<readonly PageSnapshot[]> {
+    const rows = await this.db.select().from(pageSnapshots).where(eq(pageSnapshots.page_id, String(pageId))).orderBy(desc(pageSnapshots.revision_number));
+    return rows.map(rowToSnapshot);
   }
 
   async publish(input: { readonly candidate: PagePublicationCandidate; readonly expectedPageVersion: number; readonly event: Omit<PagePublishedEvent, "revisionNumber" | "pageVersion"> }): Promise<Result<PageSnapshot, PagePublicationError>> {
@@ -73,6 +78,58 @@ export class DrizzlePagePublicationRepository implements PageSnapshotReader, Pag
     } catch (error) {
       this.config.logger.error("Atomic Page publication failed", { error: String(error) });
       return { ok: false, error: { code: "persistence_error", message: "Snapshot, Page state, and event were rolled back." } };
+    }
+  }
+
+  async rollback(input: { readonly pageId: PageId; readonly websiteId: WebsiteId; readonly organizationId: OrganizationId; readonly targetRevisionNumber: number; readonly newSnapshotId: string; readonly expectedPageVersion: number; readonly rolledBackAt: string; readonly rolledBackBy: UserId; readonly event: Omit<PagePublicationRolledBackEvent, "targetSnapshotId" | "newRevisionNumber" | "pageVersion"> }): Promise<Result<PageSnapshot, PagePublicationError>> {
+    try {
+      return await this.db.transaction(async (tx: DrizzleDB) => {
+        await tx.execute(sql`select id from ${pages} where ${pages.id} = ${String(input.pageId)} for update`);
+        const [pageRow] = await tx.select().from(pages).where(and(eq(pages.id, String(input.pageId)), eq(pages.website_id, String(input.websiteId)), eq(pages.version, input.expectedPageVersion))).limit(1);
+        if (!pageRow) return { ok: false, error: { code: "concurrency_conflict", message: "This Page changed in another session. Reload before rolling back." } } as const;
+
+        const [target] = await tx.select().from(pageSnapshots).where(and(
+          eq(pageSnapshots.page_id, String(input.pageId)),
+          eq(pageSnapshots.website_id, String(input.websiteId)),
+          eq(pageSnapshots.organization_id, String(input.organizationId)),
+          eq(pageSnapshots.revision_number, input.targetRevisionNumber),
+        )).limit(1);
+        if (!target) throw new Error("Rollback target snapshot was not found.");
+
+        const [latest] = await tx.select({ revisionNumber: pageSnapshots.revision_number }).from(pageSnapshots).where(eq(pageSnapshots.page_id, String(input.pageId))).orderBy(desc(pageSnapshots.revision_number)).limit(1);
+        const newRevisionNumber = (latest?.revisionNumber ?? 0) + 1;
+        const rolledBackAt = new Date(input.rolledBackAt);
+        this.config.beforeSnapshotInsert?.();
+        const [snapshotRow] = await tx.insert(pageSnapshots).values({
+          id: input.newSnapshotId,
+          page_id: target.page_id,
+          website_id: target.website_id,
+          organization_id: target.organization_id,
+          revision_number: newRevisionNumber,
+          release_version: target.release_version,
+          page_metadata: target.page_metadata,
+          sections: target.sections,
+          seo: target.seo,
+          created_at: rolledBackAt,
+          published_at: rolledBackAt,
+          published_by: String(input.rolledBackBy),
+        }).returning();
+        if (!snapshotRow) throw new Error("Rollback snapshot insert returned no row.");
+
+        const [updatedPage] = await tx.update(pages).set({ status: "published", published_snapshot_id: input.newSnapshotId, version: input.expectedPageVersion + 1, updated_at: rolledBackAt, updated_by: String(input.rolledBackBy) }).where(and(eq(pages.id, String(input.pageId)), eq(pages.version, input.expectedPageVersion))).returning();
+        if (!updatedPage) throw new Error("Page changed during rollback.");
+
+        const event: PagePublicationRolledBackEvent = { ...input.event, targetSnapshotId: target.id, newRevisionNumber, pageVersion: updatedPage.version };
+        this.config.beforeOutboxInsert?.();
+        await tx.insert(applicationOutbox).values({
+          id: randomUUID(), event_type: event.type, aggregate_type: "page", aggregate_id: String(input.pageId), organization_id: String(input.organizationId), website_id: String(input.websiteId),
+          payload: event, occurred_at: rolledBackAt, idempotency_key: `${event.type}:${input.newSnapshotId}`, schema_version: "1.0.0",
+        });
+        return { ok: true, value: rowToSnapshot(snapshotRow) } as const;
+      });
+    } catch (error) {
+      this.config.logger.error("Atomic Page publication rollback failed", { error: String(error) });
+      return { ok: false, error: { code: "persistence_error", message: "Page publication rollback could not be persisted." } };
     }
   }
 }

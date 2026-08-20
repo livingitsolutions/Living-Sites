@@ -66,23 +66,24 @@ state. Snapshots are used for:
 
 - **Published content.** When a page is published, a `PageSnapshot` is
   created. The snapshot captures the page's sections, SEO settings, and
-  version. The live page continues to be editable; the snapshot is what the
+  revision number. The live page continues to be editable; the snapshot is what the
   rendering layer serves to visitors.
 - **Version history.** Each publish creates a new snapshot with an
   incremented version. Users can view the history of published versions.
-- **Rollback.** A future rollback feature can restore a page to a previous
-  snapshot's section state (creating a new draft, not mutating the snapshot).
+- **Rollback.** Rollback copies a previous snapshot's publication content into
+  a new snapshot at `latest revisionNumber + 1`, then makes the new snapshot current.
 
 ### Snapshot rules
 
 1. **Append-only.** A snapshot is never modified after creation. No UPDATE
    operations on snapshot rows.
-2. **Immutable.** All fields are readonly — `version`, `publishedAt`,
+2. **Immutable.** All fields are readonly — `revisionNumber`, `publishedAt`,
    `sections`, `seo` are set at creation and never change.
 3. **Retained indefinitely.** Snapshots are not subject to retention
    windows. They are the historical record of what was published.
-4. **Versioned.** Each snapshot has a `version` string (semver or sequential)
-   unique per `pageId`.
+4. **Revisioned.** Each snapshot has a monotonically increasing numeric
+   `revisionNumber` unique per `pageId`. An optional `releaseVersion` is only a
+   human-facing label.
 
 ### Snapshot persistence shape
 
@@ -90,7 +91,8 @@ state. Snapshots are used for:
 PageSnapshot {
   id: string              ← unique snapshot ID
   pageId: PageId          ← reference to the page (by ID)
-  version: VersionString  ← e.g. "1.0.0", "1.0.1"
+  revisionNumber: number ← immutable sequence, unique per pageId
+  releaseVersion?: VersionString ← optional human-facing label
   publishedAt: ISODate    ← when the snapshot was created
   publishedBy: UserId?    ← who published
   sections: [             ← embedded JSON array (not a join)
@@ -113,17 +115,12 @@ concurrency** (see §6 below). This is a numeric or timestamp version that
 increments on every save. It is not a semantic version — it is a concurrency
 token.
 
-### Published content versioning
+### Published content revisioning
 
-Published content uses **semantic versioning** via `PageSnapshot.version`:
-
-- **Major.** Breaking structural change (new section type, removed section).
-- **Minor.** Content change (text update, image swap, prop change).
-- **Patch.** Metadata-only change (SEO settings, page title).
-
-The version is assigned by the use case at publish time, based on a diff
-between the current draft and the last published snapshot. The diff logic
-lives in the application layer (a service), not in the aggregate.
+Published content uses a database-enforced numeric `revisionNumber`. Publish
+and rollback both lock the Page publication state, derive `latest + 1`, insert
+an immutable snapshot, advance the Page's current snapshot reference, increment
+the Page optimistic version once, and insert the outbox event atomically.
 
 ### SectionType versioning
 

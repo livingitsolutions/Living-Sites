@@ -221,6 +221,8 @@ in the same transaction).
 | `GetSection` | Fetch a single section with resolved props. | Website member (any role). |
 | `ListSectionTypes` | List available SectionTypes (platform + plugin). | Website member (any role). |
 | `GetPublishedPage` | Fetch a published page snapshot for rendering. | Public (no auth). |
+| `ListPagePublicationHistory` | List immutable published revisions newest-first and identify the current snapshot. | Website member with `page.read`. |
+| `InspectPagePublication` | Fetch one immutable historical snapshot for trusted preview rendering. | Website member with `page.read`. |
 
 ### Long-running Operations
 
@@ -229,7 +231,7 @@ in the same transaction).
 | `PublishPage` | Create an immutable snapshot of the page and mark it published. Involves: validate all sections, freeze section props, create `PageSnapshot`, update page status, emit event. |
 | `SchedulePublish` | Schedule `PublishPage` for a future time. |
 | `UnpublishPage` | Revert page to draft, remove from public rendering. |
-| `RestoreSnapshot` | Create a new snapshot from an old one (rollback). |
+| `RollbackPagePublication` | Copy a historical snapshot into revision latest + 1 and make that new snapshot current. Requires `page.publish`; never mutates or re-points directly to the old snapshot. |
 
 ### Background Jobs
 

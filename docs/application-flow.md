@@ -128,6 +128,17 @@ the same transaction. Existing PageSnapshots remain immutable and are not
 deleted. Public resolution requires both a published Website and a published
 Page with its current snapshot.
 
+### Page rollback flow
+
+`RollbackPagePublication` uses the same `page.publish` authorization boundary
+as `PublishPage`. Infrastructure locks the Page, validates its optimistic
+version, reloads the selected historical snapshot, inserts a new immutable
+snapshot at `latest revisionNumber + 1`, advances the current snapshot
+reference, increments the Page version once, and writes
+`page.publication_rolled_back` to the transactional outbox. An unpublished
+Website remains unpublished, so its public hostname stays unavailable until
+`PublishWebsite` is explicitly performed.
+
 ## Query Flow
 
 A **query** is a use case that reads state. Queries never mutate. Queries
