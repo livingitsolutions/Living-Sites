@@ -11,6 +11,7 @@ export interface TestDatabaseHarness {
     readonly db: DrizzleDB;
     readonly sqlClient: postgres.Sql;
     readonly netlifyDB: NetlifyDB;
+    readonly connectionString: string;
     start(): Promise<void>;
     stop(): Promise<void>;
     reset(): Promise<void>;

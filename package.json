@@ -24,6 +24,7 @@
     "bootstrap:admin": "cross-env TSX_TSCONFIG_PATH=scripts/tsconfig.json tsx scripts/bootstrap-admin.ts",
     "auth:reset-link": "cross-env TSX_TSCONFIG_PATH=scripts/tsconfig.json tsx scripts/generate-password-reset-link.ts",
     "outbox:process": "node scripts/outbox-process.mjs",
+    "fallback:verify": "node scripts/verify-fallback-hostname.mjs",
     "netlify:db:status": "npx netlify database status",
     "netlify:db:migrate": "npx netlify database migrations apply",
     "netlify:dev": "npx netlify dev"

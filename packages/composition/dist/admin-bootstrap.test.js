@@ -71,6 +71,7 @@ function createComposition(options = {}) {
     const database = createDatabaseQueue(options.repetitions ?? 1);
     const composition = {
         database,
+        runWithTenantContext: async (_context, operation) => operation(),
         idGenerator: {
             generatePrefixed(prefix) {
                 return `${prefix}_generated`;

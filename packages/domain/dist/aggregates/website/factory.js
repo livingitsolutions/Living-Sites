@@ -25,14 +25,13 @@ export function createWebsiteDraft(input) {
         footerScripts: input.settings?.footerScripts ?? [],
         ...(input.settings?.faviconMediaId ? { faviconMediaId: input.settings.faviconMediaId } : {}),
     };
-    const fallbackLabel = String(input.id).toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
     return {
         id: input.id,
         organizationId: input.organizationId,
         name: input.name.trim(),
         slug: input.slug,
         customDomain: input.customDomain ? normalizeHostname(input.customDomain) : null,
-        fallbackDomain: normalizeHostname(`${fallbackLabel}.livingsites.app`),
+        fallbackDomain: normalizeHostname(input.fallbackDomain),
         status: WebsiteStatus.Draft,
         publishedVersion: null,
         themeId: input.themeId ?? null,

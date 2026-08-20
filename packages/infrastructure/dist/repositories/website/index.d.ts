@@ -5,7 +5,7 @@
  * independent repository port. WebsiteSettings is persisted through the
  * WebsiteRepository as part of the Website aggregate.
  *
- * Contracts only. No implementation in this milestone.
+ * Drizzle persistence implementations are exported below.
  */
 import type { WebsiteRepository } from "@livingsites/application";
 import type { DatabaseBackedAdapter } from "../shared.js";
@@ -17,4 +17,6 @@ export interface WebsiteRepositoryAdapter extends DatabaseBackedAdapter {
     readonly websites: WebsiteRepository;
 }
 export { DrizzleWebsiteRepository } from "./drizzle-website-repository.js";
+export { DrizzleWebsitePublicationRepository } from "./drizzle-website-publication-repository.js";
+export type { DrizzleWebsitePublicationRepositoryConfig } from "./drizzle-website-publication-repository.js";
 //# sourceMappingURL=index.d.ts.map

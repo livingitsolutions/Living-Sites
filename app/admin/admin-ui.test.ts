@@ -28,7 +28,7 @@ describe("admin shell UI", () => {
   });
 
   it("renders real Website fields", () => {
-    const website = createWebsiteDraft({ id: "web-alpha" as WebsiteId, organizationId: "org-alpha" as OrganizationId, name: "Field Notes", slug: "field-notes" as Slug, now: "2026-08-19T10:00:00Z" as ISODateString, createdBy: "user-alpha" as UserId });
+    const website = createWebsiteDraft({ id: "web-alpha" as WebsiteId, organizationId: "org-alpha" as OrganizationId, name: "Field Notes", slug: "field-notes" as Slug, fallbackDomain: "web-alpha.livingsites.app", now: "2026-08-19T10:00:00Z" as ISODateString, createdBy: "user-alpha" as UserId });
     const html = renderToStaticMarkup(React.createElement(WebsitesView, { organizationId: "org-alpha", websites: [website], canCreate: false, canPublish: false, publishAction: publicationAction, unpublishAction: publicationAction }));
     expect(html).toContain("Field Notes");
     expect(html).toContain("/field-notes");

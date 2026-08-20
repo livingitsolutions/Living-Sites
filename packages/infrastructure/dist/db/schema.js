@@ -76,6 +76,7 @@ export const pages = pgTable("pages", {
     archived_at: timestamp("archived_at", { withTimezone: true }),
 }, (table) => [
     uniqueIndex("pages_website_active_slug_unique").on(table.website_id, table.slug).where(sql `${table.status} <> 'archived'`),
+    uniqueIndex("pages_website_active_homepage_unique").on(table.website_id).where(sql `${table.is_homepage} = true AND ${table.status} <> 'archived'`),
     index("pages_website_id_idx").on(table.website_id),
     check("pages_version_check", sql `${table.version} >= 1`),
 ]);

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { normalizeOrganizationRole, normalizeSystemRole } from "@livingsites/application";
+import { tenantDatabase } from "../../db/tenant-context.js";
 import { membershipDraftToInsertData, rowToMembership } from "../../db/membership-mapper.js";
 import { buildOutboxInsert } from "../../db/outbox-mapper.js";
 import { applicationOutbox, memberships, organizations, } from "../../db/schema.js";
@@ -22,14 +23,15 @@ function isConnectionError(error) {
         || (typeof candidate.message === "string" && /connection|timeout|unreachable/i.test(candidate.message));
 }
 export class DrizzleMembershipRepository {
-    db;
+    rootDb;
     logger;
     schemaVersion;
     constructor(config) {
-        this.db = config.db;
+        this.rootDb = config.db;
         this.logger = config.logger;
         this.schemaVersion = config.schemaVersion ?? "1.0.0";
     }
+    get db() { return tenantDatabase(this.rootDb); }
     async findById(id) {
         return this.findByIdWithDb(this.db, id);
     }

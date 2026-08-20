@@ -4,3 +4,4 @@ export * from "./list-website-pages.js";
 export * from "./update-page-details.js";
 export * from "./archive-page.js";
 export * from "./restore-page.js";
+export * from "./set-website-homepage.js";

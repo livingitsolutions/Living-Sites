@@ -11,6 +11,7 @@ export interface CreateWebsiteDraftInput {
     readonly createdBy: UserId;
     readonly themeId?: ThemeId | null;
     readonly customDomain?: string | null;
+    readonly fallbackDomain: string;
     readonly defaultLocale?: LocaleCode;
     readonly enabledLocales?: readonly LocaleCode[];
     readonly settings?: Partial<WebsiteSettings>;

@@ -28,7 +28,7 @@ describe("Page use cases", () => {
   });
 
   it("creates version one and surfaces optimistic concurrency conflicts", async () => {
-    const repository: PageRepository = { findById: async () => page, findActiveBySlug: async () => null, listForWebsite: async () => [page], createWithEvent: async (draft) => ({ ok: true, value: { ...draft, version: 1 } as Page }), updateDetails: async (input) => ({ ok: false, error: { aggregateId: String(input.pageId), expectedVersion: input.expectedVersion, actualVersion: 2 } }), archiveWithEvent: async () => ({ ok: true, value: page }), restoreWithEvent: async () => ({ ok: true, value: page }) };
+    const repository: PageRepository = { findById: async () => page, findActiveBySlug: async () => null, listForWebsite: async () => [page], createWithEvent: async (draft) => ({ ok: true, value: { ...draft, version: 1 } as Page }), updateDetails: async (input) => ({ ok: false, error: { aggregateId: String(input.pageId), expectedVersion: input.expectedVersion, actualVersion: 2 } }), archiveWithEvent: async () => ({ ok: true, value: page }), restoreWithEvent: async () => ({ ok: true, value: page }), setWebsiteHomepage: async () => ({ ok: true, value: page }) };
     const common = { authenticatedUser: { userId }, authorizationService: authorization(true), websiteReader: websiteReader(website), pageReader: repository, clock };
     const created = await createPage({ organizationId: orgA, websiteId, title: "Contact", slug: "Contact" }, { ...common, pageCreationPersistence: repository, idGenerator });
     expect(created.ok && created.value.version).toBe(1);

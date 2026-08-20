@@ -3,7 +3,7 @@ import { createWebsiteDraft } from "@livingsites/domain";
 import type { AuthorizationService } from "../../../authorization/service.js";
 import { WebsitePermissions } from "../../../authorization/permissions.js";
 import type { OrganizationReader, PlanReader } from "../../../repositories/organization.js";
-import type { WebsiteCreationPersistence, WebsiteReader } from "../../../repositories/website.js";
+import type { FallbackDomainProvider, WebsiteCreationPersistence, WebsiteReader } from "../../../repositories/website.js";
 import { OrganizationActivePolicy, WebsiteCountPolicy, WebsiteSlugPolicy } from "../../../policies/website/index.js";
 import type { CreateWebsiteInput } from "./input.js";
 import type { CreateWebsiteOutput } from "./output.js";
@@ -18,6 +18,7 @@ export interface CreateWebsiteDeps {
   readonly planReader: PlanReader;
   readonly websiteReader: WebsiteReader;
   readonly websiteCreationPersistence: WebsiteCreationPersistence;
+  readonly fallbackDomainProvider: FallbackDomainProvider;
   readonly clock: { nowIso(): string };
   readonly idGenerator: { generatePrefixed(prefix: string): string };
 }
@@ -65,6 +66,7 @@ export async function createWebsite(input: CreateWebsiteInput, deps: CreateWebsi
       createdBy: deps.authenticatedUser.userId,
       themeId: validation.value.themeId as ThemeId | null | undefined,
       customDomain: null,
+      fallbackDomain: deps.fallbackDomainProvider.hostnameFor(websiteId),
       defaultLocale: validation.value.defaultLocale as LocaleCode | undefined,
       enabledLocales: validation.value.enabledLocales as readonly LocaleCode[] | undefined,
       settings: validation.value.settings,

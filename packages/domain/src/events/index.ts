@@ -107,6 +107,14 @@ export interface PageRestoredEvent extends DomainEvent {
   readonly pageId: PageId;
 }
 
+export interface WebsiteHomepageChangedEvent extends DomainEvent {
+  readonly type: "website.homepage_changed";
+  readonly eventScope: { readonly scope: "website"; readonly organizationId: OrganizationId; readonly websiteId: WebsiteId };
+  readonly pageId: PageId;
+  readonly previousHomepagePageId: PageId | null;
+  readonly pageVersion: number;
+}
+
 export interface MediaUploadedEvent extends DomainEvent {
   readonly type: "media.uploaded";
   readonly eventScope: { readonly scope: "organization"; readonly organizationId: OrganizationId };
@@ -194,6 +202,7 @@ export type KnownDomainEvent =
   | PagePublicationRolledBackEvent
   | PageArchivedEvent
   | PageRestoredEvent
+  | WebsiteHomepageChangedEvent
   | MediaUploadedEvent
   | FormSubmittedEvent
   | FeatureEnabledEvent

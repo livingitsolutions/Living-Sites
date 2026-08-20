@@ -8,6 +8,7 @@ export declare class DrizzleWebsiteRepository implements WebsiteRepository {
         readonly db: DrizzleDB;
         readonly logger: Logger;
     });
+    private get db();
     findById(id: WebsiteId): Promise<Website | null>;
     findByOrganizationAndSlug(organizationId: OrganizationId, slug: string): Promise<Website | null>;
     listForOrganization(organizationId: OrganizationId): Promise<readonly Website[]>;

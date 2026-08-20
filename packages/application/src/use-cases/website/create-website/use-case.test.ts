@@ -37,6 +37,7 @@ function setup(options: { userId: UserId; role?: Membership["role"]; membershipO
       planReader: { async findById() { return plan; }, async findActiveById() { return plan; }, async listActive() { return [plan]; } },
       websiteReader: { async findById() { return null; }, async findByOrganizationAndSlug(id: OrganizationId, slug: string) { return existing.find((site) => site.organizationId === id && site.slug === slug) ?? null; }, async listForOrganization(id: OrganizationId) { return existing.filter((site) => site.organizationId === id); }, async findByDomain() { return null; } },
       websiteCreationPersistence: { async createWithEvent(draft: WebsiteDraft) { persisted = { ...draft, version: 1 }; return { ok: true as const, value: persisted }; } },
+      fallbackDomainProvider: { hostnameFor: (websiteId: WebsiteId) => `${String(websiteId).replace("_", "-")}.preview.example.com` },
       clock: { nowIso: () => now }, idGenerator: { generatePrefixed: () => "web_created" },
     },
   };

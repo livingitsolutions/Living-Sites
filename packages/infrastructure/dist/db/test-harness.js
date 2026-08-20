@@ -8,6 +8,7 @@ import { NetlifyDB } from "@netlify/database-dev";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema.js";
+import { createTenantContextRunner, tenantDatabase } from "./tenant-context.js";
 export async function createTestDatabaseHarness(migrationsDir = "./netlify/database/migrations") {
     const netlifyDB = new NetlifyDB({
         directory: undefined,
@@ -15,10 +16,13 @@ export async function createTestDatabaseHarness(migrationsDir = "./netlify/datab
     });
     let sqlClient;
     let db;
+    let connectionString = "";
     async function start() {
-        const connectionString = await netlifyDB.start();
+        connectionString = await netlifyDB.start();
         await netlifyDB.applyMigrations(migrationsDir);
-        sqlClient = postgres(connectionString);
+        sqlClient = postgres(connectionString, { max: 1 });
+        await sqlClient `select set_config('app.context_mode', 'internal', false)`;
+        await sqlClient `select set_config('app.tenant_authorized', 'true', false)`;
         db = drizzle({ client: sqlClient, schema });
     }
     async function stop() {
@@ -29,20 +33,27 @@ export async function createTestDatabaseHarness(migrationsDir = "./netlify/datab
     async function reset() {
         if (!db)
             return;
-        await db.delete(schema.websites);
-        await db.delete(schema.platformSuperAdmins);
-        await db.delete(schema.memberships);
-        await db.delete(schema.applicationOutbox);
-        await db.delete(schema.planFeatureEntitlements);
-        await db.delete(schema.features);
-        await db.delete(schema.plans);
-        await db.delete(schema.platformUsers);
-        await db.delete(schema.organizations);
+        await createTenantContextRunner(db).run({ mode: "internal" }, async () => {
+            const transaction = tenantDatabase(db);
+            await transaction.delete(schema.pageSnapshots);
+            await transaction.delete(schema.pageSections);
+            await transaction.delete(schema.pages);
+            await transaction.delete(schema.websites);
+            await transaction.delete(schema.platformSuperAdmins);
+            await transaction.delete(schema.memberships);
+            await transaction.delete(schema.applicationOutbox);
+            await transaction.delete(schema.planFeatureEntitlements);
+            await transaction.delete(schema.features);
+            await transaction.delete(schema.plans);
+            await transaction.delete(schema.platformUsers);
+            await transaction.delete(schema.organizations);
+        });
     }
     return {
         get db() { return db; },
         get sqlClient() { return sqlClient; },
         get netlifyDB() { return netlifyDB; },
+        get connectionString() { return connectionString; },
         start,
         stop,
         reset,

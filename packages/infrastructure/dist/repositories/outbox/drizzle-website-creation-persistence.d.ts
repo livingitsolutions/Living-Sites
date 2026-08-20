@@ -9,6 +9,7 @@ export declare class DrizzleWebsiteCreationPersistence implements WebsiteCreatio
         readonly logger: Logger;
         readonly beforeOutboxInsert?: () => void;
     });
+    private get db();
     createWithEvent(candidate: WebsiteDraft, event: WebsiteCreatedEvent): Promise<CreateResult<Website>>;
 }
 //# sourceMappingURL=drizzle-website-creation-persistence.d.ts.map

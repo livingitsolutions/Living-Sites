@@ -1,7 +1,7 @@
 import type { Result, UserId } from "@livingsites/domain";
 import type { AuthorizationService } from "../../../authorization/service.js";
 import type { OrganizationReader, PlanReader } from "../../../repositories/organization.js";
-import type { WebsiteCreationPersistence, WebsiteReader } from "../../../repositories/website.js";
+import type { FallbackDomainProvider, WebsiteCreationPersistence, WebsiteReader } from "../../../repositories/website.js";
 import type { CreateWebsiteInput } from "./input.js";
 import type { CreateWebsiteOutput } from "./output.js";
 import type { CreateWebsiteError } from "./errors.js";
@@ -15,6 +15,7 @@ export interface CreateWebsiteDeps {
     readonly planReader: PlanReader;
     readonly websiteReader: WebsiteReader;
     readonly websiteCreationPersistence: WebsiteCreationPersistence;
+    readonly fallbackDomainProvider: FallbackDomainProvider;
     readonly clock: {
         nowIso(): string;
     };

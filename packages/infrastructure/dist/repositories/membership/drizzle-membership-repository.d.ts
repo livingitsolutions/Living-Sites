@@ -8,10 +8,11 @@ export interface DrizzleMembershipRepositoryConfig {
     readonly schemaVersion?: string;
 }
 export declare class DrizzleMembershipRepository implements MembershipRepository, MembershipMutationPersistence {
-    private readonly db;
+    private readonly rootDb;
     private readonly logger;
     private readonly schemaVersion;
     constructor(config: DrizzleMembershipRepositoryConfig);
+    private get db();
     findById(id: MembershipId): Promise<Membership | null>;
     findForUserAndOrganization(organizationId: OrganizationId, userId: UserId, websiteId?: WebsiteId | null): Promise<Membership | null>;
     findMembership(organizationId: OrganizationId, userId: UserId, websiteId?: WebsiteId | null): Promise<Membership | null>;

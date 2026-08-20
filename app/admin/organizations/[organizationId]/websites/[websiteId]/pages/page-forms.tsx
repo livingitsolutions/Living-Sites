@@ -14,3 +14,8 @@ export function EditPageForm({ page, action }: { page: { id: string; title: stri
   const [state, formAction, pending] = useActionState(action, initialPageActionState);
   return <details className="page-edit"><summary className="text-button">Edit details</summary><form action={formAction} className="inline-page-form"><input type="hidden" name="pageId" value={page.id} /><input type="hidden" name="version" value={page.version} />{state.status === "error" && state.message ? <ErrorMessage>{state.message}</ErrorMessage> : null}<FormField label="Title" name={`title-${page.id}`}><input id={`title-${page.id}`} name="title" defaultValue={page.title} required /></FormField><FormField label="Slug" name={`slug-${page.id}`}><input id={`slug-${page.id}`} name="slug" defaultValue={page.slug} required /></FormField><input type="hidden" name="description" value={page.description ?? ""} /><button className="button button-secondary" disabled={pending}>{pending ? "Saving…" : "Save"}</button></form></details>;
 }
+
+export function SetHomepageForm({ page, action }: { page: { id: string; version: number }; action: (state: PageActionState, formData: FormData) => Promise<PageActionState> }) {
+  const [state, formAction, pending] = useActionState(action, initialPageActionState);
+  return <form action={formAction} className="homepage-form"><input type="hidden" name="pageId" value={page.id} /><input type="hidden" name="version" value={page.version} />{state.status === "error" && state.message ? <ErrorMessage>{state.message}</ErrorMessage> : null}<button className="button button-secondary" disabled={pending}>{pending ? "Setting…" : "Set as homepage"}</button></form>;
+}

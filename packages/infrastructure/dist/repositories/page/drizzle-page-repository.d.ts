@@ -1,5 +1,6 @@
-import type { Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PageRestoredEvent, PageStatus, Section, WebsiteId } from "@livingsites/domain";
-import type { CreateResult, PageRepository, SaveResult } from "@livingsites/application";
+import type { Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PageRestoredEvent, PageStatus, Section, WebsiteHomepageChangedEvent, WebsiteId } from "@livingsites/domain";
+import type { CreateResult, HomepagePersistenceError, PageRepository, SaveResult } from "@livingsites/application";
+import type { Result } from "@livingsites/domain";
 import type { Logger } from "@livingsites/platform";
 import type { DrizzleDB } from "../../db/drizzle-instance.js";
 export interface DrizzlePageRepositoryConfig {
@@ -10,6 +11,7 @@ export interface DrizzlePageRepositoryConfig {
 export declare class DrizzlePageRepository implements PageRepository {
     private readonly config;
     constructor(config: DrizzlePageRepositoryConfig);
+    private get db();
     findById(id: PageId): Promise<Page | null>;
     findActiveBySlug(websiteId: WebsiteId, slug: string): Promise<Page | null>;
     listForWebsite(websiteId: WebsiteId, options?: {
@@ -44,6 +46,14 @@ export declare class DrizzlePageRepository implements PageRepository {
         restoredAt: string;
         restoredBy: string;
     }, event: PageRestoredEvent): Promise<SaveResult<Page>>;
+    setWebsiteHomepage(input: {
+        websiteId: WebsiteId;
+        pageId: PageId;
+        expectedPageVersion: number;
+        changedAt: string;
+        changedBy: string;
+        event: Omit<WebsiteHomepageChangedEvent, "previousHomepagePageId" | "pageVersion">;
+    }): Promise<Result<Page, HomepagePersistenceError>>;
     private outbox;
     private update;
     private atomicMutation;

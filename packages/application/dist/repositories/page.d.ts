@@ -1,4 +1,4 @@
-import type { AggregateVersion, OrganizationId, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PagePublishedEvent, PageRestoredEvent, PageSnapshot, PageStatus, Section, SectionSnapshotEntry, UserId, VersionString, WebsiteId } from "@livingsites/domain";
+import type { AggregateVersion, OrganizationId, Page, PageArchivedEvent, PageCreatedEvent, PageDraft, PageId, PagePublicationRolledBackEvent, PagePublishedEvent, PageRestoredEvent, PageSnapshot, PageStatus, Section, SectionSnapshotEntry, UserId, VersionString, WebsiteHomepageChangedEvent, WebsiteId } from "@livingsites/domain";
 import type { CreateResult, SaveResult } from "../contracts.js";
 import type { Result } from "@livingsites/domain";
 export interface PageReader {
@@ -41,12 +41,27 @@ export interface PageMutationPersistence {
         readonly restoredBy: string;
     }, event: PageRestoredEvent): Promise<SaveResult<Page>>;
 }
-export interface PageRepository extends PageReader, PageCreationPersistence, PageMutationPersistence {
+export type HomepagePersistenceError = {
+    readonly code: "not_found" | "archived_target" | "already_homepage" | "concurrency_conflict" | "persistence_error";
+    readonly message: string;
+};
+export interface PageHomepagePersistence {
+    setWebsiteHomepage(input: {
+        readonly websiteId: WebsiteId;
+        readonly pageId: PageId;
+        readonly expectedPageVersion: AggregateVersion;
+        readonly changedAt: string;
+        readonly changedBy: UserId;
+        readonly event: Omit<WebsiteHomepageChangedEvent, "previousHomepagePageId" | "pageVersion">;
+    }): Promise<Result<Page, HomepagePersistenceError>>;
+}
+export interface PageRepository extends PageReader, PageCreationPersistence, PageMutationPersistence, PageHomepagePersistence {
 }
 export interface PageSnapshotReader {
     findById(id: string): Promise<PageSnapshot | null>;
     findLatestForPage(pageId: PageId): Promise<PageSnapshot | null>;
     findByRevision(pageId: PageId, revisionNumber: number): Promise<PageSnapshot | null>;
+    listForPage(pageId: PageId): Promise<readonly PageSnapshot[]>;
 }
 export interface PagePublicationCandidate {
     readonly id: string;
@@ -72,6 +87,19 @@ export interface PagePublisher {
         readonly candidate: PagePublicationCandidate;
         readonly expectedPageVersion: AggregateVersion;
         readonly event: Omit<PagePublishedEvent, "revisionNumber" | "pageVersion">;
+    }): Promise<Result<PageSnapshot, PagePublicationError>>;
+}
+export interface PageRollbackPersistence {
+    rollback(input: {
+        readonly pageId: PageId;
+        readonly websiteId: WebsiteId;
+        readonly organizationId: OrganizationId;
+        readonly targetRevisionNumber: number;
+        readonly newSnapshotId: string;
+        readonly expectedPageVersion: AggregateVersion;
+        readonly rolledBackAt: string;
+        readonly rolledBackBy: UserId;
+        readonly event: Omit<PagePublicationRolledBackEvent, "targetSnapshotId" | "newRevisionNumber" | "pageVersion">;
     }): Promise<Result<PageSnapshot, PagePublicationError>>;
 }
 //# sourceMappingURL=page.d.ts.map

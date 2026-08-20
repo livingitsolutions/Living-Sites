@@ -21,6 +21,7 @@ function draft(id: string, organizationId = orgA, slug = "field-notes", domain: 
     organizationId,
     name: "Field Notes",
     slug: slug as Slug,
+    fallbackDomain: `${id.replaceAll("_", "-")}.livingsites.app`,
     customDomain: domain,
     now,
     createdBy: "usr_owner" as UserId,

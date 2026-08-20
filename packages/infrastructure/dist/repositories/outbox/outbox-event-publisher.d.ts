@@ -18,10 +18,12 @@ export type OutboxPublishError = {
     message: string;
 };
 export declare class OutboxEventPublisher implements EventPublisher {
-    private readonly db;
+    private readonly rootDb;
     private readonly logger;
     private readonly schemaVersion;
     constructor(config: OutboxEventPublisherConfig);
+    private get db();
+    private withDatabase;
     publish(event: DomainEvent): Promise<void>;
     publishAll(events: readonly DomainEvent[]): Promise<void>;
     private buildInsert;

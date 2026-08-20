@@ -33,6 +33,7 @@ export interface CreateWebsiteDraftInput {
   readonly createdBy: UserId;
   readonly themeId?: ThemeId | null;
   readonly customDomain?: string | null;
+  readonly fallbackDomain: string;
   readonly defaultLocale?: LocaleCode;
   readonly enabledLocales?: readonly LocaleCode[];
   readonly settings?: Partial<WebsiteSettings>;
@@ -54,15 +55,13 @@ export function createWebsiteDraft(input: CreateWebsiteDraftInput): WebsiteDraft
     ...(input.settings?.faviconMediaId ? { faviconMediaId: input.settings.faviconMediaId } : {}),
   };
 
-  const fallbackLabel = String(input.id).toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
-
   return {
     id: input.id,
     organizationId: input.organizationId,
     name: input.name.trim(),
     slug: input.slug,
     customDomain: input.customDomain ? normalizeHostname(input.customDomain) : null,
-    fallbackDomain: normalizeHostname(`${fallbackLabel}.livingsites.app`),
+    fallbackDomain: normalizeHostname(input.fallbackDomain),
     status: WebsiteStatus.Draft,
     publishedVersion: null,
     themeId: input.themeId ?? null,

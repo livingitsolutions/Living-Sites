@@ -10,15 +10,17 @@ export interface OutboxProcessorConfig {
 }
 type Handler = (event: OutboxEventRecord) => Promise<DispatchOutcome>;
 export declare class DrizzleOutboxProcessor implements OutboxProcessor {
-    private readonly db;
+    private readonly rootDb;
     private readonly logger;
     private readonly maxAttempts;
     private readonly baseBackoffMs;
     private readonly maxBackoffMs;
     private readonly handlers;
     constructor(config: OutboxProcessorConfig);
+    private get db();
     registerHandler(eventType: string, handler: Handler): void;
     processBatch(batchSize?: number): Promise<number>;
+    private processInternalBatch;
     private claimPending;
     private processSingle;
     private markProcessed;

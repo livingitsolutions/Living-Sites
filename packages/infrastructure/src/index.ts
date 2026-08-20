@@ -13,6 +13,7 @@ export { OutboxEventPublisher, DrizzleOrganizationCreationPersistence, DrizzleOu
 export type { OutboxEventPublisherConfig, OutboxPublishError, DrizzleOrganizationCreationPersistenceConfig, OutboxProcessorConfig } from "./repositories/outbox/index.js";
 export { createNetlifyDatabase, MissingNetlifyDatabaseError } from "./providers/netlify-database/index.js";
 export type { NetlifyDatabaseProvider, NetlifyDatabaseProviderConfig, NetlifyDrizzleDB } from "./providers/netlify-database/index.js";
+export { ConfiguredFallbackDomainProvider, DEFAULT_FALLBACK_DOMAIN_SUFFIX } from "./providers/fallback-domain/index.js";
 export type { DrizzleDB } from "./db/drizzle-instance.js";
 export { createTenantContextRunner, currentTenantContext, TenantContextDeniedError } from "./db/tenant-context.js";
 export type { TenantContext, TenantContextRunner } from "./db/tenant-context.js";

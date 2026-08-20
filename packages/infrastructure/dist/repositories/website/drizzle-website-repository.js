@@ -1,5 +1,6 @@
 import { and, eq, or } from "drizzle-orm";
 import { normalizeHostname, WebsiteStatus } from "@livingsites/domain";
+import { tenantDatabase } from "../../db/tenant-context.js";
 import { websites } from "../../db/schema.js";
 import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper.js";
 function duplicate(error) {
@@ -10,8 +11,9 @@ export class DrizzleWebsiteRepository {
     constructor(config) {
         this.config = config;
     }
+    get db() { return tenantDatabase(this.config.db); }
     async findById(id) {
-        const [row] = await this.config.db.select().from(websites).where(eq(websites.id, String(id))).limit(1);
+        const [row] = await this.db.select().from(websites).where(eq(websites.id, String(id))).limit(1);
         if (!row)
             return null;
         const mapped = rowToWebsite(row);
@@ -20,14 +22,14 @@ export class DrizzleWebsiteRepository {
         return mapped.ok ? mapped.value : null;
     }
     async findByOrganizationAndSlug(organizationId, slug) {
-        const [row] = await this.config.db.select().from(websites).where(and(eq(websites.organization_id, String(organizationId)), eq(websites.slug, slug.toLowerCase()))).limit(1);
+        const [row] = await this.db.select().from(websites).where(and(eq(websites.organization_id, String(organizationId)), eq(websites.slug, slug.toLowerCase()))).limit(1);
         if (!row)
             return null;
         const mapped = rowToWebsite(row);
         return mapped.ok ? mapped.value : null;
     }
     async listForOrganization(organizationId) {
-        const rows = await this.config.db.select().from(websites).where(eq(websites.organization_id, String(organizationId))).orderBy(websites.created_at);
+        const rows = await this.db.select().from(websites).where(eq(websites.organization_id, String(organizationId))).orderBy(websites.created_at);
         return rows.flatMap((row) => { const mapped = rowToWebsite(row); return mapped.ok ? [mapped.value] : []; });
     }
     async findByDomain(domain) {
@@ -38,7 +40,7 @@ export class DrizzleWebsiteRepository {
         catch {
             return null;
         }
-        const [row] = await this.config.db.select().from(websites).where(or(eq(websites.custom_domain, hostname), eq(websites.fallback_domain, hostname))).limit(1);
+        const [row] = await this.db.select().from(websites).where(or(eq(websites.custom_domain, hostname), eq(websites.fallback_domain, hostname))).limit(1);
         if (!row)
             return null;
         const mapped = rowToWebsite(row);
@@ -46,7 +48,7 @@ export class DrizzleWebsiteRepository {
     }
     async create(candidate) {
         try {
-            const [row] = await this.config.db.insert(websites).values(websiteDraftToInsert(candidate)).returning();
+            const [row] = await this.db.insert(websites).values(websiteDraftToInsert(candidate)).returning();
             if (!row)
                 return { ok: false, error: { code: "invalid_persistence_state", message: "Website insert returned no row." } };
             return rowToWebsite(row);
@@ -69,7 +71,7 @@ export class DrizzleWebsiteRepository {
     }
     async update(id, expectedVersion, changes) {
         try {
-            const [row] = await this.config.db.update(websites).set({ ...changes, version: expectedVersion + 1 }).where(and(eq(websites.id, String(id)), eq(websites.version, expectedVersion))).returning();
+            const [row] = await this.db.update(websites).set({ ...changes, version: expectedVersion + 1 }).where(and(eq(websites.id, String(id)), eq(websites.version, expectedVersion))).returning();
             if (!row)
                 return { ok: false, error: { aggregateId: String(id), expectedVersion, actualVersion: expectedVersion } };
             return rowToWebsite(row);

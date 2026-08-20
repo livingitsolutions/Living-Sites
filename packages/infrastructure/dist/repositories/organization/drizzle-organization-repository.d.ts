@@ -8,9 +8,10 @@ export interface DrizzleOrganizationRepositoryConfig {
     readonly logger: Logger;
 }
 export declare class DrizzleOrganizationRepository implements OrganizationReader, OrganizationCreator {
-    private readonly db;
+    private readonly rootDb;
     private readonly logger;
     constructor(config: DrizzleOrganizationRepositoryConfig);
+    private get db();
     findById(id: OrganizationId): Promise<Organization | null>;
     findBySlug(slug: string): Promise<Organization | null>;
     list(params: OrganizationListParams): Promise<PaginatedResult<Organization>>;

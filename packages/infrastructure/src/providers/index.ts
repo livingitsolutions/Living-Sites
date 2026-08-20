@@ -13,3 +13,4 @@ export type {
   NetlifyDatabaseProviderConfig,
   NetlifyDrizzleDB,
 } from "./netlify-database/index.js";
+export { ConfiguredFallbackDomainProvider, DEFAULT_FALLBACK_DOMAIN_SUFFIX } from "./fallback-domain/index.js";

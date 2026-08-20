@@ -11,4 +11,6 @@ export { createDbConnection } from "./connection.js";
 export type { DatabaseConfig, DbConnection } from "./connection.js";
 export { seedPlansAndFeatures, PLAN_FREE_ID, PLAN_LIFETIME_ID, FEATURE_IDS } from "./seed.js";
 export type { SeedResult } from "./seed.js";
+export { createTenantContextRunner, currentTenantContext, tenantDatabase, TenantContextDeniedError } from "./tenant-context.js";
+export type { TenantContext, TenantContextRunner } from "./tenant-context.js";
 //# sourceMappingURL=index.d.ts.map
