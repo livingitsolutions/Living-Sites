@@ -35,6 +35,7 @@ import type {
   OrganizationListParams,
 } from "@livingsites/application";
 import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { tenantDatabase } from "../../db/tenant-context.js";
 import { organizations, type OrganizationRow } from "../../db/schema.js";
 import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper.js";
 
@@ -69,13 +70,15 @@ export interface DrizzleOrganizationRepositoryConfig {
 }
 
 export class DrizzleOrganizationRepository implements OrganizationReader, OrganizationCreator {
-  private readonly db: DrizzleDB;
+  private readonly rootDb: DrizzleDB;
   private readonly logger: Logger;
 
   constructor(config: DrizzleOrganizationRepositoryConfig) {
-    this.db = config.db;
+    this.rootDb = config.db;
     this.logger = config.logger;
   }
+
+  private get db(): DrizzleDB { return tenantDatabase(this.rootDb); }
 
   async findById(id: OrganizationId): Promise<Organization | null> {
     try {

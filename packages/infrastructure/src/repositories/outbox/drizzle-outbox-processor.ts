@@ -21,6 +21,7 @@ import type {
   DispatchOutcome,
 } from "@livingsites/application";
 import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { createTenantContextRunner, tenantDatabase } from "../../db/tenant-context.js";
 import { applicationOutbox, type OutboxRow } from "../../db/schema.js";
 import { rowToOutboxEventRecord } from "../../db/outbox-mapper.js";
 
@@ -39,7 +40,7 @@ const DEFAULT_MAX_BACKOFF_MS = 60000;
 type Handler = (event: OutboxEventRecord) => Promise<DispatchOutcome>;
 
 export class DrizzleOutboxProcessor implements OutboxProcessor {
-  private readonly db: DrizzleDB;
+  private readonly rootDb: DrizzleDB;
   private readonly logger: Logger;
   private readonly maxAttempts: number;
   private readonly baseBackoffMs: number;
@@ -47,12 +48,14 @@ export class DrizzleOutboxProcessor implements OutboxProcessor {
   private readonly handlers: Map<string, Handler[]> = new Map();
 
   constructor(config: OutboxProcessorConfig) {
-    this.db = config.db;
+    this.rootDb = config.db;
     this.logger = config.logger;
     this.maxAttempts = config.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
     this.baseBackoffMs = config.baseBackoffMs ?? DEFAULT_BASE_BACKOFF_MS;
     this.maxBackoffMs = config.maxBackoffMs ?? DEFAULT_MAX_BACKOFF_MS;
   }
+
+  private get db(): DrizzleDB { return tenantDatabase(this.rootDb); }
 
   registerHandler(eventType: string, handler: Handler): void {
     const existing = this.handlers.get(eventType) ?? [];
@@ -60,6 +63,10 @@ export class DrizzleOutboxProcessor implements OutboxProcessor {
   }
 
   async processBatch(batchSize: number = 10): Promise<number> {
+    return createTenantContextRunner(this.rootDb).run({ mode: "internal" }, () => this.processInternalBatch(batchSize));
+  }
+
+  private async processInternalBatch(batchSize: number): Promise<number> {
     const claimed = await this.claimPending(batchSize);
     if (claimed.length === 0) return 0;
 

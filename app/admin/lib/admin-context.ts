@@ -38,47 +38,69 @@ export const getOrganizationAdminContext = cache(async (organizationIdValue: str
 
   const composition = getComposition();
   const organizationId = organizationIdValue as OrganizationId;
-  const access = await composition.authorizationService.can({
-    userId: user.platformUser.id,
-    organizationId,
-    permission: OrganizationPermissions.Read,
-  });
-  if (!access.allowed) return { kind: "denied" as const, user, reason: access.reason };
+  try {
+    return await composition.runWithTenantContext({ mode: "tenant", userId: user.platformUser.id, organizationId }, async () => {
+      const access = await composition.authorizationService.can({
+        userId: user.platformUser.id,
+        organizationId,
+        permission: OrganizationPermissions.Read,
+      });
+      if (!access.allowed) return { kind: "denied" as const, user, reason: access.reason };
 
-  const organization = await composition.organizationRepository.findById(organizationId);
-  if (!organization) return { kind: "denied" as const, user, reason: "Organization was not found." };
+      const organization = await composition.organizationRepository.findById(organizationId);
+      if (!organization) return { kind: "denied" as const, user, reason: "Organization was not found." };
 
-  const membership = await composition.membershipRepository.findForUserAndOrganization(organizationId, user.platformUser.id);
-  const permissionEntries = await Promise.all(
-    adminNavigation.map(async (item) => [item.permission, (await composition.authorizationService.can({
-      userId: user.platformUser.id,
-      organizationId,
-      permission: item.permission,
-    })).allowed] as const),
-  );
-  const createWebsite = await composition.authorizationService.can({
-    userId: user.platformUser.id,
-    organizationId,
-    permission: WebsitePermissions.Create,
-  });
+      const membership = await composition.membershipRepository.findForUserAndOrganization(organizationId, user.platformUser.id);
+      const permissionEntries = await Promise.all(
+        adminNavigation.map(async (item) => [item.permission, (await composition.authorizationService.can({
+          userId: user.platformUser.id,
+          organizationId,
+          permission: item.permission,
+        })).allowed] as const),
+      );
+      const createWebsite = await composition.authorizationService.can({
+        userId: user.platformUser.id,
+        organizationId,
+        permission: WebsitePermissions.Create,
+      });
 
-  return {
-    kind: "authorized" as const,
-    sessionUser: user.sessionUser,
-    platformUser: user.platformUser,
-    organization,
-    role: membership?.role ?? "Platform Super Admin",
-    permissions: Object.fromEntries(permissionEntries) as Record<PermissionKey, boolean>,
-    canCreateWebsite: createWebsite.allowed,
-  };
+      return {
+        kind: "authorized" as const,
+        sessionUser: user.sessionUser,
+        platformUser: user.platformUser,
+        organization,
+        role: membership?.role ?? "Platform Super Admin",
+        permissions: Object.fromEntries(permissionEntries) as Record<PermissionKey, boolean>,
+        canCreateWebsite: createWebsite.allowed,
+      };
+    });
+  } catch (error) {
+    return { kind: "denied" as const, user, reason: error instanceof Error && error.name === "TenantContextDeniedError" ? error.message : "Organization access could not be established." };
+  }
 });
 
 export async function listUserOrganizations(userId: UserId): Promise<Array<{ organization: Organization; role: string }>> {
   const composition = getComposition();
-  const memberships = await composition.membershipRepository.listForUser(userId);
-  const organizationEntries = await Promise.all(memberships.map(async (membership) => {
-    const organization = await composition.organizationRepository.findById(membership.organizationId);
-    return organization ? { organization, role: String(membership.role) } : null;
-  }));
-  return organizationEntries.filter((entry): entry is { organization: Organization; role: string } => entry !== null);
+  return composition.runWithTenantContext({ mode: "directory", userId }, async () => {
+    const memberships = await composition.membershipRepository.listForUser(userId);
+    const organizationEntries = await Promise.all(memberships.map(async (membership) => {
+      const organization = await composition.organizationRepository.findById(membership.organizationId);
+      return organization ? { organization, role: String(membership.role) } : null;
+    }));
+    return organizationEntries.filter((entry): entry is { organization: Organization; role: string } => entry !== null);
+  });
+}
+
+export async function runWithOrganizationTenant<T>(
+  context: Extract<Awaited<ReturnType<typeof getOrganizationAdminContext>>, { kind: "authorized" }>,
+  operation: () => Promise<T>,
+  websiteId?: string,
+): Promise<T> {
+  const composition = getComposition();
+  return composition.runWithTenantContext({
+    mode: "tenant",
+    userId: context.platformUser.id,
+    organizationId: context.organization.id,
+    ...(websiteId ? { websiteId: websiteId as never } : {}),
+  }, operation);
 }

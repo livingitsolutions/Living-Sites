@@ -4,6 +4,7 @@ import { normalizeHostname, WebsiteStatus } from "@livingsites/domain";
 import type { CreateResult, SaveResult, WebsiteRepository } from "@livingsites/application";
 import type { Logger } from "@livingsites/platform";
 import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { tenantDatabase } from "../../db/tenant-context.js";
 import { websites, type WebsiteRow } from "../../db/schema.js";
 import { rowToWebsite, websiteDraftToInsert } from "../../db/website-mapper.js";
 
@@ -14,8 +15,10 @@ function duplicate(error: unknown): boolean {
 export class DrizzleWebsiteRepository implements WebsiteRepository {
   constructor(private readonly config: { readonly db: DrizzleDB; readonly logger: Logger }) {}
 
+  private get db(): DrizzleDB { return tenantDatabase(this.config.db); }
+
   async findById(id: WebsiteId): Promise<Website | null> {
-    const [row] = await this.config.db.select().from(websites).where(eq(websites.id, String(id))).limit(1);
+    const [row] = await this.db.select().from(websites).where(eq(websites.id, String(id))).limit(1);
     if (!row) return null;
     const mapped = rowToWebsite(row);
     if (!mapped.ok) this.config.logger.error(mapped.error.message, { websiteId: String(id) });
@@ -23,21 +26,21 @@ export class DrizzleWebsiteRepository implements WebsiteRepository {
   }
 
   async findByOrganizationAndSlug(organizationId: OrganizationId, slug: string): Promise<Website | null> {
-    const [row] = await this.config.db.select().from(websites).where(and(eq(websites.organization_id, String(organizationId)), eq(websites.slug, slug.toLowerCase()))).limit(1);
+    const [row] = await this.db.select().from(websites).where(and(eq(websites.organization_id, String(organizationId)), eq(websites.slug, slug.toLowerCase()))).limit(1);
     if (!row) return null;
     const mapped = rowToWebsite(row);
     return mapped.ok ? mapped.value : null;
   }
 
   async listForOrganization(organizationId: OrganizationId): Promise<readonly Website[]> {
-    const rows = await this.config.db.select().from(websites).where(eq(websites.organization_id, String(organizationId))).orderBy(websites.created_at);
+    const rows = await this.db.select().from(websites).where(eq(websites.organization_id, String(organizationId))).orderBy(websites.created_at);
     return rows.flatMap((row: WebsiteRow) => { const mapped = rowToWebsite(row); return mapped.ok ? [mapped.value] : []; });
   }
 
   async findByDomain(domain: string): Promise<Website | null> {
     let hostname: string;
     try { hostname = normalizeHostname(domain); } catch { return null; }
-    const [row] = await this.config.db.select().from(websites).where(or(eq(websites.custom_domain, hostname), eq(websites.fallback_domain, hostname))).limit(1);
+    const [row] = await this.db.select().from(websites).where(or(eq(websites.custom_domain, hostname), eq(websites.fallback_domain, hostname))).limit(1);
     if (!row) return null;
     const mapped = rowToWebsite(row);
     return mapped.ok ? mapped.value : null;
@@ -45,7 +48,7 @@ export class DrizzleWebsiteRepository implements WebsiteRepository {
 
   async create(candidate: WebsiteDraft): Promise<CreateResult<Website>> {
     try {
-      const [row] = await this.config.db.insert(websites).values(websiteDraftToInsert(candidate)).returning();
+      const [row] = await this.db.insert(websites).values(websiteDraftToInsert(candidate)).returning();
       if (!row) return { ok: false, error: { code: "invalid_persistence_state", message: "Website insert returned no row." } };
       return rowToWebsite(row);
     } catch (error) {
@@ -69,7 +72,7 @@ export class DrizzleWebsiteRepository implements WebsiteRepository {
 
   private async update(id: WebsiteId, expectedVersion: number, changes: Partial<typeof websites.$inferInsert>): Promise<SaveResult<Website>> {
     try {
-      const [row] = await this.config.db.update(websites).set({ ...changes, version: expectedVersion + 1 }).where(and(eq(websites.id, String(id)), eq(websites.version, expectedVersion))).returning();
+      const [row] = await this.db.update(websites).set({ ...changes, version: expectedVersion + 1 }).where(and(eq(websites.id, String(id)), eq(websites.version, expectedVersion))).returning();
       if (!row) return { ok: false, error: { aggregateId: String(id), expectedVersion, actualVersion: expectedVersion } };
       return rowToWebsite(row);
     } catch (error) {

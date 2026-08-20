@@ -11,6 +11,7 @@ import { buildOrganizationNavigation } from "./lib/navigation-config";
 import { WebsitesView } from "./organizations/[organizationId]/websites/websites-view";
 
 const organization = { id: "org-alpha", name: "Alpha Org", slug: "alpha-org" } as any;
+const publicationAction = async () => {};
 
 describe("admin shell UI", () => {
   it("renders desktop and keyboard-operable mobile navigation", () => {
@@ -28,7 +29,7 @@ describe("admin shell UI", () => {
 
   it("renders real Website fields", () => {
     const website = createWebsiteDraft({ id: "web-alpha" as WebsiteId, organizationId: "org-alpha" as OrganizationId, name: "Field Notes", slug: "field-notes" as Slug, now: "2026-08-19T10:00:00Z" as ISODateString, createdBy: "user-alpha" as UserId });
-    const html = renderToStaticMarkup(React.createElement(WebsitesView, { organizationId: "org-alpha", websites: [website], canCreate: false }));
+    const html = renderToStaticMarkup(React.createElement(WebsitesView, { organizationId: "org-alpha", websites: [website], canCreate: false, canPublish: false, publishAction: publicationAction, unpublishAction: publicationAction }));
     expect(html).toContain("Field Notes");
     expect(html).toContain("/field-notes");
     expect(html).toContain("web-alpha.livingsites.app");
@@ -36,7 +37,7 @@ describe("admin shell UI", () => {
   });
 
   it("renders the empty Website state without a create action for viewers", () => {
-    const html = renderToStaticMarkup(React.createElement(WebsitesView, { organizationId: "org-alpha", websites: [], canCreate: false }));
+    const html = renderToStaticMarkup(React.createElement(WebsitesView, { organizationId: "org-alpha", websites: [], canCreate: false, canPublish: false, publishAction: publicationAction, unpublishAction: publicationAction }));
     expect(html).toContain("Create your first Website");
     expect(html).not.toContain("Create Website</summary>");
   });

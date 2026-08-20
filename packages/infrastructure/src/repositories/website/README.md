@@ -1,6 +1,6 @@
 # Website Repository Adapter
 
-> **Status:** Contracts only. No implementation in this milestone.
+> **Status:** Drizzle repository and atomic publication persistence implemented.
 
 ## Purpose
 
@@ -13,10 +13,14 @@ WebsiteSettings is a child entity of the Website aggregate and has no
 independent repository port. Settings are persisted atomically with the
 Website root through the `WebsiteRepository`.
 
-## Planned contracts
+## Implemented adapters
 
 - **`WebsiteRepositoryAdapter`** — composes `WebsiteRepository` as a named
   sub-adapter with `DatabaseBackedAdapter` lifecycle methods.
+- **`DrizzleWebsiteRepository`** — tenant-context-aware Website reads and
+  optimistic-concurrency mutations.
+- **`DrizzleWebsitePublicationRepository`** — atomically updates Website
+  publication status and inserts the corresponding outbox event.
 
 ## Principles
 
@@ -27,3 +31,5 @@ Website root through the `WebsiteRepository`.
 3. WebsiteSettings rows are managed within the Website transaction by the
    adapter. The table mapper for settings is a private implementation detail
    — it is not exposed as an application-layer port.
+4. Protected operations run through the composition-owned tenant context so
+   forced PostgreSQL RLS remains active.

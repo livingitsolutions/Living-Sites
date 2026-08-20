@@ -42,6 +42,8 @@ describe("DrizzleMembershipRepository — database integration", () => {
     await netlifyDB.applyMigrations("./netlify/database/migrations");
     const embeddedDatabase = (netlifyDB as unknown as { db: Parameters<typeof drizzle>[0] }).db;
     db = drizzle(embeddedDatabase, { schema });
+    await db.execute(sql`select set_config('app.context_mode', 'internal', false)`);
+    await db.execute(sql`select set_config('app.tenant_authorized', 'true', false)`);
     const logger = new NoopLogger();
     const repositoryDb = db as unknown as DrizzleDB;
     repo = new DrizzleMembershipRepository({ db: repositoryDb, logger });

@@ -1,4 +1,4 @@
-import type { AggregateVersion, OrganizationId, Website, WebsiteCreatedEvent, WebsiteDraft, WebsiteId, WebsiteSettings } from "@livingsites/domain";
+import type { AggregateVersion, OrganizationId, Result, UserId, VersionString, Website, WebsiteCreatedEvent, WebsiteDraft, WebsiteId, WebsitePublishedEvent, WebsiteSettings, WebsiteUnpublishedEvent } from "@livingsites/domain";
 import type { CreateResult, SaveResult } from "../contracts.js";
 
 export interface WebsiteReader {
@@ -20,4 +20,26 @@ export interface WebsiteRepository extends WebsiteReader, WebsiteCreator, Websit
 
 export interface WebsiteCreationPersistence {
   createWithEvent(candidate: WebsiteDraft, event: WebsiteCreatedEvent): Promise<CreateResult<Website>>;
+}
+
+export type WebsitePublicationPersistenceError =
+  | { readonly code: "concurrency_conflict"; readonly message: string }
+  | { readonly code: "persistence_error"; readonly message: string };
+
+export interface WebsitePublicationPersistence {
+  publishWithEvent(input: {
+    readonly websiteId: WebsiteId;
+    readonly expectedVersion: AggregateVersion;
+    readonly publishedVersion: VersionString;
+    readonly changedAt: string;
+    readonly changedBy: UserId;
+    readonly event: WebsitePublishedEvent;
+  }): Promise<Result<Website, WebsitePublicationPersistenceError>>;
+  unpublishWithEvent(input: {
+    readonly websiteId: WebsiteId;
+    readonly expectedVersion: AggregateVersion;
+    readonly changedAt: string;
+    readonly changedBy: UserId;
+    readonly event: WebsiteUnpublishedEvent;
+  }): Promise<Result<Website, WebsitePublicationPersistenceError>>;
 }

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by ADR 012
 
 ## Context
 
@@ -50,3 +50,8 @@ those functions and roles do not exist in Netlify Database.
 - Tenant isolation is NOT implemented and must not be assumed.
 - When authentication is added, a new ADR will document the RLS
   strategy with the actual auth provider.
+
+## Superseded Decision
+
+ADR 012 implements an application-owned, transaction-local tenant context and
+forced PostgreSQL RLS without Supabase assumptions.

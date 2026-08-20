@@ -80,6 +80,7 @@ function createComposition(options: { repetitions?: number; rejectSuperAdmin?: b
   const database = createDatabaseQueue(options.repetitions ?? 1);
   const composition = {
     database,
+    runWithTenantContext: async (_context: unknown, operation: () => Promise<unknown>) => operation(),
     idGenerator: {
       generatePrefixed(prefix: string) {
         return `${prefix}_generated`;

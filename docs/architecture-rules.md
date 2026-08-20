@@ -18,6 +18,11 @@
 4. **Tenant isolation is enforced at the data layer (RLS) and the service
    layer**, never only at the UI. A missing tenant check in a query is a
    security defect.
+   **RLS context originates from trusted authenticated server context.** The
+   Infrastructure tenant-context runner validates active membership or
+   Platform Super Admin authority before protected repositories execute.
+   Client-supplied Organization or Website IDs are routing inputs, never proof
+   of authorization. Missing context fails closed. See ADR 012.
 
 ## 2. Package structure and dependency direction
 
@@ -518,21 +523,22 @@
      VersionString), separate from `revisionNumber`. No entity outside a
      mutable aggregate root carries `AggregateVersion`.
 
-## 18. What does NOT exist yet
+## 18. Explicitly deferred capabilities
 
-This milestone produces architecture only. The following are explicitly
-**out of scope and must not be implemented** until a later milestone:
+This section records the original architecture milestone exclusions. Later
+approved milestones have implemented authentication, database adapters, RLS,
+administration UI, Page publishing, and the initial Page Builder. The
+following capabilities remain deferred until an approved milestone:
 
-- Authentication (sign-in, sessions, password reset)
-- Database implementation (migrations, RLS policies, seed data)
-- CRUD endpoints / API routes
-- Dashboards or any UI
-- Page builder
 - Media library implementation
-- Business logic implementations of any service
-- Sample data or demo pages
 - Event bus / event dispatcher
 - Plugin runtime
+- Page rollback and version-history controls
+- Export pipeline
+
+The implemented builder hierarchy is
+`Organization → Website → Pages → Page Builder`. A generic
+Organization-level builder is not part of the architecture.
 
 Any PR introducing these before its milestone is out of scope and should be
 rejected.

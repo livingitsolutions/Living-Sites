@@ -5,6 +5,7 @@ import { PageStatus as Status } from "@livingsites/domain";
 import type { CreateResult, PageRepository, SaveResult } from "@livingsites/application";
 import type { Logger } from "@livingsites/platform";
 import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { tenantDatabase } from "../../db/tenant-context.js";
 import { pageDraftToInsert, rowToPage } from "../../db/page-mapper.js";
 import { applicationOutbox, pageSections, pages } from "../../db/schema.js";
 
@@ -14,32 +15,34 @@ const duplicate = (error: unknown) => /duplicate|unique|23505/i.test(String(erro
 export class DrizzlePageRepository implements PageRepository {
   constructor(private readonly config: DrizzlePageRepositoryConfig) {}
 
+  private get db(): DrizzleDB { return tenantDatabase(this.config.db); }
+
   async findById(id: PageId): Promise<Page | null> {
-    const [row] = await this.config.db.select().from(pages).where(eq(pages.id, String(id))).limit(1);
+    const [row] = await this.db.select().from(pages).where(eq(pages.id, String(id))).limit(1);
     if (!row) return null;
-    const sectionRows = await this.config.db.select().from(pageSections).where(eq(pageSections.page_id, String(id))).orderBy(asc(pageSections.sort_order));
+    const sectionRows = await this.db.select().from(pageSections).where(eq(pageSections.page_id, String(id))).orderBy(asc(pageSections.sort_order));
     const mapped = rowToPage(row, sectionRows);
     return mapped.ok ? mapped.value : null;
   }
 
   async findActiveBySlug(websiteId: WebsiteId, slug: string): Promise<Page | null> {
-    const [row] = await this.config.db.select().from(pages).where(and(eq(pages.website_id, String(websiteId)), eq(pages.slug, slug), ne(pages.status, Status.Archived))).limit(1);
+    const [row] = await this.db.select().from(pages).where(and(eq(pages.website_id, String(websiteId)), eq(pages.slug, slug), ne(pages.status, Status.Archived))).limit(1);
     if (!row) return null;
-    const sectionRows = await this.config.db.select().from(pageSections).where(eq(pageSections.page_id, row.id)).orderBy(asc(pageSections.sort_order));
+    const sectionRows = await this.db.select().from(pageSections).where(eq(pageSections.page_id, row.id)).orderBy(asc(pageSections.sort_order));
     const mapped = rowToPage(row, sectionRows);
     return mapped.ok ? mapped.value : null;
   }
 
   async listForWebsite(websiteId: WebsiteId, options?: { readonly status?: PageStatus }): Promise<readonly Page[]> {
-    const rows = await this.config.db.select().from(pages).where(options?.status ? and(eq(pages.website_id, String(websiteId)), eq(pages.status, options.status)) : eq(pages.website_id, String(websiteId))).orderBy(pages.updated_at);
+    const rows = await this.db.select().from(pages).where(options?.status ? and(eq(pages.website_id, String(websiteId)), eq(pages.status, options.status)) : eq(pages.website_id, String(websiteId))).orderBy(pages.updated_at);
     if (!rows.length) return [];
-    const sectionRows = await this.config.db.select().from(pageSections).where(inArray(pageSections.page_id, rows.map((row: typeof pages.$inferSelect) => row.id))).orderBy(asc(pageSections.sort_order));
+    const sectionRows = await this.db.select().from(pageSections).where(inArray(pageSections.page_id, rows.map((row: typeof pages.$inferSelect) => row.id))).orderBy(asc(pageSections.sort_order));
     return rows.flatMap((row: typeof pages.$inferSelect) => { const mapped = rowToPage(row, sectionRows.filter((section: typeof pageSections.$inferSelect) => section.page_id === row.id)); return mapped.ok ? [mapped.value] : []; });
   }
 
   async createWithEvent(candidate: PageDraft, event: PageCreatedEvent): Promise<CreateResult<Page>> {
     try {
-      return await this.config.db.transaction(async (tx: DrizzleDB) => {
+      return await this.db.transaction(async (tx: DrizzleDB) => {
         const [row] = await tx.insert(pages).values(pageDraftToInsert(candidate)).returning();
         if (!row) throw new Error("Page insert returned no row.");
         this.config.beforeOutboxInsert?.();
@@ -61,7 +64,7 @@ export class DrizzlePageRepository implements PageRepository {
 
   async saveBuilder(input: { pageId: PageId; sections: readonly Section[]; expectedVersion: number; updatedAt: string; updatedBy: string }): Promise<SaveResult<Page>> {
     try {
-      return await this.config.db.transaction(async (tx: DrizzleDB) => {
+      return await this.db.transaction(async (tx: DrizzleDB) => {
         const [pageRow] = await tx.update(pages).set({ section_order: input.sections.map((section) => String(section.id)), status: Status.Draft, version: input.expectedVersion + 1, updated_at: new Date(input.updatedAt), updated_by: input.updatedBy }).where(and(eq(pages.id, String(input.pageId)), eq(pages.version, input.expectedVersion))).returning();
         if (!pageRow) return { ok: false, error: { aggregateId: String(input.pageId), expectedVersion: input.expectedVersion, actualVersion: input.expectedVersion } };
         await tx.delete(pageSections).where(eq(pageSections.page_id, String(input.pageId)));
@@ -89,7 +92,7 @@ export class DrizzlePageRepository implements PageRepository {
 
   private async update(id: PageId, expectedVersion: number, changes: Partial<typeof pages.$inferInsert>): Promise<SaveResult<Page>> {
     try {
-      const [row] = await this.config.db.update(pages).set({ ...changes, version: expectedVersion + 1 }).where(and(eq(pages.id, String(id)), eq(pages.version, expectedVersion))).returning();
+      const [row] = await this.db.update(pages).set({ ...changes, version: expectedVersion + 1 }).where(and(eq(pages.id, String(id)), eq(pages.version, expectedVersion))).returning();
       if (!row) return { ok: false, error: { aggregateId: String(id), expectedVersion, actualVersion: expectedVersion } };
       return rowToPage(row);
     } catch (error) {
@@ -99,7 +102,7 @@ export class DrizzlePageRepository implements PageRepository {
 
   private async atomicMutation(id: PageId, expectedVersion: number, changes: Partial<typeof pages.$inferInsert>, event: PageArchivedEvent | PageRestoredEvent): Promise<SaveResult<Page>> {
     try {
-      return await this.config.db.transaction(async (tx: DrizzleDB) => {
+      return await this.db.transaction(async (tx: DrizzleDB) => {
         const [row] = await tx.update(pages).set({ ...changes, version: expectedVersion + 1 }).where(and(eq(pages.id, String(id)), eq(pages.version, expectedVersion))).returning();
         if (!row) return { ok: false, error: { aggregateId: String(id), expectedVersion, actualVersion: expectedVersion } };
         this.config.beforeOutboxInsert?.();
