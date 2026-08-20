@@ -1,5 +1,5 @@
 import { Card, PageHeader, StatusBadge } from "../../components/primitives";
-import { getOrganizationAdminContext } from "../../lib/admin-context";
+import { getOrganizationAdminContext, runWithOrganizationTenant } from "../../lib/admin-context";
 import { getComposition } from "@/app/lib/composition";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +9,10 @@ export default async function OrganizationDashboard({ params }: { params: Promis
   const context = await getOrganizationAdminContext(organizationId);
   if (context.kind !== "authorized") return null;
   const composition = getComposition();
-  const websites = await composition.listOrganizationWebsites({ organizationId: context.organization.id }, { authenticatedUser: { userId: context.platformUser.id }, authorizationService: composition.authorizationService, websiteReader: composition.websiteRepository });
-  const members = await composition.getOrganizationMembers({ organizationId, callerUserId: context.platformUser.id }, composition.getOrganizationMembersDeps);
+  const [websites, members] = await runWithOrganizationTenant(context, () => Promise.all([
+    composition.listOrganizationWebsites({ organizationId: context.organization.id }, { authenticatedUser: { userId: context.platformUser.id }, authorizationService: composition.authorizationService, websiteReader: composition.websiteRepository }),
+    composition.getOrganizationMembers({ organizationId, callerUserId: context.platformUser.id }, composition.getOrganizationMembersDeps),
+  ]));
 
   return <><PageHeader eyebrow="Dashboard" title={`Welcome to ${context.organization.name}`} description="A concise view of the organization data available today." />
     <div className="metric-grid">

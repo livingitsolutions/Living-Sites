@@ -26,6 +26,7 @@ import type {
 } from "@livingsites/application";
 import type { OrganizationCreationPersistence } from "@livingsites/application";
 import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { tenantDatabase } from "../../db/tenant-context.js";
 import { organizations, applicationOutbox, type OrganizationRow } from "../../db/schema.js";
 import { rowToOrganization, draftToInsertData } from "../../db/organization-mapper.js";
 import { buildOutboxInsert } from "../../db/outbox-mapper.js";
@@ -62,15 +63,17 @@ export interface DrizzleOrganizationCreationPersistenceConfig {
 }
 
 export class DrizzleOrganizationCreationPersistence implements OrganizationCreationPersistence {
-  private readonly db: DrizzleDB;
+  private readonly rootDb: DrizzleDB;
   private readonly logger: Logger;
   private readonly schemaVersion: string;
 
   constructor(config: DrizzleOrganizationCreationPersistenceConfig) {
-    this.db = config.db;
+    this.rootDb = config.db;
     this.logger = config.logger;
     this.schemaVersion = config.schemaVersion ?? "1.0.0";
   }
+
+  private get db(): DrizzleDB { return tenantDatabase(this.rootDb); }
 
   async createWithEvent(
     draft: OrganizationDraft,

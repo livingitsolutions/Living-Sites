@@ -125,6 +125,8 @@ None. Organization is a root context; it does not react to other contexts.
 | `RemoveCustomDomain` | Unmap a custom domain. | Org `owner` or `admin`. |
 | `UpdateNavigation` | Reorder or edit nav items for the website. | Website `editor` or higher. |
 | `UpdateTheme` | Change the active theme or theme variables for the website. | Website `editor` or higher. |
+| `PublishWebsite` | Make a ready Website publicly resolvable after at least one Page is published. | Website publish permission. |
+| `UnpublishWebsite` | Take a Website offline without deleting PageSnapshots. | Website publish permission. |
 | `ArchiveWebsite` | Soft-delete a website. | Org `owner` or `admin`. |
 | `RestoreWebsite` | Restore an archived website within the retention window. | Org `owner` or `admin`. |
 
@@ -162,6 +164,8 @@ in the same transaction).
 | `CustomDomainRemoved` | After `RemoveCustomDomain` succeeds. |
 | `NavigationUpdated` | After `UpdateNavigation` succeeds. |
 | `ThemeUpdated` | After `UpdateTheme` succeeds. |
+| `WebsitePublished` | Atomically after `PublishWebsite` succeeds. |
+| `WebsiteUnpublished` | Atomically after `UnpublishWebsite` succeeds. |
 
 ### Events Consumed
 

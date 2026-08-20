@@ -29,6 +29,7 @@ import type {
 } from "@livingsites/application";
 import { normalizeOrganizationRole, normalizeSystemRole } from "@livingsites/application";
 import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { tenantDatabase } from "../../db/tenant-context.js";
 import { membershipDraftToInsertData, rowToMembership } from "../../db/membership-mapper.js";
 import { buildOutboxInsert } from "../../db/outbox-mapper.js";
 import {
@@ -65,15 +66,17 @@ export interface DrizzleMembershipRepositoryConfig {
 }
 
 export class DrizzleMembershipRepository implements MembershipRepository, MembershipMutationPersistence {
-  private readonly db: DrizzleDB;
+  private readonly rootDb: DrizzleDB;
   private readonly logger: Logger;
   private readonly schemaVersion: string;
 
   constructor(config: DrizzleMembershipRepositoryConfig) {
-    this.db = config.db;
+    this.rootDb = config.db;
     this.logger = config.logger;
     this.schemaVersion = config.schemaVersion ?? "1.0.0";
   }
+
+  private get db(): DrizzleDB { return tenantDatabase(this.rootDb); }
 
   async findById(id: MembershipId): Promise<Membership | null> {
     return this.findByIdWithDb(this.db, id);

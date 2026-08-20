@@ -1,6 +1,6 @@
 # Website Use Cases
 
-> **Status:** Architecture only. No implementation.
+> **Status:** Create, get/list, publish, and unpublish are implemented.
 
 ## Commands
 
@@ -11,6 +11,8 @@
 - `RemoveCustomDomain` — Unmap a custom domain.
 - `UpdateNavigation` — Reorder or edit nav items.
 - `UpdateTheme` — Change the active theme or theme variables.
+- `PublishWebsite` — Validate readiness and atomically publish the Website with a durable event.
+- `UnpublishWebsite` — Take the Website offline without deleting PageSnapshots and emit a durable event.
 - `ArchiveWebsite` — Soft-delete a website.
 - `RestoreWebsite` — Restore an archived website within the retention window.
 
@@ -29,7 +31,7 @@ None.
 
 ## Events Produced
 
-`WebsiteCreated`, `WebsiteUpdated`, `WebsiteArchived`, `WebsiteRestored`,
+`WebsiteCreated`, `WebsitePublished`, `WebsiteUnpublished`, `WebsiteUpdated`, `WebsiteArchived`, `WebsiteRestored`,
 `CustomDomainAssigned`, `CustomDomainRemoved`, `NavigationUpdated`,
 `ThemeUpdated`.
 
@@ -45,6 +47,9 @@ Database provider, DNS verification service.
 
 Org `owner`/`admin`: create, archive, restore, domains. Website `admin`:
 settings. Website `editor`: navigation, theme. Website `viewer`: read.
+
+Public resolution requires `Website.status === published`; Page publication
+alone is insufficient.
 
 ## Future Extension Points
 

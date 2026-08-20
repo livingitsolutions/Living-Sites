@@ -37,7 +37,9 @@ beforeAll(async () => {
     netlifyDB = new NetlifyDB({ logger: () => {} });
     const connStr = await netlifyDB.start();
     await netlifyDB.applyMigrations("./netlify/database/migrations");
-    sqlClient = postgres(connStr);
+    sqlClient = postgres(connStr, { max: 1 });
+    await sqlClient`select set_config('app.context_mode', 'internal', false)`;
+    await sqlClient`select set_config('app.tenant_authorized', 'true', false)`;
     db = drizzle({ client: sqlClient, schema });
     planReader = new DrizzlePlanReader({ db, logger });
     featureReader = new DrizzleFeatureReader({ db, logger });

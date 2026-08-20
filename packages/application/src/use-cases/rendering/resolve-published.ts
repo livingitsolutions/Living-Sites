@@ -10,7 +10,7 @@ export interface PublishedPageResolution { readonly website: Website; readonly p
 export async function resolvePublishedWebsite(input: { readonly hostname: string }, deps: { readonly websiteReader: WebsiteReader }): Promise<Result<PublishedWebsiteResolution, PublicResolutionError>> {
   const hostname = input.hostname.trim().toLowerCase().replace(/:\d+$/, "");
   const website = await deps.websiteReader.findByDomain(hostname);
-  if (!website || website.status === WebsiteStatus.Archived || website.archivedAt) return { ok: false, error: { code: "not_found", message: "Published Website was not found." } };
+  if (!website || website.status !== WebsiteStatus.Published || website.archivedAt) return { ok: false, error: { code: "not_found", message: "Published Website was not found." } };
   return { ok: true, value: { website } };
 }
 

@@ -15,6 +15,7 @@ import type { Logger } from "@livingsites/platform";
 import type { DomainEvent, OrganizationCreatedEvent } from "@livingsites/domain";
 import type { EventPublisher } from "@livingsites/application";
 import type { DrizzleDB } from "../../db/drizzle-instance.js";
+import { createTenantContextRunner, currentTenantContext, tenantDatabase } from "../../db/tenant-context.js";
 import { applicationOutbox } from "../../db/schema.js";
 import { buildOutboxInsert } from "../../db/outbox-mapper.js";
 
@@ -74,20 +75,27 @@ function scopeToAggregateId(event: DomainEvent): string {
 }
 
 export class OutboxEventPublisher implements EventPublisher {
-  private readonly db: DrizzleDB;
+  private readonly rootDb: DrizzleDB;
   private readonly logger: Logger;
   private readonly schemaVersion: string;
 
   constructor(config: OutboxEventPublisherConfig) {
-    this.db = config.db;
+    this.rootDb = config.db;
     this.logger = config.logger;
     this.schemaVersion = config.schemaVersion ?? "1.0.0";
+  }
+
+  private get db(): DrizzleDB { return tenantDatabase(this.rootDb); }
+
+  private async withDatabase<T>(operation: () => Promise<T>): Promise<T> {
+    if (currentTenantContext()) return operation();
+    return createTenantContextRunner(this.rootDb).run({ mode: "internal" }, operation);
   }
 
   async publish(event: DomainEvent): Promise<void> {
     const insert = this.buildInsert(event);
     try {
-      await this.db.insert(applicationOutbox).values(insert);
+      await this.withDatabase(() => this.db.insert(applicationOutbox).values(insert));
     } catch (err) {
       if (isDuplicateKeyError(err)) {
         this.logger.warn("Outbox event already exists (idempotent)", { idempotencyKey: insert.idempotency_key });
@@ -106,7 +114,7 @@ export class OutboxEventPublisher implements EventPublisher {
     if (events.length === 0) return;
     const inserts = events.map((e) => this.buildInsert(e));
     try {
-      await this.db.insert(applicationOutbox).values(inserts);
+      await this.withDatabase(() => this.db.insert(applicationOutbox).values(inserts));
     } catch (err) {
       if (isDuplicateKeyError(err)) {
         this.logger.warn("Outbox batch: some events already exist (idempotent)", { count: events.length });

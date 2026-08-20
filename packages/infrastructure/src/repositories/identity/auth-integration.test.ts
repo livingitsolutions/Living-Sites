@@ -45,7 +45,9 @@ describe("Better Auth + Drizzle integration", () => {
     netlifyDB = new NetlifyDB({ logger: () => {} });
     const connectionString = await netlifyDB.start();
     await netlifyDB.applyMigrations("./netlify/database/migrations");
-    sql = postgres(connectionString);
+    sql = postgres(connectionString, { max: 1 });
+    await sql`select set_config('app.context_mode', 'internal', false)`;
+    await sql`select set_config('app.tenant_authorized', 'true', false)`;
     db = drizzle({ client: sql, schema });
 
     const rawAuth = betterAuth({

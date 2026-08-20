@@ -62,6 +62,12 @@ export interface WebsitePublishedEvent extends DomainEvent {
   readonly publishedVersion: VersionString;
 }
 
+export interface WebsiteUnpublishedEvent extends DomainEvent {
+  readonly type: "website.unpublished";
+  readonly eventScope: { readonly scope: "website"; readonly organizationId: OrganizationId; readonly websiteId: WebsiteId };
+  readonly websiteVersion: number;
+}
+
 export interface PagePublishedEvent extends DomainEvent {
   readonly type: "page.published";
   readonly eventScope: { readonly scope: "website"; readonly organizationId: OrganizationId; readonly websiteId: WebsiteId };
@@ -171,6 +177,7 @@ export type KnownDomainEvent =
   | OrganizationCreatedEvent
   | WebsiteCreatedEvent
   | WebsitePublishedEvent
+  | WebsiteUnpublishedEvent
   | PageCreatedEvent
   | PagePublishedEvent
   | PageArchivedEvent

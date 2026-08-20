@@ -1,6 +1,6 @@
 # Living Sites — Application Flow
 
-> **Status:** Architecture only. No implementation in this milestone.
+> **Status:** Living architecture. Implemented flows are identified below.
 
 ## Overview
 
@@ -25,13 +25,31 @@ Platform Runtime (logging, clock, ids, telemetry, feature flags)
     ↓
 Infrastructure Providers (concrete implementations)
     ↓
-External Systems (Supabase Postgres, Storage, Analytics SDKs, Email, Queues)
+    External Systems (Netlify Database/Postgres, Storage, Analytics SDKs, Email, Queues)
 ```
 
 Every layer depends on the contract of the layer below. No layer skips a
 level. The UI never calls a repository. A repository never calls an external
 system directly — it goes through an infrastructure provider. Platform
 runtime capabilities are injected at every level by the composition root.
+
+## Trusted Database Context
+
+Protected repository calls execute inside a composition-owned database
+transaction. The tenant-context runner sets transaction-local PostgreSQL
+context from the authenticated server user, validates active membership or
+Platform Super Admin authority, and only then enables tenant access. Directory,
+public, and internal workloads use separate explicit modes. Missing context
+fails closed under forced RLS. Application authorization remains mandatory.
+
+```text
+Authenticated transport
+  → application authorization
+  → TenantContextRunner transaction
+  → membership / Platform Super Admin verification
+  → transaction-local PostgreSQL context
+  → RLS-protected repository operation
+```
 
 ## Command Flow
 
@@ -95,6 +113,20 @@ sequenceDiagram
 5. **Platform capabilities (clock, IDs) are used inside the use case** to
    generate timestamps and identifiers — never `Date.now()` or
    `crypto.randomUUID()` directly.
+
+### Website publication flow
+
+`PublishWebsite` authorizes the Website publish permission, verifies
+Organization ownership and optimistic version, rejects archived Websites, and
+requires at least one published Page with a current snapshot. Infrastructure
+then updates Website status and inserts `website.published` into the durable
+outbox in one transaction.
+
+`UnpublishWebsite` performs the same authorization, ownership, and concurrency
+checks, changes status to `unpublished`, and inserts `website.unpublished` in
+the same transaction. Existing PageSnapshots remain immutable and are not
+deleted. Public resolution requires both a published Website and a published
+Page with its current snapshot.
 
 ## Query Flow
 
@@ -315,6 +347,8 @@ sequenceDiagram
 | Queries never mutate state. | Query use cases have no write-path repository calls. Review + test. |
 | Commands never return read models. | Command return types are `Result<Entity, DomainError>`, not DTOs. Type system. |
 | Events emitted only by completed use cases. | The event emission call is the last line before `Result.ok`. Review. |
+| Tenant data requires trusted database context. | Transaction-local context validation plus forced PostgreSQL RLS. ADR 012 and integration tests. |
+| Website publication and its event are atomic. | Website update and outbox insert share one transaction and roll back together. Integration test. |
 | Background jobs execute use cases. | Background job functions call use case methods — no inline business logic. Review. |
 | Repositories never contain business rules. | Repository interfaces are data-access only (get, insert, update, delete). No validation, no authorization, no orchestration. Interface shape + review. |
 | Services never bypass use cases. | Service implementations call use case methods — no direct repository writes outside a use case. Review. |

@@ -34,11 +34,13 @@ import {
   DrizzleSuperAdminStore,
   DrizzleWebsiteRepository,
   DrizzleWebsiteCreationPersistence,
+  DrizzleWebsitePublicationRepository,
   DrizzlePageRepository,
   DrizzlePagePublicationRepository,
+  createTenantContextRunner,
   MissingNetlifyDatabaseError,
 } from "@livingsites/infrastructure";
-import type { BetterAuthInstance } from "@livingsites/infrastructure";
+import type { BetterAuthInstance, TenantContext, TenantContextRunner } from "@livingsites/infrastructure";
 import type { DrizzleDB } from "@livingsites/infrastructure";
 import type {
   OrganizationReader,
@@ -57,6 +59,7 @@ import type {
   RegistrationMode,
   WebsiteReader,
   WebsiteCreationPersistence,
+  WebsitePublicationPersistence,
   PageRepository,
   PagePublisher,
   PageSnapshotReader,
@@ -71,6 +74,8 @@ import {
   createWebsite,
   getWebsite,
   listOrganizationWebsites,
+  publishWebsite,
+  unpublishWebsite,
   createPage,
   getPage,
   listWebsitePages,
@@ -130,6 +135,7 @@ export interface ProductionComposition {
   readonly membershipRepository: MembershipRepository;
   readonly websiteRepository: WebsiteReader;
   readonly websiteCreationPersistence: WebsiteCreationPersistence;
+  readonly websitePublicationPersistence: WebsitePublicationPersistence;
   readonly pageRepository: PageRepository;
   readonly pagePublisher: PagePublisher;
   readonly pageSnapshotReader: PageSnapshotReader;
@@ -157,6 +163,8 @@ export interface ProductionComposition {
   readonly createWebsite: typeof createWebsite;
   readonly getWebsite: typeof getWebsite;
   readonly listOrganizationWebsites: typeof listOrganizationWebsites;
+  readonly publishWebsite: typeof publishWebsite;
+  readonly unpublishWebsite: typeof unpublishWebsite;
   readonly createPage: typeof createPage;
   readonly getPage: typeof getPage;
   readonly listWebsitePages: typeof listWebsitePages;
@@ -172,6 +180,8 @@ export interface ProductionComposition {
   readonly publishPage: typeof publishPage;
   readonly resolvePublishedPage: typeof resolvePublishedPage;
   readonly resolvePublishedWebsite: typeof resolvePublishedWebsite;
+  readonly tenantContextRunner: TenantContextRunner;
+  readonly runWithTenantContext: <T>(context: TenantContext, operation: () => Promise<T>) => Promise<T>;
   readonly registrationMode: RegistrationMode;
   readonly healthCheck: () => Promise<{ healthy: boolean; details: Record<string, boolean> }>;
   readonly close: () => Promise<void>;
@@ -236,6 +246,7 @@ export function composeProduction(
   }
 
   const db = connection.db;
+  const tenantContextRunner = createTenantContextRunner(db);
   const identityDisabler = new DrizzleOrphanIdentityDisabler(db);
   const identityLinkageStore = new DrizzleIdentityLinkageStore(db);
 
@@ -321,6 +332,7 @@ export function composeProduction(
   const membershipRepository = new DrizzleMembershipRepository({ db, logger });
   const websiteRepository = new DrizzleWebsiteRepository({ db, logger });
   const websiteCreationPersistence = new DrizzleWebsiteCreationPersistence({ db, logger });
+  const websitePublicationPersistence = new DrizzleWebsitePublicationRepository({ db, logger });
   const pageRepository = new DrizzlePageRepository({ db, logger });
   const pagePublicationRepository = new DrizzlePagePublicationRepository({ db, logger });
   const superAdminStore = new DrizzleSuperAdminStore({ db, logger });
@@ -431,6 +443,7 @@ export function composeProduction(
     membershipRepository,
     websiteRepository,
     websiteCreationPersistence,
+    websitePublicationPersistence,
     pageRepository,
     pagePublisher: pagePublicationRepository,
     pageSnapshotReader: pagePublicationRepository,
@@ -458,6 +471,8 @@ export function composeProduction(
     createWebsite,
     getWebsite,
     listOrganizationWebsites,
+    publishWebsite,
+    unpublishWebsite,
     createPage,
     getPage,
     listWebsitePages,
@@ -473,6 +488,8 @@ export function composeProduction(
     publishPage,
     resolvePublishedPage,
     resolvePublishedWebsite,
+    tenantContextRunner,
+    runWithTenantContext: (context, operation) => tenantContextRunner.run(context, operation),
     registrationMode,
     healthCheck,
     close,
