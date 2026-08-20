@@ -77,6 +77,17 @@ export interface PagePublishedEvent extends DomainEvent {
   readonly pageVersion: number;
 }
 
+export interface PagePublicationRolledBackEvent extends DomainEvent {
+  readonly type: "page.publication_rolled_back";
+  readonly eventScope: { readonly scope: "website"; readonly organizationId: OrganizationId; readonly websiteId: WebsiteId };
+  readonly pageId: PageId;
+  readonly targetSnapshotId: string;
+  readonly targetRevisionNumber: number;
+  readonly newSnapshotId: string;
+  readonly newRevisionNumber: number;
+  readonly pageVersion: number;
+}
+
 export interface PageCreatedEvent extends DomainEvent {
   readonly type: "page.created";
   readonly eventScope: { readonly scope: "website"; readonly organizationId: OrganizationId; readonly websiteId: WebsiteId };
@@ -180,6 +191,7 @@ export type KnownDomainEvent =
   | WebsiteUnpublishedEvent
   | PageCreatedEvent
   | PagePublishedEvent
+  | PagePublicationRolledBackEvent
   | PageArchivedEvent
   | PageRestoredEvent
   | MediaUploadedEvent

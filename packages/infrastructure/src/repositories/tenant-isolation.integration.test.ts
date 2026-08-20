@@ -2,10 +2,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import postgres from "postgres";
-import type { OrganizationId, UserId, WebsiteId } from "@livingsites/domain";
+import type { OrganizationId, PageId, UserId, WebsiteId } from "@livingsites/domain";
+import { NoopLogger } from "@livingsites/platform";
 import { createTestDatabaseHarness, type TestDatabaseHarness } from "../db/test-harness.js";
 import { createTenantContextRunner, tenantDatabase, TenantContextDeniedError } from "../db/tenant-context.js";
 import * as schema from "../db/schema.js";
+import { DrizzlePagePublicationRepository } from "./page/drizzle-page-publication-repository.js";
 
 const now = new Date("2026-08-19T00:00:00.000Z");
 const orgA = "org_rls_a" as OrganizationId;
@@ -87,6 +89,9 @@ describe("PostgreSQL tenant isolation", () => {
   it("fails closed without tenant context", async () => {
     expect(await isolatedDb.select().from(schema.organizations)).toHaveLength(0);
     expect(await isolatedDb.update(schema.websites).set({ name: "blocked" }).where(eq(schema.websites.id, websiteA)).returning()).toHaveLength(0);
+    const publications = new DrizzlePagePublicationRepository({ db: isolatedDb, logger: new NoopLogger() });
+    expect(await publications.listForPage("page_a" as PageId)).toHaveLength(0);
+    expect(await publications.findById("snapshot_a")).toBeNull();
   });
 
   it("prevents Org A from reading or mutating Org B rows", async () => {
@@ -110,6 +115,22 @@ describe("PostgreSQL tenant isolation", () => {
       expect((await db.select().from(schema.pageSnapshots)).map((row) => row.id)).toEqual(["snapshot_a"]);
       expect(await db.update(schema.websites).set({ name: "Updated A" }).where(eq(schema.websites.id, websiteA)).returning()).toHaveLength(1);
       expect(await db.update(schema.pages).set({ title: "Blocked B" }).where(eq(schema.pages.id, "page_b")).returning()).toHaveLength(0);
+    });
+  });
+
+  it("isolates Page history, inspection, and rollback through tenant context", async () => {
+    const runner = createTenantContextRunner(isolatedDb);
+    const publications = new DrizzlePagePublicationRepository({ db: isolatedDb, logger: new NoopLogger() });
+    await runner.run({ mode: "tenant", userId: userA, organizationId: orgA, websiteId: websiteA }, async () => {
+      expect((await publications.listForPage("page_a" as PageId)).map((snapshot) => snapshot.id)).toEqual(["snapshot_a"]);
+      expect(await publications.findById("snapshot_b")).toBeNull();
+      expect((await publications.rollback({ pageId: "page_b" as PageId, websiteId: websiteB, organizationId: orgB, targetRevisionNumber: 1, newSnapshotId: "snapshot_blocked", expectedPageVersion: 1, rolledBackAt: now.toISOString(), rolledBackBy: userA, event: { type: "page.publication_rolled_back", occurredAt: now.toISOString() as never, eventScope: { scope: "website", organizationId: orgB, websiteId: websiteB }, pageId: "page_b" as PageId, targetRevisionNumber: 1, newSnapshotId: "snapshot_blocked" } })).ok).toBe(false);
+      const valid = await publications.rollback({ pageId: "page_a" as PageId, websiteId: websiteA, organizationId: orgA, targetRevisionNumber: 1, newSnapshotId: "snapshot_a_2", expectedPageVersion: 1, rolledBackAt: now.toISOString(), rolledBackBy: userA, event: { type: "page.publication_rolled_back", occurredAt: now.toISOString() as never, eventScope: { scope: "website", organizationId: orgA, websiteId: websiteA }, pageId: "page_a" as PageId, targetRevisionNumber: 1, newSnapshotId: "snapshot_a_2" } });
+      expect(valid.ok && valid.value.revisionNumber).toBe(2);
+    });
+    await runner.run({ mode: "tenant", userId: superUser, organizationId: orgB, websiteId: websiteB }, async () => {
+      expect(await publications.findById("snapshot_a")).not.toBeNull();
+      expect(await publications.findById("snapshot_b")).not.toBeNull();
     });
   });
 

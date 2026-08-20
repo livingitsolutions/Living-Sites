@@ -527,13 +527,13 @@
 
 This section records the original architecture milestone exclusions. Later
 approved milestones have implemented authentication, database adapters, RLS,
-administration UI, Page publishing, and the initial Page Builder. The
+administration UI, Page publishing, Page publication history and rollback,
+and the initial Page Builder. The
 following capabilities remain deferred until an approved milestone:
 
 - Media library implementation
 - Event bus / event dispatcher
 - Plugin runtime
-- Page rollback and version-history controls
 - Export pipeline
 
 The implemented builder hierarchy is

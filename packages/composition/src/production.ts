@@ -62,6 +62,7 @@ import type {
   WebsitePublicationPersistence,
   PageRepository,
   PagePublisher,
+  PageRollbackPersistence,
   PageSnapshotReader,
 } from "@livingsites/application";
 import {
@@ -89,6 +90,9 @@ import {
   reorderSections,
   getPageBuilderState,
   publishPage,
+  listPagePublicationHistory,
+  inspectPagePublication,
+  rollbackPagePublication,
   resolvePublishedPage,
   resolvePublishedWebsite,
   AuthorizationService,
@@ -138,6 +142,7 @@ export interface ProductionComposition {
   readonly websitePublicationPersistence: WebsitePublicationPersistence;
   readonly pageRepository: PageRepository;
   readonly pagePublisher: PagePublisher;
+  readonly pageRollbackPersistence: PageRollbackPersistence;
   readonly pageSnapshotReader: PageSnapshotReader;
   readonly superAdminStore: DrizzleSuperAdminStore;
   readonly authorizationService: AuthorizationService;
@@ -178,6 +183,9 @@ export interface ProductionComposition {
   readonly reorderSections: typeof reorderSections;
   readonly getPageBuilderState: typeof getPageBuilderState;
   readonly publishPage: typeof publishPage;
+  readonly listPagePublicationHistory: typeof listPagePublicationHistory;
+  readonly inspectPagePublication: typeof inspectPagePublication;
+  readonly rollbackPagePublication: typeof rollbackPagePublication;
   readonly resolvePublishedPage: typeof resolvePublishedPage;
   readonly resolvePublishedWebsite: typeof resolvePublishedWebsite;
   readonly tenantContextRunner: TenantContextRunner;
@@ -446,6 +454,7 @@ export function composeProduction(
     websitePublicationPersistence,
     pageRepository,
     pagePublisher: pagePublicationRepository,
+    pageRollbackPersistence: pagePublicationRepository,
     pageSnapshotReader: pagePublicationRepository,
     superAdminStore,
     authorizationService,
@@ -486,6 +495,9 @@ export function composeProduction(
     reorderSections,
     getPageBuilderState,
     publishPage,
+    listPagePublicationHistory,
+    inspectPagePublication,
+    rollbackPagePublication,
     resolvePublishedPage,
     resolvePublishedWebsite,
     tenantContextRunner,

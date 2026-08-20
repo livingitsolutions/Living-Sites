@@ -6,6 +6,7 @@ import { getOrganizationAdminContext, runWithOrganizationTenant } from "../../..
 
 export type BuilderActionResult = { readonly ok: true; readonly state: PageBuilderState } | { readonly ok: false; readonly code: string; readonly message: string };
 export type PublishActionResult = { readonly ok: true; readonly revisionNumber: number; readonly snapshotId: string } | { readonly ok: false; readonly code: string; readonly message: string };
+export type RollbackActionResult = { readonly ok: true; readonly revisionNumber: number; readonly snapshotId: string } | { readonly ok: false; readonly code: string; readonly message: string };
 const depsFor = (composition: ReturnType<typeof getComposition>, userId: never) => ({ authenticatedUser: { userId }, authorizationService: composition.authorizationService, websiteReader: composition.websiteRepository, pageReader: composition.pageRepository, pageMutationPersistence: composition.pageRepository, clock: composition.clock, idGenerator: composition.idGenerator });
 async function contextFor(organizationId: string) { const context = await getOrganizationAdminContext(organizationId); return context.kind === "authorized" ? context : null; }
 const output = (result: Awaited<ReturnType<ReturnType<typeof getComposition>["addSection"]>>): BuilderActionResult => result.ok ? { ok: true, state: result.value } : { ok: false, code: result.error.code, message: result.error.message };
@@ -34,4 +35,13 @@ export async function publishPageAction(organizationId: string, websiteId: strin
   const context = await contextFor(organizationId); if (!context) return { ok: false, code: "unauthorized", message: "You are not authorized to publish this Page." }; const composition = getComposition();
   const result = await runWithOrganizationTenant(context, () => composition.publishPage({ organizationId: context.organization.id, websiteId: websiteId as never, pageId: pageId as never, expectedVersion }, { authenticatedUser: { userId: context.platformUser.id as never }, authorizationService: composition.authorizationService, websiteReader: composition.websiteRepository, pageReader: composition.pageRepository, pagePublisher: composition.pagePublisher, clock: composition.clock, idGenerator: composition.idGenerator }), websiteId);
   return result.ok ? { ok: true, revisionNumber: result.value.revisionNumber, snapshotId: result.value.id } : { ok: false, code: result.error.code, message: [result.error.message, ...(result.error.details ?? [])].join(" ") };
+}
+
+export async function rollbackPagePublicationAction(organizationId: string, websiteId: string, pageId: string, targetRevisionNumber: number, expectedVersion: number): Promise<RollbackActionResult> {
+  const context = await contextFor(organizationId); if (!context) return { ok: false, code: "unauthorized", message: "You are not authorized to rollback this Page." }; const composition = getComposition();
+  const result = await runWithOrganizationTenant(context, () => composition.rollbackPagePublication(
+    { organizationId: context.organization.id, websiteId: websiteId as never, pageId: pageId as never, targetRevisionNumber, expectedVersion },
+    { authenticatedUser: { userId: context.platformUser.id as never }, authorizationService: composition.authorizationService, websiteReader: composition.websiteRepository, pageReader: composition.pageRepository, pageSnapshotReader: composition.pageSnapshotReader, pageRollbackPersistence: composition.pageRollbackPersistence, clock: composition.clock, idGenerator: composition.idGenerator },
+  ), websiteId);
+  return result.ok ? { ok: true, revisionNumber: result.value.revisionNumber, snapshotId: result.value.id } : { ok: false, code: result.error.code, message: result.error.message };
 }
